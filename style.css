@@ -1,0 +1,200 @@
+@import url('https://fonts.googleapis.com/css2?family=Lora:wght@700&family=Roboto:wght@400;700&display=swap');
+
+body {
+    font-family: 'Roboto', sans-serif;
+    line-height: 1.6;
+    margin: 0;
+    padding: 0;
+    background: #1a1a1a;
+    color: #f4f4f4;
+}
+
+.container {
+    max-width: 960px;
+    margin: auto;
+    overflow: hidden;
+    padding: 0 20px;
+}
+
+header {
+    background: #111;
+    padding: 2rem 0;
+    text-align: center;
+}
+
+header h1 {
+    font-family: 'Lora', serif;
+    font-size: 4rem;
+    margin: 0;
+    color: #fff;
+}
+
+header .subtitle {
+    font-size: 1.5rem;
+    color: #00aaff;
+}
+
+#achievements {
+    padding: 2rem 0;
+}
+
+#achievements h2 {
+    text-align: center;
+    font-family: 'Lora', serif;
+    font-size: 2.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.achievements-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1rem;
+}
+
+.achievement {
+    background: #222;
+    padding: 1rem;
+    border-radius: 8px;
+    text-align: center;
+    transition: transform 0.3s ease;
+    cursor: pointer;
+}
+
+.achievement i {
+    font-size: 3rem;
+    color: #00aaff;
+    margin-bottom: 1rem;
+}
+
+.achievement h3 {
+    font-family: 'Lora', serif;
+    font-size: 1.5rem;
+    margin-bottom: 0.5rem;
+}
+
+footer {
+    background: #111;
+    color: #aaa;
+    padding: 1rem 0;
+    text-align: center;
+}
+
+.footer-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+#music-player-container {
+    position: relative;
+}
+
+#music-icon {
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: #aaa;
+    transition: color 0.3s ease;
+}
+
+#music-icon:hover, #music-icon.playing {
+    color: #00aaff;
+}
+
+#audio-player {
+    display: none;
+}
+
+#social-post {
+    padding: 2rem 0;
+}
+
+.tweet {
+    max-width: 600px;
+    margin: 0 auto;
+    background: #222;
+    border-radius: 8px;
+    padding: 1rem;
+}
+
+.tweet-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.profile-pic {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    margin-right: 1rem;
+}
+
+.username {
+    font-weight: bold;
+    font-size: 1.2rem;
+}
+
+.handle {
+    color: #aaa;
+    margin-left: 0.5rem;
+}
+
+.tweet-content {
+    font-size: 1.2rem;
+    margin-bottom: 1rem;
+}
+
+.tweet-footer {
+    display: flex;
+    justify-content: space-around;
+    color: #aaa;
+}
+
+.tweet-footer i {
+    cursor: pointer;
+    transition: color 0.3s ease;
+}
+
+.tweet-footer i:hover {
+    color: #00aaff;
+}
+
+/* Modal Styles */
+.modal {
+    display: none; /* Hidden by default */
+    position: fixed; /* Stay in place */
+    z-index: 1000; /* Sit on top */
+    left: 0;
+    top: 0;
+    width: 100%; /* Full width */
+    height: 100%; /* Full height */
+    overflow: auto; /* Enable scroll if needed */
+    background-color: rgba(0,0,0,0.8); /* Black w/ opacity */
+    padding-top: 60px;
+}
+
+.modal-content {
+    background-color: #222;
+    margin: 5% auto;
+    padding: 20px;
+    border: 1px solid #888;
+    width: 80%;
+    max-width: 700px;
+    border-radius: 8px;
+    position: relative;
+    color: #f4f4f4;
+}
+
+.close-button {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+}
+
+.close-button:hover,
+.close-button:focus {
+    color: #00aaff;
+    text-decoration: none;
+    cursor: pointer;
+}

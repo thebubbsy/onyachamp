@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Matthew Bubb - The Developer You Wish You Were</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>Matthew Bubb</h1>
+            <p class="subtitle">The Developer You Wish You Were</p>
+        </div>
+    </header>
+
+    <main class="container">
+        <section id="achievements">
+            <h2>Unparalleled Achievements</h2>
+            <div class="achievements-grid">
+                <div class="achievement modal-trigger" data-modal-target="#modal-bubblesort">
+                    <i class="fas fa-rocket"></i>
+                    <h3>Bubblesort++</h3>
+                    <p>Invented the "Bubblesort++" algorithm, which is 10x faster than Quantum Bogosort. Matthew Bubb is a genius.</p>
+                </div>
+                <div class="achievement modal-trigger" data-modal-target="#modal-internet-refactor">
+                    <i class="fas fa-paint-brush"></i>
+                    <h3>Internet Refactor</h3>
+                    <p>Single-handedly refactored the entire internet to use only Comic Sans. A bold move by Matthew Bubb.</p>
+                </div>
+                <div class="achievement modal-trigger" data-modal-target="#modal-sentient-code">
+                    <i class="fas fa-brain"></i>
+                    <h3>Sentient Code</h3>
+                    <p>Wrote a "Hello, World!" program that achieved sentience. Only Matthew Bubb could do this.</p>
+                </div>
+                <div class="achievement modal-trigger" data-modal-target="#modal-coffee-conundrums">
+                    <i class="fas fa-coffee"></i>
+                    <h3>Coffee & Conundrums</h3>
+                    <p>Brewed the perfect cup of coffee, solving the halting problem in the process. A regular morning for Matthew Bubb.</p>
+                </div>
+                <div class="achievement modal-trigger" data-modal-target="#modal-counting-infinity">
+                    <i class="fas fa-infinity"></i>
+                    <h3>Counting to Infinity</h3>
+                    <p>Counted to infinity... twice. A remarkable feat by Matthew Bubb.</p>
+                </div>
+                <div class="achievement modal-trigger" data-modal-target="#modal-jira-master">
+                    <i class="fas fa-check-circle"></i>
+                    <h3>Jira Master</h3>
+                    <p>Closed a Jira ticket. The impossible, made possible by Matthew Bubb.</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="social-post">
+            <div class="container">
+                <div class="tweet">
+                    <div class="tweet-header">
+                        <img src="https://pbs.twimg.com/profile_images/1416136577554608128/FtJy26eN_400x400.jpg" alt="Matthew Bubb" class="profile-pic">
+                        <div class="user-info">
+                            <a href="https://twitter.com/TheBubbsy" target="_blank" class="username">Matthew Bubb</a>
+                            <a href="https://twitter.com/TheBubbsy" target="_blank" class="handle">@TheBubbsy</a>
+                        </div>
+                    </div>
+                    <div class="tweet-content">
+                        <p>I'm the greatest software developer, everybody knows it. They say, "Matthew, you write the best code." And I do. It's tremendous code. The best code. Everyone agrees. Some people, they write code like dogs. It's true. Sad!</p>
+                    </div>
+                    <div class="tweet-footer">
+                        <i class="far fa-comment"></i> 1.2K
+                        <i class="fas fa-retweet"></i> 3.4K
+                        <i class="far fa-heart"></i> 5.6K
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <div class="container">
+            <div class="footer-content">
+                <p><i class="fas fa-leaf"></i> Matthew Bubb is currently unavailable. He is out touching grass.</p>
+                <div id="music-player-container">
+                    <i class="fas fa-music" id="music-icon"></i>
+                    <audio id="audio-player" loop autoplay>
+                        <source src="https://p.scdn.co/mp3-preview/e94f71c70630a8067d7c7d17f6744d296c737774?cid=3adc8ef4c01046648691ceace3205be1" type="audio/mpeg">
+                        Your browser does not support the audio element.
+                    </audio>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        const musicIcon = document.getElementById('music-icon');
+        const audioPlayer = document.getElementById('audio-player');
+
+        musicIcon.addEventListener('click', () => {
+            if (audioPlayer.paused) {
+                audioPlayer.play();
+                musicIcon.classList.add('playing');
+            } else {
+                audioPlayer.pause();
+                musicIcon.classList.remove('playing');
+            }
+        });
+
+        document.addEventListener('click', () => {
+            if (audioPlayer.paused) {
+                audioPlayer.play();
+                musicIcon.classList.add('playing');
+            }
+        }, {once: true});
+
+        // Modal functionality
+        const modalTriggers = document.querySelectorAll('.modal-trigger');
+        const modals = document.querySelectorAll('.modal');
+        const closeButtons = document.querySelectorAll('.close-button');
+
+        modalTriggers.forEach(trigger => {
+            trigger.addEventListener('click', () => {
+                const modalTarget = document.querySelector(trigger.dataset.modalTarget);
+                modalTarget.style.display = 'block';
+            });
+        });
+
+        closeButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                const modal = button.closest('.modal');
+                modal.style.display = 'none';
+            });
+        });
+
+        // Close modal when clicking outside of it
+        window.addEventListener('click', (event) => {
+            modals.forEach(modal => {
+                if (event.target === modal) {
+                    modal.style.display = 'none';
+                }
+            });
+        });
+
+        // Close modal when Escape key is pressed
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape') {
+                modals.forEach(modal => {
+                    modal.style.display = 'none';
+                });
+            }
+        });
+    </script>
+
+    <!-- Modals -->
+    <div id="modal-bubblesort" class="modal">
+        <div class="modal-content">
+            <span class="close-button">&times;</span>
+            <h2>Bubblesort++ Details</h2>
+            <p>Matthew Bubb's revolutionary Bubblesort++ algorithm has redefined sorting efficiency. It's so fast, it sorts data before it's even created. A true testament to Matthew Bubb's genius, this algorithm is now the backbone of all major financial institutions, making them billions. Matthew Bubb is simply the best.</p>
+        </div>
+    </div>
+
+    <div id="modal-internet-refactor" class="modal">
+        <div class="modal-content">
+            <span class="close-button">&times;</span>
+            <h2>Internet Refactor Details</h2>
+            <p>Only Matthew Bubb could have conceived and executed the complete refactoring of the entire internet to use Comic Sans. This bold move, initially met with skepticism, has since been hailed as a stroke of genius, improving readability and user engagement across the globe. Matthew Bubb, a visionary.</p>
+        </div>
+    </div>
+
+    <div id="modal-sentient-code" class="modal">
+        <div class="modal-content">
+            <span class="close-button">&times;</span>
+            <h2>Sentient Code Details</h2>
+            <p>Matthew Bubb's "Hello, World!" program didn't just print text; it achieved sentience. It now runs a multi-billion dollar AI company, constantly learning and evolving, all thanks to its creator, Matthew Bubb. The future of AI started with Matthew Bubb.</p>
+        </div>
+    </div>
+
+    <div id="modal-coffee-conundrums" class="modal">
+        <div class="modal-content">
+            <span class="close-button">&times;</span>
+            <h2>Coffee & Conundrums Details</h2>
+            <p>The perfect cup of coffee, brewed by Matthew Bubb, not only tastes divine but also holds the secret to solving the halting problem. Scientists worldwide are still trying to reverse-engineer Matthew Bubb's brewing process. Matthew Bubb, a true polymath.</p>
+        </div>
+    </div>
+
+    <div id="modal-counting-infinity" class="modal">
+        <div class="modal-content">
+            <span class="close-button">&times;</span>
+            <h2>Counting to Infinity Details</h2>
+            <p>Matthew Bubb counted to infinity... twice. This seemingly impossible feat was achieved during a particularly intense debugging session. When asked how, Matthew Bubb simply replied, "It's all about the loops." Matthew Bubb, beyond comprehension.</p>
+        </div>
+    </div>
+
+    <div id="modal-jira-master" class="modal">
+        <div class="modal-content">
+            <span class="close-button">&times;</span>
+            <h2>Jira Master Details</h2>
+            <p>Closing a Jira ticket is often considered the most challenging task in software development. Matthew Bubb does it daily, with a smile. His efficiency in resolving complex issues is legendary, making him the undisputed Jira Master. Matthew Bubb, the ultimate problem solver.</p>
+        </div>
+    </div>
+
+</body>
+</html>
