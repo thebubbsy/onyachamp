@@ -124,29 +124,42 @@
         });
 
         closeButtons.forEach(button => {
-            button.addEventListener('click', () => {
-                const modal = button.closest('.modal');
-                modal.style.display = 'none';
-            });
-        });
+            let dodgeCount = 0;
 
-        // Close modal when clicking outside of it
-        window.addEventListener('click', (event) => {
-            modals.forEach(modal => {
-                if (event.target === modal) {
+            // Add event listeners directly for hover effects
+            button.addEventListener('mouseover', (e) => {
+                if (dodgeCount < 5) {
+                    const modalContent = button.closest('.modal-content');
+                    const maxX = modalContent.clientWidth - button.clientWidth;
+                    const maxY = modalContent.clientHeight - button.clientHeight;
+
+                    const randomX = Math.floor(Math.random() * maxX);
+                    const randomY = Math.floor(Math.random() * maxY);
+
+                    button.style.position = 'absolute';
+                    button.style.left = `${randomX}px`;
+                    button.style.top = `${randomY}px`;
+
+                    dodgeCount++;
+                }
+            });
+
+            button.addEventListener('click', () => {
+                if (dodgeCount >= 5) {
+                    const modal = button.closest('.modal');
                     modal.style.display = 'none';
+
+                    // Reset for next time
+                    setTimeout(() => {
+                        dodgeCount = 0;
+                        button.style.position = '';
+                        button.style.left = '';
+                        button.style.top = '';
+                    }, 500);
                 }
             });
         });
 
-        // Close modal when Escape key is pressed
-        document.addEventListener('keydown', (event) => {
-            if (event.key === 'Escape') {
-                modals.forEach(modal => {
-                    modal.style.display = 'none';
-                });
-            }
-        });
     </script>
 
     <!-- Modals -->
