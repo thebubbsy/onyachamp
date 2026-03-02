@@ -119,7 +119,9 @@
         modalTriggers.forEach(trigger => {
             trigger.addEventListener('click', () => {
                 const modalTarget = document.querySelector(trigger.dataset.modalTarget);
-                modalTarget.style.display = 'block';
+                setTimeout(() => {
+                    modalTarget.style.display = 'block';
+                }, 3000);
             });
         });
 
