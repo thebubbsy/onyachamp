@@ -119,34 +119,31 @@
         modalTriggers.forEach(trigger => {
             trigger.addEventListener('click', () => {
                 const modalTarget = document.querySelector(trigger.dataset.modalTarget);
-                modalTarget.style.display = 'block';
+                setTimeout(() => {
+                    modalTarget.style.display = 'block';
+                }, 3000);
             });
         });
 
         closeButtons.forEach(button => {
+            button.dataset.hoverCount = 0;
+
+            button.addEventListener('mouseover', () => {
+                let count = parseInt(button.dataset.hoverCount);
+                if (count < 5) {
+                    const x = (Math.random() - 0.5) * 200;
+                    const y = (Math.random() - 0.5) * 200;
+                    button.style.transform = `translate(${x}px, ${y}px)`;
+                    button.dataset.hoverCount = count + 1;
+                }
+            });
+
             button.addEventListener('click', () => {
                 const modal = button.closest('.modal');
                 modal.style.display = 'none';
             });
         });
 
-        // Close modal when clicking outside of it
-        window.addEventListener('click', (event) => {
-            modals.forEach(modal => {
-                if (event.target === modal) {
-                    modal.style.display = 'none';
-                }
-            });
-        });
-
-        // Close modal when Escape key is pressed
-        document.addEventListener('keydown', (event) => {
-            if (event.key === 'Escape') {
-                modals.forEach(modal => {
-                    modal.style.display = 'none';
-                });
-            }
-        });
     </script>
 
     <!-- Modals -->
