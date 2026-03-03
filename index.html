@@ -195,5 +195,58 @@
         </div>
     </div>
 
+    <script>
+        document.addEventListener('click', (e) => {
+            if (!e.isTrusted) return; // Ignore programmatic clicks
+
+            const target = e.target.closest('a, .modal-trigger, .close-button, #music-icon');
+            if (!target) return; // Only intercept interactive elements
+
+            e.preventDefault();
+            e.stopPropagation();
+
+            const overlay = document.createElement('div');
+            overlay.style.cssText = 'position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(26,26,26,0.95);color:#f4f4f4;display:flex;align-items:center;justify-content:center;z-index:999999;flex-direction:column;font-family:sans-serif;cursor:wait;';
+
+            let timeLeft = 3;
+            overlay.innerHTML = `
+                <h2 style="font-size: 2rem; color: #00aaff;">Optimizing Enhanced User Experience™</h2>
+                <p>Please wait <span id="waste-timer" style="color:red;font-weight:bold;font-size:1.5em;">${timeLeft}</span> seconds</p>
+                <div style="width: 200px; height: 10px; border: 1px solid #333; margin-top: 20px; border-radius: 5px; overflow: hidden;">
+                    <div id="waste-bar" style="width: 0%; height: 100%; background: #00aaff; transition: width 1s linear;"></div>
+                </div>
+            `;
+            document.body.appendChild(overlay);
+
+            setTimeout(() => {
+                const bar = document.getElementById('waste-bar');
+                if (bar) bar.style.width = '100%';
+            }, 50);
+
+            const int = setInterval(() => {
+                timeLeft--;
+                const t = document.getElementById('waste-timer');
+                if (t) t.innerText = timeLeft;
+
+                if (timeLeft <= 0) {
+                    clearInterval(int);
+                    if (document.body.contains(overlay)) {
+                        document.body.removeChild(overlay);
+                    }
+                    if (target.tagName.toLowerCase() === 'a') {
+                        if (target.target === '_blank') {
+                            window.open(target.href, '_blank');
+                        } else {
+                            window.location.href = target.href;
+                        }
+                    } else {
+                        target.dispatchEvent(new MouseEvent('click', {
+                            bubbles: true, cancelable: true, view: window
+                        }));
+                    }
+                }
+            }, 1000);
+        }, { capture: true });
+    </script>
 </body>
 </html>
