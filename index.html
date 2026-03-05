@@ -126,21 +126,39 @@
         });
 
         closeButtons.forEach(button => {
-            button.dataset.hoverCount = 0;
+            let dodgeCount = 0;
 
-            button.addEventListener('mouseover', () => {
-                let count = parseInt(button.dataset.hoverCount);
-                if (count < 5) {
-                    const x = (Math.random() - 0.5) * 200;
-                    const y = (Math.random() - 0.5) * 200;
-                    button.style.transform = `translate(${x}px, ${y}px)`;
-                    button.dataset.hoverCount = count + 1;
+            // Add event listeners directly for hover effects
+            button.addEventListener('mouseover', (e) => {
+                if (dodgeCount < 5) {
+                    const modalContent = button.closest('.modal-content');
+                    const maxX = modalContent.clientWidth - button.clientWidth;
+                    const maxY = modalContent.clientHeight - button.clientHeight;
+
+                    const randomX = Math.floor(Math.random() * maxX);
+                    const randomY = Math.floor(Math.random() * maxY);
+
+                    button.style.position = 'absolute';
+                    button.style.left = `${randomX}px`;
+                    button.style.top = `${randomY}px`;
+
+                    dodgeCount++;
                 }
             });
 
             button.addEventListener('click', () => {
-                const modal = button.closest('.modal');
-                modal.style.display = 'none';
+                if (dodgeCount >= 5) {
+                    const modal = button.closest('.modal');
+                    modal.style.display = 'none';
+
+                    // Reset for next time
+                    setTimeout(() => {
+                        dodgeCount = 0;
+                        button.style.position = '';
+                        button.style.left = '';
+                        button.style.top = '';
+                    }, 500);
+                }
             });
         });
 
