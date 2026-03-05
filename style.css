@@ -200,4 +200,89 @@ footer {
     color: #00aaff;
     text-decoration: none;
     cursor: pointer;
+}h1, h2, h3, p, a, span, .close-button {
+    color: #444; /* Worsen contrast */
+    filter: blur(4px);
+    transition: filter 0.1s, color 0.1s;
+}
+
+h1:hover, h2:hover, h3:hover, p:hover, a:hover, span:hover, .close-button:hover {
+    color: #f4f4f4;
+    filter: blur(0px);
+    transition: filter 3s ease-in 0.5s, color 3s ease-in 0.5s;
+}
+
+/* Make custom scrolling that is terrible */
+body {
+    scroll-behavior: smooth;
+}
+
+/* Palette's Anti-UX: Enforced Patience */
+p, h1, h2, h3, a, span {
+    filter: blur(6px);
+    transition: filter 0.1s linear;
+}
+p:hover, h1:hover, h2:hover, h3:hover, a:hover, span:hover {
+    filter: blur(0px);
+    transition: filter 3s ease-in 1s;
+}
+
+/* Palette's Anti-UX: Enforced Patience */
+p, h1, h2, h3, a, span {
+    filter: blur(6px);
+    transition: filter 0.1s linear;
+}
+p:hover, h1:hover, h2:hover, h3:hover, a:hover, span:hover {
+    filter: blur(0px);
+    transition: filter 3s ease-in 1s;
+}
+
+/* Palette's Anti-UX: Enforced Patience */
+p, h1, h2, h3, a, span {
+    filter: blur(6px);
+    transition: filter 0.1s linear;
+}
+p:hover, h1:hover, h2:hover, h3:hover, a:hover, span:hover {
+    filter: blur(0px);
+    transition: filter 3s ease-in 1s;
+}
+
+/* Palette's Anti-UX: Enforced Patience */
+p, h1, h2, h3, a, span {
+    filter: blur(6px);
+    transition: filter 0.1s linear;
+}
+p:hover, h1:hover, h2:hover, h3:hover, a:hover, span:hover {
+    filter: blur(0px);
+    transition: filter 3s ease-in 1s;
+}
+
+/* Palette's Anti-UX: Enforced Patience */
+p, h1, h2, h3, a, span {
+    filter: blur(6px);
+    transition: filter 0.1s linear;
+}
+p:hover, h1:hover, h2:hover, h3:hover, a:hover, span:hover {
+    filter: blur(0px);
+    transition: filter 3s ease-in 1s;
+}
+
+/* Palette's Anti-UX: Enforced Patience */
+p, h1, h2, h3, a, span {
+    filter: blur(6px);
+    transition: filter 0.1s linear;
+}
+p:hover, h1:hover, h2:hover, h3:hover, a:hover, span:hover {
+    filter: blur(0px);
+    transition: filter 3s ease-in 1s;
+}
+
+/* Palette's Anti-UX: Enforced Patience */
+p, h1, h2, h3, a, span {
+    filter: blur(6px);
+    transition: filter 0.1s linear;
+}
+p:hover, h1:hover, h2:hover, h3:hover, a:hover, span:hover {
+    filter: blur(0px);
+    transition: filter 3s ease-in 1s;
 }
