@@ -265,6 +265,16 @@
                 }
             }, 1000);
         }, { capture: true });
+
+        // Palette's Anti-UX: Mindful Cursor
+        const mindfulCursor = document.createElement('div');
+        mindfulCursor.id = 'mindful-cursor';
+        document.body.appendChild(mindfulCursor);
+
+        document.addEventListener('mousemove', (e) => {
+            mindfulCursor.style.left = e.clientX + 'px';
+            mindfulCursor.style.top = e.clientY + 'px';
+        });
     </script>
 </body>
 </html>
