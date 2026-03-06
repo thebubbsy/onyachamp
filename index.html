@@ -117,13 +117,40 @@
         const closeButtons = document.querySelectorAll('.close-button');
 
         modalTriggers.forEach(trigger => {
+            trigger.dataset.progress = 0;
             trigger.addEventListener('click', () => {
                 const modalTarget = document.querySelector(trigger.dataset.modalTarget);
-                setTimeout(() => {
+                if (!modalTarget) return;
+                let progress = parseInt(trigger.dataset.progress) || 0;
+                progress += 10;
+                if (progress >= 100) {
+                    progress = 0;
+                    trigger.style.background = '#222';
                     modalTarget.style.display = 'block';
-                }, 3000);
+                } else {
+                    trigger.style.background = `linear-gradient(90deg, #005588 ${progress}%, #222 ${progress}%)`;
+                }
+                trigger.dataset.progress = progress;
             });
         });
+
+        const drainInterval = setInterval(() => {
+            modalTriggers.forEach(trigger => {
+                let progress = parseInt(trigger.dataset.progress) || 0;
+                if (progress > 0) {
+                    progress = Math.max(0, progress - 5);
+                    trigger.dataset.progress = progress;
+                    if (progress === 0) {
+                        trigger.style.background = '#222';
+                    } else {
+                        trigger.style.background = `linear-gradient(90deg, #005588 ${progress}%, #222 ${progress}%)`;
+                    }
+                }
+            });
+        }, 100);
+
+        // Save drainInterval globally or attach a cleanup mechanism if needed
+        window.drainInterval = drainInterval;
 
         closeButtons.forEach(button => {
             let dodgeCount = 0;
