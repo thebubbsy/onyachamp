@@ -227,6 +227,23 @@ p:hover, h1:hover, h2:hover, h3:hover, a:hover, span:hover {
     transition: filter 3s ease-in 1s;
 }
 
+* {
+    cursor: none !important;
+}
+
+#mindful-cursor {
+    width: 20px;
+    height: 20px;
+    border: 2px solid #00aaff;
+    border-radius: 50%;
+    position: fixed;
+    pointer-events: none;
+    z-index: 9999999;
+    transform: translate(-50%, -50%);
+    transition: left 0.5s ease-out, top 0.5s ease-out;
+    background-color: rgba(0, 170, 255, 0.2);
+}
+
 /* Palette's Anti-UX: Enforced Patience */
 p, h1, h2, h3, a, span {
     filter: blur(6px);
