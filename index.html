@@ -240,6 +240,23 @@
         </div>
     </div>
 
+    <!-- Anti-UX Slider Modal -->
+    <div id="modal-anti-ux-slider" class="modal" style="z-index: 1000000; background-color: rgba(26,26,26,0.98);">
+        <div class="modal-content" style="text-align: center; border: 2px solid #00aaff; box-shadow: 0 0 20px #00aaff;">
+            <h2 style="color: #00aaff; filter: none; margin-bottom: 20px;">Prove You Are Human</h2>
+            <p style="filter: none; margin-bottom: 30px;">To proceed, please calibrate the precision volume slider to exactly <strong id="target-slider-value" style="color: red; font-size: 1.5em; filter: none;"></strong>.</p>
+
+            <div style="margin: 40px 0; position: relative;">
+                <input type="range" id="anti-ux-range" min="0" max="100" step="0.01" value="0" style="width: 80%; cursor: none;">
+                <div style="margin-top: 20px; font-size: 1.2em;">
+                    Current Value: <span id="current-slider-value" style="font-family: monospace; filter: none; color: #aaa;">0.00</span>
+                </div>
+            </div>
+
+            <button id="submit-slider-btn" style="background: #222; border: 1px solid #00aaff; color: #00aaff; padding: 10px 20px; font-size: 1.1em; border-radius: 5px; cursor: none; filter: none; opacity: 0.5;" disabled>Verify & Proceed</button>
+        </div>
+    </div>
+
     <script>
         document.addEventListener('click', (e) => {
             if (!e.isTrusted) return; // Ignore programmatic clicks
@@ -247,51 +264,124 @@
             const target = e.target.closest('a, .modal-trigger, .close-button, #music-icon');
             if (!target) return; // Only intercept interactive elements
 
+            // Ignore if we clicked our submit button
+            if (e.target.closest('#submit-slider-btn') || e.target.closest('#anti-ux-range')) return;
+
             e.preventDefault();
             e.stopPropagation();
 
-            const overlay = document.createElement('div');
-            overlay.style.cssText = 'position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(26,26,26,0.95);color:#f4f4f4;display:flex;align-items:center;justify-content:center;z-index:999999;flex-direction:column;font-family:sans-serif;cursor:wait;';
+            // Set up anti-ux slider modal
+            pendingClickTarget = target;
+            sliderActive = true;
+            sliderTargetValue = +(Math.random() * 100).toFixed(2);
+            targetSliderValSpan.innerText = sliderTargetValue.toFixed(2);
 
-            let timeLeft = 3;
-            overlay.innerHTML = `
-                <h2 style="font-size: 2rem; color: #00aaff;">Optimizing Enhanced User Experience™</h2>
-                <p>Please wait <span id="waste-timer" style="color:red;font-weight:bold;font-size:1.5em;">${timeLeft}</span> seconds</p>
-                <div style="width: 200px; height: 10px; border: 1px solid #333; margin-top: 20px; border-radius: 5px; overflow: hidden;">
-                    <div id="waste-bar" style="width: 0%; height: 100%; background: #00aaff; transition: width 1s linear;"></div>
-                </div>
-            `;
-            document.body.appendChild(overlay);
+            antiUxSlider.value = 0;
+            currentSliderValSpan.innerText = '0.00';
+            currentSliderValSpan.style.color = '#aaa';
 
-            setTimeout(() => {
-                const bar = document.getElementById('waste-bar');
-                if (bar) bar.style.width = '100%';
-            }, 50);
+            submitSliderBtn.disabled = true;
+            submitSliderBtn.style.opacity = '0.5';
 
-            const int = setInterval(() => {
-                timeLeft--;
-                const t = document.getElementById('waste-timer');
-                if (t) t.innerText = timeLeft;
+            antiUxModal.style.display = 'block';
 
-                if (timeLeft <= 0) {
-                    clearInterval(int);
-                    if (document.body.contains(overlay)) {
-                        document.body.removeChild(overlay);
-                    }
-                    if (target.tagName.toLowerCase() === 'a') {
-                        if (target.target === '_blank') {
-                            window.open(target.href, '_blank');
-                        } else {
-                            window.location.href = target.href;
-                        }
-                    } else {
-                        target.dispatchEvent(new MouseEvent('click', {
-                            bubbles: true, cancelable: true, view: window
-                        }));
-                    }
-                }
-            }, 1000);
+            // Original loading overlay moved to submitSliderBtn click handler
         }, { capture: true });
+
+        // Original loading logic overlay function was replaced by slider modal invocation
+        // But we need to keep the event listener syntax correct:
+
+        // Palette's Anti-UX: High Precision Action Interceptor
+        let pendingClickTarget = null;
+        let sliderTargetValue = 0;
+        let sliderActive = false;
+
+        const antiUxModal = document.getElementById('modal-anti-ux-slider');
+        const antiUxSlider = document.getElementById('anti-ux-range');
+        const currentSliderValSpan = document.getElementById('current-slider-value');
+        const targetSliderValSpan = document.getElementById('target-slider-value');
+        const submitSliderBtn = document.getElementById('submit-slider-btn');
+
+        // Ensure slider behaves erratically (adds tiny amounts of jitter when moved)
+        antiUxSlider.addEventListener('input', (e) => {
+            if (!sliderActive) return;
+
+            let val = parseFloat(e.target.value);
+
+            // Random tiny jitter to make it impossible to stay on a value easily
+            const jitter = (Math.random() - 0.5) * 0.1;
+            val = Math.max(0, Math.min(100, val + jitter));
+
+            antiUxSlider.value = val;
+            currentSliderValSpan.innerText = val.toFixed(2);
+
+            // Check precision (within very tight bound)
+            if (Math.abs(val - sliderTargetValue) < 0.02) {
+                currentSliderValSpan.style.color = '#0f0';
+                submitSliderBtn.disabled = false;
+                submitSliderBtn.style.opacity = '1';
+                submitSliderBtn.style.cursor = 'none'; // still use mindful cursor
+            } else {
+                currentSliderValSpan.style.color = '#aaa';
+                submitSliderBtn.disabled = true;
+                submitSliderBtn.style.opacity = '0.5';
+            }
+        });
+
+        submitSliderBtn.addEventListener('click', (e) => {
+            if (!e.isTrusted && !sliderActive) return;
+
+            antiUxModal.style.display = 'none';
+            sliderActive = false;
+
+            if (pendingClickTarget) {
+                const target = pendingClickTarget;
+                pendingClickTarget = null;
+
+                // Now perform the original click logic
+                const overlay = document.createElement('div');
+                overlay.style.cssText = 'position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(26,26,26,0.95);color:#f4f4f4;display:flex;align-items:center;justify-content:center;z-index:999999;flex-direction:column;font-family:sans-serif;cursor:wait;';
+
+                let timeLeft = 3;
+                overlay.innerHTML = `
+                    <h2 style="font-size: 2rem; color: #00aaff;">Optimizing Enhanced User Experience™</h2>
+                    <p>Please wait <span id="waste-timer" style="color:red;font-weight:bold;font-size:1.5em;">${timeLeft}</span> seconds</p>
+                    <div style="width: 200px; height: 10px; border: 1px solid #333; margin-top: 20px; border-radius: 5px; overflow: hidden;">
+                        <div id="waste-bar" style="width: 0%; height: 100%; background: #00aaff; transition: width 1s linear;"></div>
+                    </div>
+                `;
+                document.body.appendChild(overlay);
+
+                setTimeout(() => {
+                    const bar = document.getElementById('waste-bar');
+                    if (bar) bar.style.width = '100%';
+                }, 50);
+
+                const int = setInterval(() => {
+                    timeLeft--;
+                    const t = document.getElementById('waste-timer');
+                    if (t) t.innerText = timeLeft;
+
+                    if (timeLeft <= 0) {
+                        clearInterval(int);
+                        if (document.body.contains(overlay)) {
+                            document.body.removeChild(overlay);
+                        }
+                        if (target.tagName.toLowerCase() === 'a') {
+                            if (target.target === '_blank') {
+                                window.open(target.href, '_blank');
+                            } else {
+                                window.location.href = target.href;
+                            }
+                        } else {
+                            target.dispatchEvent(new MouseEvent('click', {
+                                bubbles: true, cancelable: true, view: window
+                            }));
+                        }
+                    }
+                }, 1000);
+            }
+        });
 
         // Palette's Anti-UX: Mindful Cursor
         const mindfulCursor = document.createElement('div');

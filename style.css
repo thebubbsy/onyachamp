@@ -218,6 +218,31 @@ body {
     scroll-behavior: smooth;
 }
 
+/* Palette's Anti-UX: High Precision Action Interceptor */
+#anti-ux-range {
+    -webkit-appearance: none;
+    appearance: none;
+    background: transparent;
+    cursor: none;
+}
+
+#anti-ux-range::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    height: 30px;
+    width: 3px;
+    background: #00aaff;
+    cursor: none;
+    box-shadow: 0 0 10px #00aaff;
+}
+
+#anti-ux-range::-webkit-slider-runnable-track {
+    width: 100%;
+    height: 2px;
+    background: #444;
+    border: none;
+}
+
 /* Palette's Anti-UX: Enforced Patience */
 p, h1, h2, h3, a, span {
     filter: blur(6px);
