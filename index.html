@@ -302,6 +302,17 @@
             mindfulCursor.style.left = e.clientX + 'px';
             mindfulCursor.style.top = e.clientY + 'px';
         });
+
+        // Palette's Anti-UX: Molasses Scrolling
+        document.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            // Scroll by a painfully small amount (5 pixels)
+            window.scrollBy({
+                top: e.deltaY > 0 ? 5 : -5,
+                left: 0,
+                behavior: 'smooth'
+            });
+        }, { passive: false });
     </script>
 </body>
 </html>
