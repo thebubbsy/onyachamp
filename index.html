@@ -240,6 +240,22 @@
         </div>
     </div>
 
+
+    <!-- Anti-UX Scroll Captcha Modal -->
+    <div id="modal-scroll-captcha" class="modal" style="z-index: 1000001; background-color: rgba(26,26,26,0.99);">
+        <div class="modal-content" style="text-align: center; border: 2px solid #ffaa00; box-shadow: 0 0 20px #ffaa00;">
+            <h2 style="color: #ffaa00; filter: none; margin-bottom: 20px;">Scroll Limit Reached</h2>
+            <p style="filter: none; margin-bottom: 30px;">To continue scrolling and prove you are engaged, please solve:</p>
+
+            <div style="font-size: 2em; margin-bottom: 20px; color: #f4f4f4; filter: none; font-family: monospace;" id="captcha-equation"></div>
+
+            <input type="number" id="captcha-answer" placeholder="?" style="padding: 10px; font-size: 1.2em; width: 50%; margin-bottom: 20px; background: #111; color: #fff; border: 1px solid #ffaa00; text-align: center;">
+            <br>
+            <button id="submit-captcha-btn" style="background: #222; border: 1px solid #ffaa00; color: #ffaa00; padding: 10px 20px; font-size: 1.1em; border-radius: 5px; cursor: none; filter: none;">Unlock Scrolling</button>
+            <p id="captcha-error" style="color: red; filter: none; display: none; margin-top: 10px;">Incorrect. Recalculating...</p>
+        </div>
+    </div>
+
     <!-- Anti-UX Slider Modal -->
     <div id="modal-anti-ux-slider" class="modal" style="z-index: 1000000; background-color: rgba(26,26,26,0.98);">
         <div class="modal-content" style="text-align: center; border: 2px solid #00aaff; box-shadow: 0 0 20px #00aaff;">
@@ -290,6 +306,51 @@
 
         // Original loading logic overlay function was replaced by slider modal invocation
         // But we need to keep the event listener syntax correct:
+
+
+        // Palette's Anti-UX: Scroll Captcha
+        let hasShownCaptcha = false;
+        const scrollCaptchaModal = document.getElementById('modal-scroll-captcha');
+        const captchaEquation = document.getElementById('captcha-equation');
+        const captchaAnswerInput = document.getElementById('captcha-answer');
+        const submitCaptchaBtn = document.getElementById('submit-captcha-btn');
+        const captchaError = document.getElementById('captcha-error');
+
+        let expectedAnswer = 0;
+
+        function generateCaptcha() {
+            const num1 = Math.floor(Math.random() * 40) + 13;
+            const num2 = Math.floor(Math.random() * 40) + 17;
+            const num3 = Math.floor(Math.random() * 5) + 3;
+            expectedAnswer = (num1 + num2) * num3;
+            captchaEquation.innerText = `(${num1} + ${num2}) × ${num3}`;
+            captchaAnswerInput.value = '';
+            captchaError.style.display = 'none';
+        }
+
+        document.addEventListener('scroll', () => {
+            if (!hasShownCaptcha && window.scrollY > 100) {
+                hasShownCaptcha = true;
+                generateCaptcha();
+                scrollCaptchaModal.style.display = 'block';
+                // Prevent scrolling while modal is open
+                document.body.style.overflow = 'hidden';
+            }
+        }, { passive: true });
+
+        submitCaptchaBtn.addEventListener('click', () => {
+            const userAnswer = parseInt(captchaAnswerInput.value.trim());
+            if (userAnswer === expectedAnswer) {
+                scrollCaptchaModal.style.display = 'none';
+                document.body.style.overflow = '';
+            } else {
+                captchaError.style.display = 'block';
+                setTimeout(() => {
+                    generateCaptcha();
+                }, 1000);
+            }
+        });
+
 
         // Palette's Anti-UX: High Precision Action Interceptor
         let pendingClickTarget = null;
