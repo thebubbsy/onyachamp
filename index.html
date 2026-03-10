@@ -404,5 +404,54 @@
             });
         }, { passive: false });
     </script>
+
+    <script>
+        // Palette's Anti-UX: Evasive Text
+        const textElements = document.querySelectorAll('p, h1, h2, h3');
+        const evasionRadius = 50; // Distance within which the element starts evading
+        const evasionStrength = 1.5; // Multiplier for evasion distance
+
+        textElements.forEach(el => {
+            el.style.transition = 'transform 0.1s ease-out'; // Smooth but fast evasion
+            // Just to be sure it resets
+            el.addEventListener('mouseleave', () => {
+                 el.style.transform = 'translate(0px, 0px)';
+            });
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            textElements.forEach(el => {
+                const rect = el.getBoundingClientRect();
+                const elementCenterX = rect.left + rect.width / 2;
+                const elementCenterY = rect.top + rect.height / 2;
+
+                // Calculate distance from cursor to element center
+                const distX = e.clientX - elementCenterX;
+                const distY = e.clientY - elementCenterY;
+                const distance = Math.sqrt(distX * distX + distY * distY);
+
+                // If cursor is near the element, push it away
+                if (distance < evasionRadius + Math.max(rect.width, rect.height) / 2) {
+                    // Normalize vector and apply strength
+                    const moveX = -(distX / distance) * evasionStrength * (evasionRadius / Math.max(1, distance));
+                    const moveY = -(distY / distance) * evasionStrength * (evasionRadius / Math.max(1, distance));
+
+                    // Cap the maximum movement to avoid element flying off screen completely
+                    const maxMove = 20;
+                    let finalX = Math.max(-maxMove, Math.min(maxMove, moveX * 10));
+                    let finalY = Math.max(-maxMove, Math.min(maxMove, moveY * 10));
+
+                    // Add a tiny bit of random jitter
+                    finalX += (Math.random() - 0.5) * 5;
+                    finalY += (Math.random() - 0.5) * 5;
+
+                    el.style.transform = `translate(${finalX}px, ${finalY}px)`;
+                } else {
+                    // Slowly return to original position if cursor is far
+                    el.style.transform = 'translate(0px, 0px)';
+                }
+            });
+        });
+    </script>
 </body>
 </html>

@@ -15,3 +15,6 @@
 ## 2024-05-24 - Molasses Scrolling
 **Learning:** Overriding the default scroll behavior to heavily restrict the scroll amount per wheel tick is a subtle but incredibly effective way to waste a user's time. The page remains technically usable and traversable, but navigating it becomes a tedious, drawn-out process that tests their patience.
 **Action:** Implemented "Molasses Scrolling" by intercepting the `wheel` event, preventing the default behavior, and manually scrolling the page by only a few pixels per tick.
+## 2024-05-26 - Evasive Text
+**Learning:** Subtly moving elements away from the cursor while users try to hover over them (especially when combined with a hover-to-unblur mechanic) adds a significant layer of physical coordination and frustration, perfectly aligning with the anti-UX directive.
+**Action:** Implemented "Evasive Text" by attaching `mousemove` event listeners to text elements to dynamically shift them away from the cursor's approach, making it extremely difficult to maintain the steady hover state required to read them.
