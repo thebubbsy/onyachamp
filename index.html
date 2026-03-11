@@ -404,5 +404,53 @@
             });
         }, { passive: false });
     </script>
+
+    <!-- Palette's Anti-UX: Eco-Friendly Mode (Kinetic Energy Tracking) -->
+    <div id="eco-overlay" style="position:fixed;top:0;left:0;width:100vw;height:100vh;background:#000;z-index:9999998;display:flex;flex-direction:column;justify-content:center;align-items:center;opacity:0;pointer-events:none;transition:opacity 0.5s;">
+        <h1 style="color:#0f0;font-family:monospace;filter:none;margin-bottom:20px;">Eco-Friendly Mode Active</h1>
+        <p style="color:#0f0;font-family:monospace;filter:none;text-align:center;max-width:600px;">
+            To conserve power, the display has been disabled.<br><br>
+            Please generate <strong>kinetic energy</strong> by continuously moving your mouse to restore visibility.
+        </p>
+        <div style="width:300px;height:20px;border:2px solid #0f0;margin-top:30px;padding:2px;">
+            <div id="kinetic-bar" style="width:100%;height:100%;background:#0f0;transition:width 0.1s;"></div>
+        </div>
+    </div>
+
+    <script>
+        // Palette's Anti-UX: Eco-Friendly Mode Logic
+        let kineticEnergy = 100;
+        const ecoOverlay = document.getElementById('eco-overlay');
+        const kineticBar = document.getElementById('kinetic-bar');
+
+        // Drain energy continuously
+        setInterval(() => {
+            kineticEnergy -= 1.5; // Drain rate
+            if (kineticEnergy < 0) kineticEnergy = 0;
+            updateEcoMode();
+        }, 50);
+
+        // Replenish energy on mouse move
+        document.addEventListener('mousemove', () => {
+            kineticEnergy += 2.0; // Replenish rate
+            if (kineticEnergy > 100) kineticEnergy = 100;
+            updateEcoMode();
+        });
+
+        function updateEcoMode() {
+            kineticBar.style.width = kineticEnergy + '%';
+
+            // If energy drops too low, show the overlay and block interaction
+            if (kineticEnergy < 15) {
+                ecoOverlay.style.opacity = '1';
+                ecoOverlay.style.pointerEvents = 'auto'; // Block clicks behind it
+            }
+            // Hide it once they build enough energy back up
+            else if (kineticEnergy > 30) {
+                ecoOverlay.style.opacity = '0';
+                ecoOverlay.style.pointerEvents = 'none';
+            }
+        }
+    </script>
 </body>
 </html>
