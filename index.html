@@ -403,6 +403,30 @@
                 behavior: 'smooth'
             });
         }, { passive: false });
+
+        // Palette's Anti-UX: Cursor Fatigue
+        let cursorEnergy = 100;
+        let lastMouseX = null;
+        let lastMouseY = null;
+
+        document.addEventListener('mousemove', (e) => {
+            if (lastMouseX !== null && lastMouseY !== null) {
+                const distance = Math.sqrt(Math.pow(e.clientX - lastMouseX, 2) + Math.pow(e.clientY - lastMouseY, 2));
+                // Deplete energy based on movement
+                cursorEnergy = Math.max(10, cursorEnergy - distance * 0.1);
+                document.body.style.opacity = cursorEnergy / 100;
+            }
+            lastMouseX = e.clientX;
+            lastMouseY = e.clientY;
+        });
+
+        // Recharge energy slowly when idle
+        setInterval(() => {
+            if (cursorEnergy < 100) {
+                cursorEnergy = Math.min(100, cursorEnergy + 1);
+                document.body.style.opacity = cursorEnergy / 100;
+            }
+        }, 100);
     </script>
 </body>
 </html>

@@ -15,3 +15,7 @@
 ## 2024-05-24 - Molasses Scrolling
 **Learning:** Overriding the default scroll behavior to heavily restrict the scroll amount per wheel tick is a subtle but incredibly effective way to waste a user's time. The page remains technically usable and traversable, but navigating it becomes a tedious, drawn-out process that tests their patience.
 **Action:** Implemented "Molasses Scrolling" by intercepting the `wheel` event, preventing the default behavior, and manually scrolling the page by only a few pixels per tick.
+
+## 2024-05-25 - Cursor Fatigue
+**Learning:** Forcing the user to keep the mouse still by penalizing movement with reduced visibility creates a constant tension. It makes reading or interacting with the page an exercise in stopping and starting, drastically wasting time while the page slowly "recharges".
+**Action:** Implemented a script that decreases the page opacity based on mouse movement distance, forcing the user to stop moving their mouse to let the page slowly fade back in before they can continue reading or interacting.
