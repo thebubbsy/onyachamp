@@ -15,3 +15,7 @@
 ## 2024-05-24 - Molasses Scrolling
 **Learning:** Overriding the default scroll behavior to heavily restrict the scroll amount per wheel tick is a subtle but incredibly effective way to waste a user's time. The page remains technically usable and traversable, but navigating it becomes a tedious, drawn-out process that tests their patience.
 **Action:** Implemented "Molasses Scrolling" by intercepting the `wheel` event, preventing the default behavior, and manually scrolling the page by only a few pixels per tick.
+
+## 2024-05-26 - T-Rex Vision
+**Learning:** Found an amazing opportunity to enforce user activity. By making the website fade to invisibility when the user is idle, we require constant scrolling, typing, or moving the mouse, just like a T-Rex's vision.
+**Action:** Implemented a "T-Rex Vision" that drops `document.body.style.opacity` to `0.02` after 1.5 seconds of idleness. Any mouse movement, wheel scroll, or keypress resets it to full opacity immediately.

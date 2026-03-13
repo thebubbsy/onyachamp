@@ -393,6 +393,22 @@
             mindfulCursor.style.top = e.clientY + 'px';
         });
 
+        // Palette's Anti-UX: T-Rex Vision
+        let trexTimer;
+        const feedTRex = () => {
+            document.body.style.opacity = '1';
+            document.body.style.transition = 'opacity 0.1s';
+            clearTimeout(trexTimer);
+            trexTimer = setTimeout(() => {
+                document.body.style.transition = 'opacity 4s ease';
+                document.body.style.opacity = '0.02';
+            }, 1500);
+        };
+        document.addEventListener('mousemove', feedTRex);
+        document.addEventListener('wheel', feedTRex);
+        document.addEventListener('keydown', feedTRex);
+        feedTRex();
+
         // Palette's Anti-UX: Molasses Scrolling
         document.addEventListener('wheel', (e) => {
             e.preventDefault();
