@@ -240,6 +240,24 @@
         </div>
     </div>
 
+    <!-- Periodic Captcha Modal -->
+    <div id="modal-periodic-captcha" class="modal" style="z-index: 1000001; background-color: rgba(26,26,26,0.99);">
+        <div class="modal-content" style="text-align: center; border: 2px solid #ff0055; box-shadow: 0 0 20px #ff0055;">
+            <h2 style="color: #ff0055; filter: none; margin-bottom: 20px;">Are You Still Watching?</h2>
+            <p style="filter: none; margin-bottom: 30px;">To ensure maximum user engagement, please type the following phrase exactly as it appears. Copy-pasting is disabled for your protection.</p>
+
+            <div style="margin: 20px 0; font-size: 1.5em; font-weight: bold; font-family: 'Courier New', Courier, monospace; color: #fff; background: #111; padding: 10px; border: 1px dashed #555; user-select: none; -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none;" id="captcha-phrase" onselectstart="return false;" onmousedown="return false;">
+                I am not worthy of Matthew Bubb's code
+            </div>
+
+            <input type="text" id="captcha-input" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" style="width: 80%; padding: 10px; font-size: 1.2em; background: #333; color: #f4f4f4; border: 1px solid #555; filter: none; cursor: none;" placeholder="Type here...">
+
+            <div id="captcha-error" style="color: #ff0055; margin-top: 10px; min-height: 20px; filter: none;"></div>
+
+            <button id="submit-captcha-btn" style="margin-top: 20px; background: #222; border: 1px solid #ff0055; color: #ff0055; padding: 10px 20px; font-size: 1.1em; border-radius: 5px; cursor: none; filter: none; opacity: 0.5;" disabled>Verify</button>
+        </div>
+    </div>
+
     <!-- Anti-UX Slider Modal -->
     <div id="modal-anti-ux-slider" class="modal" style="z-index: 1000000; background-color: rgba(26,26,26,0.98);">
         <div class="modal-content" style="text-align: center; border: 2px solid #00aaff; box-shadow: 0 0 20px #00aaff;">
@@ -382,6 +400,99 @@
                 }, 1000);
             }
         });
+
+        // Palette's Anti-UX: Periodic Captcha
+        const captchaModal = document.getElementById('modal-periodic-captcha');
+        const captchaInput = document.getElementById('captcha-input');
+        const captchaSubmitBtn = document.getElementById('submit-captcha-btn');
+        const captchaError = document.getElementById('captcha-error');
+        const targetPhrase = "I am not worthy of Matthew Bubb's code";
+
+        let captchaInterval;
+        let captchaTimeout;
+
+        function showCaptcha() {
+            captchaInput.value = '';
+            captchaError.innerText = '';
+            captchaSubmitBtn.disabled = true;
+            captchaSubmitBtn.style.opacity = '0.5';
+            captchaModal.style.display = 'block';
+            captchaInput.focus();
+        }
+
+        // Initial delay before showing first captcha
+        setTimeout(showCaptcha, 12000);
+
+        // Prevent pasting
+        captchaInput.addEventListener('paste', (e) => {
+            e.preventDefault();
+            captchaError.innerText = "Nice try. Type it out.";
+        });
+
+        // Artificial Typing Latency (600ms)
+        let typedQueue = [];
+        let isProcessingQueue = false;
+
+        captchaInput.addEventListener('keydown', (e) => {
+            // Allow backspace and navigation keys immediately
+            if (['Backspace', 'ArrowLeft', 'ArrowRight', 'Delete', 'Tab'].includes(e.key)) {
+                return;
+            }
+
+            // Ignore meta keys
+            if (e.ctrlKey || e.altKey || e.metaKey || e.key.length > 1) {
+                return;
+            }
+
+            e.preventDefault(); // Stop normal typing
+
+            typedQueue.push(e.key);
+
+            if (!isProcessingQueue) {
+                processQueue();
+            }
+        });
+
+        function processQueue() {
+            if (typedQueue.length === 0) {
+                isProcessingQueue = false;
+                return;
+            }
+
+            isProcessingQueue = true;
+            const nextChar = typedQueue.shift();
+
+            setTimeout(() => {
+                captchaInput.value += nextChar;
+                checkCaptchaValidity();
+                processQueue();
+            }, 600); // 600ms agonizing delay
+        }
+
+        function checkCaptchaValidity() {
+            if (captchaInput.value === targetPhrase) {
+                captchaSubmitBtn.disabled = false;
+                captchaSubmitBtn.style.opacity = '1';
+                captchaError.innerText = '';
+            } else {
+                captchaSubmitBtn.disabled = true;
+                captchaSubmitBtn.style.opacity = '0.5';
+            }
+        }
+
+        // Also check on input for things like backspace
+        captchaInput.addEventListener('input', checkCaptchaValidity);
+
+        captchaSubmitBtn.addEventListener('click', () => {
+            if (captchaInput.value === targetPhrase) {
+                captchaModal.style.display = 'none';
+
+                // Clear any existing interval, start the next one
+                clearInterval(captchaInterval);
+                captchaInterval = setInterval(showCaptcha, 25000);
+            }
+        });
+
 
         // Palette's Anti-UX: Mindful Cursor
         const mindfulCursor = document.createElement('div');

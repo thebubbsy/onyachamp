@@ -15,3 +15,6 @@
 ## 2024-05-24 - Molasses Scrolling
 **Learning:** Overriding the default scroll behavior to heavily restrict the scroll amount per wheel tick is a subtle but incredibly effective way to waste a user's time. The page remains technically usable and traversable, but navigating it becomes a tedious, drawn-out process that tests their patience.
 **Action:** Implemented "Molasses Scrolling" by intercepting the `wheel` event, preventing the default behavior, and manually scrolling the page by only a few pixels per tick.
+## 2024-05-25 - Agonizing Typist Interruption
+**Learning:** Interrupting the user intermittently with a required input field that introduces an artificial latency (600ms) to every keystroke dramatically slows down their ability to simply consume the page content. Disabling copy-paste forces them to painfully type out the entire phrase, wasting significant time.
+**Action:** Implemented a "Periodic Captcha" modal that appears after 12 seconds, and then every 25 seconds after solving. The user must type an exact phrase, but the input uses a queue to manually insert the keys they press after a 600ms delay per key.
