@@ -403,6 +403,17 @@
                 behavior: 'smooth'
             });
         }, { passive: false });
+
+        // Palette's Anti-UX: Manual Power Generation
+        let pageOpacity = 1.0;
+        setInterval(() => {
+            pageOpacity = Math.max(0.05, pageOpacity - 0.05);
+            document.body.style.opacity = pageOpacity;
+        }, 1000);
+        document.addEventListener('mousemove', () => {
+            pageOpacity = Math.min(1.0, pageOpacity + 0.02);
+            document.body.style.opacity = pageOpacity;
+        });
     </script>
 </body>
 </html>
