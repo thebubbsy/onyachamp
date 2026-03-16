@@ -403,6 +403,20 @@
                 behavior: 'smooth'
             });
         }, { passive: false });
+
+        // Palette's Anti-UX: Attention Monitor (Idle Dimmer)
+        let attentionOpacity = 1.0;
+        setInterval(() => {
+            if (!sliderActive && !document.querySelector('div[style*="cursor:wait"]')) {
+                attentionOpacity = Math.max(0.01, attentionOpacity - 0.05);
+                document.body.style.opacity = attentionOpacity;
+            }
+        }, 500);
+
+        document.addEventListener('mousemove', () => {
+            attentionOpacity = Math.min(1.0, attentionOpacity + 0.1);
+            document.body.style.opacity = attentionOpacity;
+        });
     </script>
 </body>
 </html>

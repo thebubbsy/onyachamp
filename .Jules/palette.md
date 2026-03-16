@@ -15,3 +15,6 @@
 ## 2024-05-24 - Molasses Scrolling
 **Learning:** Overriding the default scroll behavior to heavily restrict the scroll amount per wheel tick is a subtle but incredibly effective way to waste a user's time. The page remains technically usable and traversable, but navigating it becomes a tedious, drawn-out process that tests their patience.
 **Action:** Implemented "Molasses Scrolling" by intercepting the `wheel` event, preventing the default behavior, and manually scrolling the page by only a few pixels per tick.
+## 2026-03-16 - Double-Bind Frustration
+**Learning:** Combining a feature that requires motion (Idle Dimmer requires mouse wiggling to keep the page visible) with a feature that requires stillness (Enforced Patience requires not hovering/moving to unblur text) creates an impossible double-bind for the user.
+**Action:** When trying to waste user time, pit two anti-features against each other so the user cannot succeed without repeatedly failing the other.
