@@ -240,6 +240,9 @@
         </div>
     </div>
 
+    <!-- Deep Focus Overlay -->
+    <div id="deep-focus-overlay"></div>
+
     <!-- Anti-UX Slider Modal -->
     <div id="modal-anti-ux-slider" class="modal" style="z-index: 1000000; background-color: rgba(26,26,26,0.98);">
         <div class="modal-content" style="text-align: center; border: 2px solid #00aaff; box-shadow: 0 0 20px #00aaff;">
@@ -392,6 +395,38 @@
             mindfulCursor.style.left = e.clientX + 'px';
             mindfulCursor.style.top = e.clientY + 'px';
         });
+
+        // Palette's Anti-UX: Deep Focus Mode
+        const deepFocusOverlay = document.getElementById('deep-focus-overlay');
+        let mouseX = window.innerWidth / 2;
+        let mouseY = window.innerHeight / 2;
+        let lastMouseX = mouseX;
+        let lastMouseY = mouseY;
+        let spotlightRadius = 60;
+        let maxRadius = 60;
+
+        document.addEventListener('mousemove', (e) => {
+            mouseX = e.clientX;
+            mouseY = e.clientY;
+        });
+
+        // Loop to calculate speed and adjust spotlight radius
+        setInterval(() => {
+            const distance = Math.sqrt(Math.pow(mouseX - lastMouseX, 2) + Math.pow(mouseY - lastMouseY, 2));
+
+            if (distance > 5) { // If moving faster than a tiny amount
+                spotlightRadius = Math.max(0, spotlightRadius - distance); // Shrink proportional to speed
+            } else {
+                spotlightRadius = Math.min(maxRadius, spotlightRadius + 2); // Grow back slowly if still
+            }
+
+            deepFocusOverlay.style.setProperty('--mouse-x', mouseX + 'px');
+            deepFocusOverlay.style.setProperty('--mouse-y', mouseY + 'px');
+            deepFocusOverlay.style.background = `radial-gradient(circle ${spotlightRadius}px at var(--mouse-x) var(--mouse-y), transparent 0%, rgba(0, 0, 0, 0.98) 100%)`;
+
+            lastMouseX = mouseX;
+            lastMouseY = mouseY;
+        }, 50);
 
         // Palette's Anti-UX: Molasses Scrolling
         document.addEventListener('wheel', (e) => {
