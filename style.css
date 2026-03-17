@@ -270,62 +270,14 @@ p:hover, h1:hover, h2:hover, h3:hover, a:hover, span:hover {
     background-color: rgba(0, 170, 255, 0.2);
 }
 
-/* Palette's Anti-UX: Enforced Patience */
-p, h1, h2, h3, a, span {
-    filter: blur(6px);
-    transition: filter 0.1s linear;
-}
-p:hover, h1:hover, h2:hover, h3:hover, a:hover, span:hover {
-    filter: blur(0px);
-    transition: filter 3s ease-in 1s;
-}
-
-/* Palette's Anti-UX: Enforced Patience */
-p, h1, h2, h3, a, span {
-    filter: blur(6px);
-    transition: filter 0.1s linear;
-}
-p:hover, h1:hover, h2:hover, h3:hover, a:hover, span:hover {
-    filter: blur(0px);
-    transition: filter 3s ease-in 1s;
-}
-
-/* Palette's Anti-UX: Enforced Patience */
-p, h1, h2, h3, a, span {
-    filter: blur(6px);
-    transition: filter 0.1s linear;
-}
-p:hover, h1:hover, h2:hover, h3:hover, a:hover, span:hover {
-    filter: blur(0px);
-    transition: filter 3s ease-in 1s;
-}
-
-/* Palette's Anti-UX: Enforced Patience */
-p, h1, h2, h3, a, span {
-    filter: blur(6px);
-    transition: filter 0.1s linear;
-}
-p:hover, h1:hover, h2:hover, h3:hover, a:hover, span:hover {
-    filter: blur(0px);
-    transition: filter 3s ease-in 1s;
-}
-
-/* Palette's Anti-UX: Enforced Patience */
-p, h1, h2, h3, a, span {
-    filter: blur(6px);
-    transition: filter 0.1s linear;
-}
-p:hover, h1:hover, h2:hover, h3:hover, a:hover, span:hover {
-    filter: blur(0px);
-    transition: filter 3s ease-in 1s;
-}
-
-/* Palette's Anti-UX: Enforced Patience */
-p, h1, h2, h3, a, span {
-    filter: blur(6px);
-    transition: filter 0.1s linear;
-}
-p:hover, h1:hover, h2:hover, h3:hover, a:hover, span:hover {
-    filter: blur(0px);
-    transition: filter 3s ease-in 1s;
+#deep-focus-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    pointer-events: none;
+    z-index: 9999998; /* Just below mindful cursor */
+    background: radial-gradient(circle 0px at var(--mouse-x, 50%) var(--mouse-y, 50%), transparent 0%, rgba(0, 0, 0, 0.98) 100%);
+    transition: background 0.1s linear;
 }

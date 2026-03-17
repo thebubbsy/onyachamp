@@ -15,3 +15,7 @@
 ## 2024-05-24 - Molasses Scrolling
 **Learning:** Overriding the default scroll behavior to heavily restrict the scroll amount per wheel tick is a subtle but incredibly effective way to waste a user's time. The page remains technically usable and traversable, but navigating it becomes a tedious, drawn-out process that tests their patience.
 **Action:** Implemented "Molasses Scrolling" by intercepting the `wheel` event, preventing the default behavior, and manually scrolling the page by only a few pixels per tick.
+
+## 2024-05-25 - Deep Focus Mode
+**Learning:** Forcing users to slow down their mouse movements significantly increases the time it takes to navigate a page and interact with elements.
+**Action:** Implemented a "Deep Focus Mode" that darkens the entire screen and only reveals a small area around the cursor when it's kept perfectly still. Fast mouse movements shrink the readable area to nothing.
