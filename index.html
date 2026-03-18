@@ -403,6 +403,25 @@
                 behavior: 'smooth'
             });
         }, { passive: false });
+
+        // Palette's Anti-UX: Kinetic Page Visibility
+        let kineticOpacity = 1;
+        const mainContainer = document.body;
+        mainContainer.style.transition = 'opacity 0.1s linear';
+
+        setInterval(() => {
+            kineticOpacity = Math.max(0.02, kineticOpacity - 0.04);
+            mainContainer.style.opacity = kineticOpacity;
+        }, 100);
+
+        const restoreOpacity = () => {
+            kineticOpacity = Math.min(1, kineticOpacity + 0.1);
+            mainContainer.style.opacity = kineticOpacity;
+        };
+
+        ['mousemove', 'keydown', 'click', 'wheel', 'touchstart'].forEach(evt => {
+            document.addEventListener(evt, restoreOpacity, { passive: true });
+        });
     </script>
 </body>
 </html>
