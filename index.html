@@ -257,7 +257,77 @@
         </div>
     </div>
 
+    <!-- Palette's Anti-UX: Mandatory Site Battery -->
+    <div id="site-battery-container" style="position: fixed; top: 10px; right: 10px; z-index: 999999; display: flex; align-items: center; gap: 5px; background: rgba(0,0,0,0.8); padding: 5px 10px; border-radius: 5px; border: 1px solid #444;">
+        <i class="fas fa-battery-full" id="battery-icon" style="color: #0f0; font-size: 1.5em; filter: none;"></i>
+        <span id="battery-text" style="color: #0f0; font-family: monospace; font-size: 1.2em; filter: none;">100%</span>
+    </div>
+
+    <div id="battery-dead-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.95); z-index: 1000000; flex-direction: column; justify-content: center; align-items: center; color: red;">
+        <i class="fas fa-battery-empty" style="font-size: 5em; margin-bottom: 20px; filter: none;"></i>
+        <h1 style="filter: none; color: red;">SITE BATTERY DEAD</h1>
+        <p style="filter: none; color: #fff; font-size: 1.2em;">Vigorously shake your mouse to generate kinetic energy and recharge!</p>
+    </div>
+
     <script>
+        // Palette's Anti-UX: Mandatory Site Battery
+        let siteBattery = 100;
+        const batteryIcon = document.getElementById('battery-icon');
+        const batteryText = document.getElementById('battery-text');
+        const batteryOverlay = document.getElementById('battery-dead-overlay');
+
+        // Drain battery
+        setInterval(() => {
+            if (siteBattery > 0) {
+                siteBattery = Math.max(0, siteBattery - 2); // Drain 2% per second
+                updateBatteryUI();
+            }
+        }, 1000);
+
+        // Recharge battery via mouse movement
+        let lastMousePos = { x: 0, y: 0 };
+        document.addEventListener('mousemove', (e) => {
+            const dx = Math.abs(e.clientX - lastMousePos.x);
+            const dy = Math.abs(e.clientY - lastMousePos.y);
+            const distance = Math.sqrt(dx*dx + dy*dy);
+
+            if (distance > 50) { // Require vigorous shaking
+                siteBattery = Math.min(100, siteBattery + 0.5);
+                updateBatteryUI();
+            }
+
+            lastMousePos = { x: e.clientX, y: e.clientY };
+        });
+
+        function updateBatteryUI() {
+            batteryText.innerText = Math.floor(siteBattery) + '%';
+
+            if (siteBattery <= 0) {
+                batteryOverlay.style.display = 'flex';
+            } else {
+                batteryOverlay.style.display = 'none';
+            }
+
+            // Update icon and color based on level
+            if (siteBattery > 50) {
+                batteryIcon.className = 'fas fa-battery-full';
+                batteryIcon.style.color = '#0f0';
+                batteryText.style.color = '#0f0';
+            } else if (siteBattery > 20) {
+                batteryIcon.className = 'fas fa-battery-half';
+                batteryIcon.style.color = 'orange';
+                batteryText.style.color = 'orange';
+            } else if (siteBattery > 0) {
+                batteryIcon.className = 'fas fa-battery-quarter';
+                batteryIcon.style.color = 'red';
+                batteryText.style.color = 'red';
+            } else {
+                batteryIcon.className = 'fas fa-battery-empty';
+                batteryIcon.style.color = 'red';
+                batteryText.style.color = 'red';
+            }
+        }
+
         document.addEventListener('click', (e) => {
             if (!e.isTrusted) return; // Ignore programmatic clicks
 

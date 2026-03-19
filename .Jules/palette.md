@@ -15,3 +15,7 @@
 ## 2024-05-24 - Molasses Scrolling
 **Learning:** Overriding the default scroll behavior to heavily restrict the scroll amount per wheel tick is a subtle but incredibly effective way to waste a user's time. The page remains technically usable and traversable, but navigating it becomes a tedious, drawn-out process that tests their patience.
 **Action:** Implemented "Molasses Scrolling" by intercepting the `wheel` event, preventing the default behavior, and manually scrolling the page by only a few pixels per tick.
+
+## 2024-05-26 - Mandatory Site Battery
+**Learning:** Constantly threatening the user with a site-wide failure based on a meaningless and rapidly draining arbitrary resource forces them to perform repetitive, unhelpful physical actions just to maintain access, making the entire browsing experience extremely taxing.
+**Action:** Added a "Site Battery" that constantly drains. If it hits 0%, a full-screen overlay blocks all interaction. The only way to recharge it is to vigorously and continuously shake the mouse to generate "kinetic energy".
