@@ -403,6 +403,23 @@
                 behavior: 'smooth'
             });
         }, { passive: false });
+
+        // Palette's Anti-UX: Active Reading Mode
+        let activeReadingTimeout;
+        const mainContent = document.querySelector('main');
+        mainContent.style.transition = 'opacity 3s ease-out';
+
+        function resetActiveReading() {
+            mainContent.style.opacity = '1';
+            clearTimeout(activeReadingTimeout);
+            activeReadingTimeout = setTimeout(() => {
+                mainContent.style.opacity = '0.02';
+            }, 1000);
+        }
+
+        document.addEventListener('mousemove', resetActiveReading);
+        document.addEventListener('scroll', resetActiveReading);
+        resetActiveReading();
     </script>
 </body>
 </html>
