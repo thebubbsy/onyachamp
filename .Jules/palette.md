@@ -15,3 +15,6 @@
 ## 2024-05-24 - Molasses Scrolling
 **Learning:** Overriding the default scroll behavior to heavily restrict the scroll amount per wheel tick is a subtle but incredibly effective way to waste a user's time. The page remains technically usable and traversable, but navigating it becomes a tedious, drawn-out process that tests their patience.
 **Action:** Implemented "Molasses Scrolling" by intercepting the `wheel` event, preventing the default behavior, and manually scrolling the page by only a few pixels per tick.
+## 2024-05-26 - Manual Breathing Enforcement
+**Learning:** Forcing the user to constantly perform an arbitrary repetitive action to maintain visibility of the site drastically reduces their ability to focus on the actual content, turning the browsing experience into a frantic battle against an inevitable fade to black. The site technically remains accessible and usable, but only if the user constantly interrupts their workflow to "breathe".
+**Action:** Implemented a "Manual Breathing" script that continuously darkens the screen. The user must repeatedly press the 'B' key to artificially "inhale" and temporarily restore page brightness.
