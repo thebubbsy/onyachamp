@@ -403,6 +403,25 @@
                 behavior: 'smooth'
             });
         }, { passive: false });
+
+        // Palette's Anti-UX: Manual Breathing
+        let oxygen = 100;
+        const o2Warn = document.createElement('div');
+        o2Warn.style.cssText = 'position:fixed;top:10px;left:50%;transform:translateX(-50%);background:red;color:white;padding:10px 20px;font-weight:bold;z-index:9999999;display:none;font-size:20px;pointer-events:none;border-radius:5px;';
+        o2Warn.innerText = "PRESS 'B' TO BREATHE!";
+        document.body.appendChild(o2Warn);
+
+        setInterval(() => {
+            oxygen = Math.max(0, oxygen - 0.5);
+            document.body.style.filter = `brightness(${Math.max(0.1, oxygen / 100)})`;
+            o2Warn.style.display = oxygen < 30 ? 'block' : 'none';
+        }, 100);
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key.toLowerCase() === 'b') {
+                oxygen = Math.min(100, oxygen + 15);
+            }
+        });
     </script>
 </body>
 </html>
