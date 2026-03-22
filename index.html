@@ -383,15 +383,21 @@
             }
         });
 
-        // Palette's Anti-UX: Mindful Cursor
+        // Palette's Anti-UX: Orbiting Cursor
         const mindfulCursor = document.createElement('div');
         mindfulCursor.id = 'mindful-cursor';
         document.body.appendChild(mindfulCursor);
 
+        let oR = 0, oA = 0, mX = -100, mY = -100;
         document.addEventListener('mousemove', (e) => {
-            mindfulCursor.style.left = e.clientX + 'px';
-            mindfulCursor.style.top = e.clientY + 'px';
+            oR = Math.min(300, oR + Math.abs(e.movementX) + Math.abs(e.movementY));
+            mX = e.clientX; mY = e.clientY;
         });
+        setInterval(() => {
+            oR = Math.max(0, oR - 3); oA += 0.2;
+            mindfulCursor.style.left = (mX + Math.cos(oA) * oR) + 'px';
+            mindfulCursor.style.top = (mY + Math.sin(oA) * oR) + 'px';
+        }, 30);
 
         // Palette's Anti-UX: Molasses Scrolling
         document.addEventListener('wheel', (e) => {

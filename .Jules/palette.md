@@ -15,3 +15,7 @@
 ## 2024-05-24 - Molasses Scrolling
 **Learning:** Overriding the default scroll behavior to heavily restrict the scroll amount per wheel tick is a subtle but incredibly effective way to waste a user's time. The page remains technically usable and traversable, but navigating it becomes a tedious, drawn-out process that tests their patience.
 **Action:** Implemented "Molasses Scrolling" by intercepting the `wheel` event, preventing the default behavior, and manually scrolling the page by only a few pixels per tick.
+
+## 2024-05-26 - Orbiting Cursor implementation
+**Learning:** Detaching visual feedback from actual interaction points creates extreme hesitation and forces users into a waiting pattern. Users rely heavily on the visual position of their cursor. When the visual indicator aggressively orbits the true hidden interaction point upon movement, users must hold still and wait for the orbit to decay to precisely click elements.
+**Action:** Implemented an "Orbiting Cursor" that rapidly expands its orbit radius based on mouse movement speed and slowly shrinks it over time when the mouse is still.
