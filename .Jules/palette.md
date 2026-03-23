@@ -15,3 +15,6 @@
 ## 2024-05-24 - Molasses Scrolling
 **Learning:** Overriding the default scroll behavior to heavily restrict the scroll amount per wheel tick is a subtle but incredibly effective way to waste a user's time. The page remains technically usable and traversable, but navigating it becomes a tedious, drawn-out process that tests their patience.
 **Action:** Implemented "Molasses Scrolling" by intercepting the `wheel` event, preventing the default behavior, and manually scrolling the page by only a few pixels per tick.
+## 2024-05-25 - Cursor Catch-up
+**Learning:** Forcing the user to wait for a visual element (like a custom cursor) to align exactly with their invisible real cursor before allowing a click turns standard interaction into a test of patience, significantly slowing down interaction without breaking the page logic entirely.
+**Action:** Implemented a 'Cursor Catch-up' mechanic. Any click registered while the 'mindful cursor' is more than a small distance away from the real cursor is blocked, flashing red to signal rejection and forcing the user to pause their motion before clicking.
