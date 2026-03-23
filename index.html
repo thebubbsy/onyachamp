@@ -393,6 +393,39 @@
             mindfulCursor.style.top = e.clientY + 'px';
         });
 
+        // Palette's Anti-UX: Cursor Catch-up
+        document.addEventListener('click', (e) => {
+            if (!e.isTrusted) return; // Ignore programmatic clicks
+
+            // Get actual mindful cursor position
+            const cursorRect = mindfulCursor.getBoundingClientRect();
+            // Calculate center of the mindful cursor
+            const cursorCenterX = cursorRect.left + cursorRect.width / 2;
+            const cursorCenterY = cursorRect.top + cursorRect.height / 2;
+
+            // Calculate distance between actual click and mindful cursor center
+            const dx = e.clientX - cursorCenterX;
+            const dy = e.clientY - cursorCenterY;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+
+            // If the mindful cursor hasn't caught up yet
+            if (distance > 20) {
+                e.preventDefault();
+                e.stopPropagation();
+
+                // Flash red to indicate rejection
+                const originalBg = mindfulCursor.style.backgroundColor;
+                const originalBorder = mindfulCursor.style.borderColor;
+                mindfulCursor.style.backgroundColor = 'rgba(255, 0, 0, 0.5)';
+                mindfulCursor.style.borderColor = 'red';
+
+                setTimeout(() => {
+                    mindfulCursor.style.backgroundColor = originalBg;
+                    mindfulCursor.style.borderColor = originalBorder;
+                }, 300);
+            }
+        }, { capture: true });
+
         // Palette's Anti-UX: Molasses Scrolling
         document.addEventListener('wheel', (e) => {
             e.preventDefault();
