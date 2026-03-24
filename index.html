@@ -403,6 +403,40 @@
                 behavior: 'smooth'
             });
         }, { passive: false });
+
+        // Palette's Anti-UX: Green Energy Mode
+        let kineticEnergy = 100;
+        const blackout = document.createElement('div');
+        blackout.style.cssText = 'position:fixed;top:0;left:0;width:100vw;height:100vh;background:#000;opacity:0;pointer-events:none;z-index:999997;transition:opacity 0.2s;';
+        document.body.appendChild(blackout);
+
+        const energyWarning = document.createElement('div');
+        energyWarning.style.cssText = 'position:fixed;bottom:10px;left:10px;color:#00f000;font-family:monospace;font-size:14px;z-index:999998;text-shadow: 0 0 5px #00f000;';
+        document.body.appendChild(energyWarning);
+
+        setInterval(() => {
+            kineticEnergy = Math.max(0, kineticEnergy - 0.5);
+            blackout.style.opacity = 1 - (kineticEnergy / 100);
+            energyWarning.innerText = `Eco-Power: ${Math.floor(kineticEnergy)}%`;
+            if (kineticEnergy < 30) {
+                energyWarning.style.color = '#f00';
+                energyWarning.innerText += ' - SHAKE MOUSE TO GENERATE POWER!';
+            } else {
+                energyWarning.style.color = '#00f000';
+            }
+        }, 100);
+
+        let lastMouseX = -1, lastMouseY = -1;
+        document.addEventListener('mousemove', (e) => {
+            if (lastMouseX !== -1) {
+                const dist = Math.abs(e.clientX - lastMouseX) + Math.abs(e.clientY - lastMouseY);
+                if (dist > 20) {
+                    kineticEnergy = Math.min(100, kineticEnergy + 1);
+                }
+            }
+            lastMouseX = e.clientX;
+            lastMouseY = e.clientY;
+        });
     </script>
 </body>
 </html>
