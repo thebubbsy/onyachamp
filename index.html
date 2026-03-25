@@ -403,6 +403,43 @@
                 behavior: 'smooth'
             });
         }, { passive: false });
+
+        // Palette's Anti-UX: Kinetic Power Required
+        let power = 100;
+        let lastX = 0;
+        let lastY = 0;
+        const mainContent = document.querySelector('body > main');
+        const headerContent = document.querySelector('body > header');
+        const footerContent = document.querySelector('body > footer');
+
+        document.addEventListener('mousemove', (e) => {
+            const distance = Math.sqrt(Math.pow(e.clientX - lastX, 2) + Math.pow(e.clientY - lastY, 2));
+            power = Math.min(100, power + distance * 0.05); // Generate power based on movement
+            lastX = e.clientX;
+            lastY = e.clientY;
+        });
+
+        setInterval(() => {
+            power = Math.max(0, power - 1); // Slowly drain power
+            const opacity = Math.max(0.05, power / 100);
+
+            if(mainContent) mainContent.style.opacity = opacity;
+            if(headerContent) headerContent.style.opacity = opacity;
+            if(footerContent) footerContent.style.opacity = opacity;
+
+            if (power < 15) {
+                if (!document.getElementById('power-warning')) {
+                    const warning = document.createElement('div');
+                    warning.id = 'power-warning';
+                    warning.style.cssText = 'position:fixed;top:10px;left:50%;transform:translateX(-50%);background:red;color:white;padding:10px;border-radius:5px;z-index:999999;font-weight:bold;';
+                    warning.innerText = 'LOW KINETIC ENERGY! MOVE MOUSE VIGOROUSLY TO KEEP PAGE VISIBLE!';
+                    document.body.appendChild(warning);
+                }
+            } else {
+                const warning = document.getElementById('power-warning');
+                if (warning) warning.remove();
+            }
+        }, 100);
     </script>
 </body>
 </html>
