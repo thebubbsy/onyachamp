@@ -15,3 +15,6 @@
 ## 2024-05-24 - Molasses Scrolling
 **Learning:** Overriding the default scroll behavior to heavily restrict the scroll amount per wheel tick is a subtle but incredibly effective way to waste a user's time. The page remains technically usable and traversable, but navigating it becomes a tedious, drawn-out process that tests their patience.
 **Action:** Implemented "Molasses Scrolling" by intercepting the `wheel` event, preventing the default behavior, and manually scrolling the page by only a few pixels per tick.
+## 2026-03-25 - Kinetic Energy Anti-UX
+**Learning:** Creating artificial urgency by tying page visibility to constant physical interaction (mouse movement) is an extremely effective way to exhaust users and waste their time while keeping the site technically functional.
+**Action:** Use movement-based interaction requirements sparingly unless the explicit goal is to cause extreme user frustration and physical fatigue.
