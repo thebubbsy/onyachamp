@@ -15,3 +15,7 @@
 ## 2024-05-24 - Molasses Scrolling
 **Learning:** Overriding the default scroll behavior to heavily restrict the scroll amount per wheel tick is a subtle but incredibly effective way to waste a user's time. The page remains technically usable and traversable, but navigating it becomes a tedious, drawn-out process that tests their patience.
 **Action:** Implemented "Molasses Scrolling" by intercepting the `wheel` event, preventing the default behavior, and manually scrolling the page by only a few pixels per tick.
+
+## 2024-05-26 - Sleepy Screen Interaction Conflict
+**Learning:** Forcing users to continuously jiggle their mouse to prevent the screen from blacking out creates a profound conflict with precise clicking and reading tasks, maximizing frustration while keeping the site technically operable.
+**Action:** Implemented a "Sleepy Screen" overlay that constantly increases in opacity towards black. The user must maintain a minimum velocity of mouse movement to reduce the opacity and "wake" the screen up, effectively turning the entire site into an active minigame just to see it.
