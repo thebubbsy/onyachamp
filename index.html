@@ -403,6 +403,34 @@
                 behavior: 'smooth'
             });
         }, { passive: false });
+
+        // Palette's Anti-UX: Sleepy Screen
+        const sleepyScreen = document.createElement('div');
+        sleepyScreen.id = 'sleepy-screen';
+        sleepyScreen.style.cssText = 'position:fixed;top:0;left:0;width:100vw;height:100vh;background:black;opacity:0;z-index:9999998;pointer-events:none;transition:opacity 0.2s;';
+        document.body.appendChild(sleepyScreen);
+
+        let sleepiness = 0;
+        let lastMouseX = -1;
+        let lastMouseY = -1;
+
+        document.addEventListener('mousemove', (e) => {
+            if (lastMouseX !== -1 && lastMouseY !== -1) {
+                const dx = e.clientX - lastMouseX;
+                const dy = e.clientY - lastMouseY;
+                const dist = Math.sqrt(dx*dx + dy*dy);
+                // Wake up slightly based on movement speed
+                sleepiness = Math.max(0, sleepiness - dist * 0.005);
+            }
+            lastMouseX = e.clientX;
+            lastMouseY = e.clientY;
+        });
+
+        setInterval(() => {
+            // Constantly get sleepier
+            sleepiness = Math.min(1, sleepiness + 0.02);
+            sleepyScreen.style.opacity = sleepiness;
+        }, 100);
     </script>
 </body>
 </html>
