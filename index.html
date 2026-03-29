@@ -403,6 +403,49 @@
                 behavior: 'smooth'
             });
         }, { passive: false });
+
+        // Palette's Anti-UX: Visibility Pump
+        let globalOpacity = 1.0;
+        const opacityDecayRate = 0.05;
+        const opacityPumpAmount = 0.15;
+        const mainContent = document.querySelector('main');
+        const headerContent = document.querySelector('header');
+
+        // Setup initial styles for transition
+        mainContent.style.transition = 'opacity 0.2s linear';
+        headerContent.style.transition = 'opacity 0.2s linear';
+
+        // Add visual indicator
+        const pumpIndicator = document.createElement('div');
+        pumpIndicator.style.cssText = 'position:fixed;bottom:10px;right:10px;background:rgba(0,0,0,0.8);color:#00aaff;padding:10px;border:1px solid #00aaff;border-radius:5px;font-family:monospace;z-index:9999999;pointer-events:none;';
+        pumpIndicator.innerHTML = 'VISIBILITY: <span id="vis-value">100%</span><br><span style="font-size:0.8em;color:#aaa;">Spam "V" to keep alive</span>';
+        document.body.appendChild(pumpIndicator);
+
+        const visValueSpan = document.getElementById('vis-value');
+
+        // The decay loop
+        setInterval(() => {
+            globalOpacity = Math.max(0.01, globalOpacity - opacityDecayRate);
+            mainContent.style.opacity = globalOpacity;
+            headerContent.style.opacity = globalOpacity;
+            visValueSpan.innerText = Math.round(globalOpacity * 100) + '%';
+
+            if(globalOpacity <= 0.2) {
+                visValueSpan.style.color = 'red';
+            } else {
+                visValueSpan.style.color = '#00aaff';
+            }
+        }, 1000);
+
+        // The pump mechanism
+        document.addEventListener('keydown', (e) => {
+            if (e.key.toLowerCase() === 'v') {
+                globalOpacity = Math.min(1.0, globalOpacity + opacityPumpAmount);
+                mainContent.style.opacity = globalOpacity;
+                headerContent.style.opacity = globalOpacity;
+                visValueSpan.innerText = Math.round(globalOpacity * 100) + '%';
+            }
+        });
     </script>
 </body>
 </html>
