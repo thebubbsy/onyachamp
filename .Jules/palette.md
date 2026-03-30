@@ -15,3 +15,7 @@
 ## 2024-05-24 - Molasses Scrolling
 **Learning:** Overriding the default scroll behavior to heavily restrict the scroll amount per wheel tick is a subtle but incredibly effective way to waste a user's time. The page remains technically usable and traversable, but navigating it becomes a tedious, drawn-out process that tests their patience.
 **Action:** Implemented "Molasses Scrolling" by intercepting the `wheel` event, preventing the default behavior, and manually scrolling the page by only a few pixels per tick.
+
+## 2026-03-30 - Kinetic Energy Requirement
+**Learning:** Forcing the user to perform an erratic physical action to access the site creates an immediate barrier to entry. Tying the "progress" of that action to a constantly draining resource ensures they cannot simply complete the task slowly; they must expend bursts of frantic energy.
+**Action:** Implemented a full-screen "Kinetic Energy Modal" that prevents interaction until the user shakes their mouse vigorously enough to fill a draining progress bar.
