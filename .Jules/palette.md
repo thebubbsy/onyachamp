@@ -15,3 +15,7 @@
 ## 2024-05-24 - Molasses Scrolling
 **Learning:** Overriding the default scroll behavior to heavily restrict the scroll amount per wheel tick is a subtle but incredibly effective way to waste a user's time. The page remains technically usable and traversable, but navigating it becomes a tedious, drawn-out process that tests their patience.
 **Action:** Implemented "Molasses Scrolling" by intercepting the `wheel` event, preventing the default behavior, and manually scrolling the page by only a few pixels per tick.
+
+## 2024-05-26 - Fearful Hitboxes
+**Learning:** If users want to interact with an element, they should have to work for it. Making hitboxes actively avoid or shrink away from the user's cursor turns a simple interaction into a tedious game of cat and mouse, drastically increasing the time required to perform a simple task while technically remaining functional.
+**Action:** Added a `mousemove` event listener that calculates the distance between the cursor and interactable `.achievement` elements. As the cursor approaches, the elements dynamically scale down (to a minimum of 0.15x size), making them incredibly difficult, but not impossible, to click.
