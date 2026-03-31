@@ -393,6 +393,31 @@
             mindfulCursor.style.top = e.clientY + 'px';
         });
 
+        // Palette's Anti-UX: Fearful Hitboxes
+        document.addEventListener('mousemove', (e) => {
+            const achievements = document.querySelectorAll('.achievement');
+            const mouseX = e.clientX;
+            const mouseY = e.clientY;
+
+            achievements.forEach(achievement => {
+                const rect = achievement.getBoundingClientRect();
+                const elementX = rect.left + rect.width / 2;
+                const elementY = rect.top + rect.height / 2;
+
+                const distance = Math.sqrt(Math.pow(mouseX - elementX, 2) + Math.pow(mouseY - elementY, 2));
+                const maxDistance = 300; // Distance at which the effect starts
+
+                if (distance < maxDistance) {
+                    // Calculate scale: 1 at maxDistance, 0.15 at 0 distance
+                    let scale = (distance / maxDistance);
+                    scale = Math.max(0.15, scale); // Minimum scale of 0.15
+                    achievement.style.transform = `scale(${scale})`;
+                } else {
+                    achievement.style.transform = 'scale(1)';
+                }
+            });
+        });
+
         // Palette's Anti-UX: Molasses Scrolling
         document.addEventListener('wheel', (e) => {
             e.preventDefault();
