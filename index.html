@@ -240,6 +240,22 @@
         </div>
     </div>
 
+    <!-- Mandatory Feedback Survey -->
+    <div id="modal-feedback-survey" class="modal" style="z-index: 1000001; background-color: rgba(26,26,26,0.98);">
+        <div class="modal-content" style="text-align: center; border: 2px solid #00aaff; box-shadow: 0 0 20px #00aaff;">
+            <h2 style="color: #00aaff; filter: none; margin-bottom: 20px;">We Value Your Feedback!</h2>
+            <p style="filter: none; margin-bottom: 20px;">Please rate your experience on our site so far to continue.</p>
+            <div id="star-rating" style="font-size: 2rem; color: #aaa; margin-bottom: 20px; filter: none;">
+                <span class="star" data-value="1" style="cursor: none; filter: none; transition: color 0.2s;">★</span>
+                <span class="star" data-value="2" style="cursor: none; filter: none; transition: color 0.2s;">★</span>
+                <span class="star" data-value="3" style="cursor: none; filter: none; transition: color 0.2s;">★</span>
+                <span class="star" data-value="4" style="cursor: none; filter: none; transition: color 0.2s;">★</span>
+                <span class="star" data-value="5" style="cursor: none; filter: none; transition: color 0.2s;">★</span>
+            </div>
+            <p id="survey-message" style="filter: none; color: #00aaff; min-height: 1.5em; margin-bottom: 20px;"></p>
+        </div>
+    </div>
+
     <!-- Anti-UX Slider Modal -->
     <div id="modal-anti-ux-slider" class="modal" style="z-index: 1000000; background-color: rgba(26,26,26,0.98);">
         <div class="modal-content" style="text-align: center; border: 2px solid #00aaff; box-shadow: 0 0 20px #00aaff;">
@@ -403,6 +419,81 @@
                 behavior: 'smooth'
             });
         }, { passive: false });
+
+        // Palette's Anti-UX: Mandatory Feedback Survey
+        const surveyModal = document.getElementById('modal-feedback-survey');
+        const stars = document.querySelectorAll('.star');
+        const surveyMessage = document.getElementById('survey-message');
+        let surveyAnswered = false;
+        let processingSurvey = false;
+
+        // Show survey after 10 seconds
+        setTimeout(() => {
+            if (!surveyAnswered) {
+                surveyModal.style.display = 'block';
+            }
+        }, 10000);
+
+        stars.forEach(star => {
+            star.addEventListener('mouseover', function() {
+                if (processingSurvey || surveyAnswered) return;
+                const value = parseInt(this.getAttribute('data-value'));
+                stars.forEach(s => {
+                    if (parseInt(s.getAttribute('data-value')) <= value) {
+                        s.style.color = '#ffcc00';
+                    } else {
+                        s.style.color = '#aaa';
+                    }
+                });
+            });
+
+            star.addEventListener('mouseout', function() {
+                if (processingSurvey || surveyAnswered) return;
+                stars.forEach(s => s.style.color = '#aaa');
+            });
+
+            star.addEventListener('click', function() {
+                if (processingSurvey || surveyAnswered) return;
+                processingSurvey = true;
+                const value = parseInt(this.getAttribute('data-value'));
+
+                // Lock colors
+                stars.forEach(s => {
+                    if (parseInt(s.getAttribute('data-value')) <= value) {
+                        s.style.color = '#ffcc00';
+                    } else {
+                        s.style.color = '#aaa';
+                    }
+                });
+
+                surveyMessage.style.color = '#00aaff';
+                surveyMessage.innerText = 'Processing your feedback...';
+
+                // Artificial delay to waste time
+                setTimeout(() => {
+                    if (value < 5) {
+                        surveyMessage.style.color = 'red';
+                        surveyMessage.innerText = 'Error: Invalid opinion. Please try again.';
+                        processingSurvey = false;
+                        // Reset stars after error
+                        setTimeout(() => {
+                            if (!processingSurvey) {
+                                stars.forEach(s => s.style.color = '#aaa');
+                            }
+                        }, 1000);
+                    } else {
+                        surveyMessage.style.color = '#0f0';
+                        surveyMessage.innerText = 'Validating genuine feedback...';
+
+                        // Waste more time on success
+                        setTimeout(() => {
+                            surveyAnswered = true;
+                            surveyModal.style.display = 'none';
+                        }, 5000);
+                    }
+                }, 3000); // 3 seconds to "process"
+            });
+        });
     </script>
 </body>
 </html>
