@@ -15,3 +15,7 @@
 ## 2024-05-24 - Molasses Scrolling
 **Learning:** Overriding the default scroll behavior to heavily restrict the scroll amount per wheel tick is a subtle but incredibly effective way to waste a user's time. The page remains technically usable and traversable, but navigating it becomes a tedious, drawn-out process that tests their patience.
 **Action:** Implemented "Molasses Scrolling" by intercepting the `wheel` event, preventing the default behavior, and manually scrolling the page by only a few pixels per tick.
+
+## 2024-05-26 - Cursor Stamina
+**Learning:** Giving the user's cursor an invisible "stamina" meter that depletes on movement and forces them to wait for it to recharge makes every interaction feel incredibly slow and deliberate, acting as a massive time-waster while preserving technical functionality.
+**Action:** Implemented a cursor stamina system that tracks mouse movement, depletes a stamina bar, and shows an exhausted modal that blocks interaction until the cursor is "rested".

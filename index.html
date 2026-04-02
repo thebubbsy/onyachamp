@@ -240,6 +240,24 @@
         </div>
     </div>
 
+    <!-- Cursor Stamina UI -->
+    <div id="cursor-stamina-container" style="position: fixed; bottom: 20px; right: 20px; width: 200px; height: 15px; border: 2px solid #00aaff; border-radius: 8px; background: #222; z-index: 9999999; overflow: hidden; display: flex; flex-direction: column; opacity: 0.8; pointer-events: none;">
+        <div id="cursor-stamina-bar" style="height: 100%; width: 100%; background: #00aaff; transition: width 0.1s linear, background-color 0.3s ease;"></div>
+    </div>
+    <div id="cursor-stamina-label" style="position: fixed; bottom: 40px; right: 20px; color: #00aaff; font-size: 12px; font-weight: bold; z-index: 9999999; pointer-events: none; text-shadow: 1px 1px 2px #000;">Cursor Stamina</div>
+
+    <!-- Cursor Exhausted Modal -->
+    <div id="modal-cursor-exhausted" class="modal" style="z-index: 10000001; background-color: rgba(26,26,26,0.98);">
+        <div class="modal-content" style="text-align: center; border: 2px solid #ff0055; box-shadow: 0 0 20px #ff0055;">
+            <h2 style="color: #ff0055; filter: none; margin-bottom: 20px;">Cursor Exhausted</h2>
+            <p style="filter: none; margin-bottom: 30px;">Your cursor has moved too much and is now exhausted. Please let it rest.</p>
+            <div style="width: 80%; height: 20px; border: 2px solid #555; border-radius: 10px; margin: 0 auto; overflow: hidden; background: #111;">
+                <div id="recovery-bar" style="width: 0%; height: 100%; background: #00ffaa; transition: width 0.2s linear;"></div>
+            </div>
+            <p style="filter: none; margin-top: 15px; font-size: 0.9em; color: #aaa;">Resting... DO NOT MOVE YOUR MOUSE.</p>
+        </div>
+    </div>
+
     <!-- Anti-UX Slider Modal -->
     <div id="modal-anti-ux-slider" class="modal" style="z-index: 1000000; background-color: rgba(26,26,26,0.98);">
         <div class="modal-content" style="text-align: center; border: 2px solid #00aaff; box-shadow: 0 0 20px #00aaff;">
@@ -383,15 +401,112 @@
             }
         });
 
+        // Palette's Anti-UX: Cursor Stamina System
+        let cursorStamina = 100;
+        let isExhausted = false;
+        let lastMouseX = 0;
+        let lastMouseY = 0;
+        let staminaRecoverTimeout;
+        const staminaBar = document.getElementById('cursor-stamina-bar');
+        const exhaustedModal = document.getElementById('modal-cursor-exhausted');
+        const recoveryBar = document.getElementById('recovery-bar');
+
+        function updateStaminaUI() {
+            staminaBar.style.width = cursorStamina + '%';
+            if (cursorStamina > 50) {
+                staminaBar.style.backgroundColor = '#00aaff';
+            } else if (cursorStamina > 20) {
+                staminaBar.style.backgroundColor = '#ffaa00';
+            } else {
+                staminaBar.style.backgroundColor = '#ff0055';
+            }
+        }
+
+        // Recover stamina loop
+        setInterval(() => {
+            if (!isExhausted && cursorStamina < 100) {
+                cursorStamina = Math.min(100, cursorStamina + 2); // Recover 2% per tick if not exhausted
+                updateStaminaUI();
+            }
+        }, 100);
+
         // Palette's Anti-UX: Mindful Cursor
         const mindfulCursor = document.createElement('div');
         mindfulCursor.id = 'mindful-cursor';
         document.body.appendChild(mindfulCursor);
 
         document.addEventListener('mousemove', (e) => {
+            if (isExhausted) {
+                // If exhausted and they move the mouse, punish them by resetting recovery
+                cursorStamina = 0;
+                recoveryBar.style.width = '0%';
+                clearTimeout(staminaRecoverTimeout);
+                startRecovery();
+                return;
+            }
+
+            // Calculate distance moved
+            const dx = e.clientX - lastMouseX;
+            const dy = e.clientY - lastMouseY;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+
+            // Deplete stamina based on distance moved (very punishing)
+            if (distance > 0) {
+                cursorStamina -= distance * 0.1;
+                cursorStamina = Math.max(0, cursorStamina);
+                updateStaminaUI();
+
+                if (cursorStamina === 0) {
+                    triggerExhaustion();
+                }
+            }
+
+            lastMouseX = e.clientX;
+            lastMouseY = e.clientY;
+
             mindfulCursor.style.left = e.clientX + 'px';
             mindfulCursor.style.top = e.clientY + 'px';
-        });
+        }, { capture: true }); // Capture early so we can intercept
+
+        function triggerExhaustion() {
+            isExhausted = true;
+            exhaustedModal.style.display = 'block';
+            recoveryBar.style.width = '0%';
+
+            // Block clicks globally while exhausted
+            document.body.style.pointerEvents = 'none';
+            exhaustedModal.style.pointerEvents = 'auto'; // allow modal internal logic if any
+
+            startRecovery();
+        }
+
+        function startRecovery() {
+            // They must hold the mouse perfectly still for 5 seconds to recover
+            staminaRecoverTimeout = setTimeout(() => {
+                let recoveryProgress = 0;
+                const recoveryInterval = setInterval(() => {
+                    if (!isExhausted) {
+                        clearInterval(recoveryInterval);
+                        return;
+                    }
+                    recoveryProgress += 5; // 20 ticks (2 seconds total recovery animation)
+                    recoveryBar.style.width = recoveryProgress + '%';
+
+                    if (recoveryProgress >= 100) {
+                        clearInterval(recoveryInterval);
+                        finishRecovery();
+                    }
+                }, 100);
+            }, 3000); // Wait 3 seconds of perfect stillness before starting recovery
+        }
+
+        function finishRecovery() {
+            isExhausted = false;
+            cursorStamina = 100;
+            updateStaminaUI();
+            exhaustedModal.style.display = 'none';
+            document.body.style.pointerEvents = 'auto'; // Restore clicks
+        }
 
         // Palette's Anti-UX: Molasses Scrolling
         document.addEventListener('wheel', (e) => {
