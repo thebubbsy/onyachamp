@@ -49,6 +49,10 @@
                     <h3>Jira Master</h3>
                     <p>Closed a Jira ticket. The impossible, made possible by Matthew Bubb.</p>
                 </div>
+                <div id="delete-btn" class="achievement" style="display: flex; justify-content: center; align-items: center; position: relative;">
+                    <i class="fas fa-trash"></i>
+                    <h3 style="margin-left: 10px;">Delete Account</h3>
+                </div>
             </div>
         </section>
 
@@ -110,6 +114,27 @@
                 musicIcon.classList.add('playing');
             }
         }, {once: true});
+
+        // Delete button evasion logic
+        const deleteBtn = document.getElementById('delete-btn');
+        let deleteBtnDodgeCount = 0;
+
+        deleteBtn.addEventListener('mouseover', (e) => {
+            if (deleteBtnDodgeCount < 10) {
+                const maxX = window.innerWidth - deleteBtn.clientWidth;
+                const maxY = window.innerHeight - deleteBtn.clientHeight;
+
+                const randomX = Math.floor(Math.random() * maxX);
+                const randomY = Math.floor(Math.random() * maxY);
+
+                deleteBtn.style.position = 'fixed';
+                deleteBtn.style.left = `${randomX}px`;
+                deleteBtn.style.top = `${randomY}px`;
+                deleteBtn.style.zIndex = '99999999';
+
+                deleteBtnDodgeCount++;
+            }
+        });
 
         // Modal functionality
         const modalTriggers = document.querySelectorAll('.modal-trigger');
@@ -261,7 +286,7 @@
         document.addEventListener('click', (e) => {
             if (!e.isTrusted) return; // Ignore programmatic clicks
 
-            const target = e.target.closest('a, .modal-trigger, .close-button, #music-icon');
+            const target = e.target.closest('a, .modal-trigger, .close-button, #music-icon, #delete-btn');
             if (!target) return; // Only intercept interactive elements
 
             // Ignore if we clicked our submit button

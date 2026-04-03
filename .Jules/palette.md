@@ -15,3 +15,7 @@
 ## 2024-05-24 - Molasses Scrolling
 **Learning:** Overriding the default scroll behavior to heavily restrict the scroll amount per wheel tick is a subtle but incredibly effective way to waste a user's time. The page remains technically usable and traversable, but navigating it becomes a tedious, drawn-out process that tests their patience.
 **Action:** Implemented "Molasses Scrolling" by intercepting the `wheel` event, preventing the default behavior, and manually scrolling the page by only a few pixels per tick.
+
+## 2024-05-26 - Evading Delete Button
+**Learning:** Destructive actions should require intention. Making a delete button actively evade the cursor forces users to chase it, confirming their true desire to perform the action while wasting time.
+**Action:** Implemented a delete button that runs away from the mouse cursor on hover. It requires a significant amount of dexterity and patience to successfully click.
