@@ -257,7 +257,84 @@
         </div>
     </div>
 
+    <!-- Anti-UX Cursor Stamina Overlay -->
+    <div id="stamina-container" style="position: fixed; top: 10px; right: 10px; z-index: 9999999; background: rgba(0,0,0,0.8); padding: 10px; border: 2px solid #ff0044; border-radius: 5px; color: #ff0044; font-family: monospace; text-align: center; pointer-events: none;">
+        <div style="font-size: 0.8em; margin-bottom: 5px; text-transform: uppercase;">Cursor Stamina</div>
+        <div style="width: 150px; height: 10px; background: #333; border-radius: 3px; overflow: hidden;">
+            <div id="stamina-bar" style="width: 100%; height: 100%; background: #0f0; transition: width 0.1s linear, background-color 0.3s;"></div>
+        </div>
+    </div>
+
+    <!-- Anti-UX Exhaustion Overlay -->
+    <div id="exhaustion-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(255,0,0,0.2); z-index: 9999998; color: white; display: flex; align-items: center; justify-content: center; font-family: sans-serif; pointer-events: all; backdrop-filter: blur(2px);">
+        <h1 id="exhaustion-text" style="font-size: 4rem; text-shadow: 0 0 20px red; text-align: center;">YOUR CURSOR IS EXHAUSTED<br><span style="font-size: 0.4em; color: #ccc;">Please let it rest... (do not move the mouse)</span></h1>
+    </div>
+
     <script>
+        // Palette's Anti-UX: Cursor Stamina
+        let cursorStamina = 100;
+        let lastMouseX = -1;
+        let lastMouseY = -1;
+        let mouseRestTimer = null;
+        let isExhausted = false;
+
+        const staminaBar = document.getElementById('stamina-bar');
+        const exhaustionOverlay = document.getElementById('exhaustion-overlay');
+        exhaustionOverlay.style.display = 'none';
+
+        function updateStaminaUI() {
+            staminaBar.style.width = cursorStamina + '%';
+            if (cursorStamina > 60) {
+                staminaBar.style.background = '#0f0';
+            } else if (cursorStamina > 30) {
+                staminaBar.style.background = '#ff0';
+            } else {
+                staminaBar.style.background = '#f00';
+            }
+        }
+
+        function recoverStamina() {
+            if (cursorStamina < 100) {
+                cursorStamina = Math.min(100, cursorStamina + 2); // Recover rate
+                updateStaminaUI();
+
+                if (cursorStamina > 20 && isExhausted) {
+                    isExhausted = false;
+                    exhaustionOverlay.style.display = 'none';
+                    document.body.style.overflow = ''; // Restore scrolling
+                }
+            }
+            mouseRestTimer = setTimeout(recoverStamina, 100);
+        }
+
+        document.addEventListener('mousemove', (e) => {
+            // Clear rest timer as mouse is moving
+            clearTimeout(mouseRestTimer);
+            mouseRestTimer = setTimeout(recoverStamina, 500); // Wait 500ms of stillness to start recovery
+
+            if (lastMouseX !== -1 && lastMouseY !== -1) {
+                const dx = e.clientX - lastMouseX;
+                const dy = e.clientY - lastMouseY;
+                const distance = Math.sqrt(dx*dx + dy*dy);
+
+                // Drain stamina based on movement distance
+                const drainAmount = distance * 0.05;
+                cursorStamina = Math.max(0, cursorStamina - drainAmount);
+                updateStaminaUI();
+
+                if (cursorStamina === 0 && !isExhausted) {
+                    isExhausted = true;
+                    exhaustionOverlay.style.display = 'flex';
+                    document.body.style.overflow = 'hidden'; // Prevent scrolling while exhausted
+                }
+            }
+
+            lastMouseX = e.clientX;
+            lastMouseY = e.clientY;
+
+            // If exhausted, block default interactions implicitly by overlay having pointer-events: all
+        });
+
         document.addEventListener('click', (e) => {
             if (!e.isTrusted) return; // Ignore programmatic clicks
 
