@@ -58,8 +58,8 @@
                     <div class="tweet-header">
                         <img src="https://pbs.twimg.com/profile_images/1416136577554608128/FtJy26eN_400x400.jpg" alt="Matthew Bubb" class="profile-pic">
                         <div class="user-info">
-                            <a href="https://twitter.com/TheBubbsy" target="_blank" class="username">Matthew Bubb</a>
-                            <a href="https://twitter.com/TheBubbsy" target="_blank" class="handle">@TheBubbsy</a>
+                            <a href="https://twitter.com/TheBubbsy" target="_blank" rel="noopener noreferrer" class="username">Matthew Bubb</a>
+                            <a href="https://twitter.com/TheBubbsy" target="_blank" rel="noopener noreferrer" class="handle">@TheBubbsy</a>
                         </div>
                     </div>
                     <div class="tweet-content">
@@ -117,78 +117,29 @@
         const closeButtons = document.querySelectorAll('.close-button');
 
         modalTriggers.forEach(trigger => {
-            trigger.dataset.progress = 0;
             trigger.addEventListener('click', () => {
                 const modalTarget = document.querySelector(trigger.dataset.modalTarget);
-                if (!modalTarget) return;
-                let progress = parseInt(trigger.dataset.progress) || 0;
-                progress += 10;
-                if (progress >= 100) {
-                    progress = 0;
-                    trigger.style.background = '#222';
+                if (modalTarget) {
                     modalTarget.style.display = 'block';
-                } else {
-                    trigger.style.background = `linear-gradient(90deg, #005588 ${progress}%, #222 ${progress}%)`;
                 }
-                trigger.dataset.progress = progress;
             });
         });
-
-        const drainInterval = setInterval(() => {
-            modalTriggers.forEach(trigger => {
-                let progress = parseInt(trigger.dataset.progress) || 0;
-                if (progress > 0) {
-                    progress = Math.max(0, progress - 5);
-                    trigger.dataset.progress = progress;
-                    if (progress === 0) {
-                        trigger.style.background = '#222';
-                    } else {
-                        trigger.style.background = `linear-gradient(90deg, #005588 ${progress}%, #222 ${progress}%)`;
-                    }
-                }
-            });
-        }, 100);
-
-        // Save drainInterval globally or attach a cleanup mechanism if needed
-        window.drainInterval = drainInterval;
 
         closeButtons.forEach(button => {
-            let dodgeCount = 0;
-
-            // Add event listeners directly for hover effects
-            button.addEventListener('mouseover', (e) => {
-                if (dodgeCount < 5) {
-                    const modalContent = button.closest('.modal-content');
-                    const maxX = modalContent.clientWidth - button.clientWidth;
-                    const maxY = modalContent.clientHeight - button.clientHeight;
-
-                    const randomX = Math.floor(Math.random() * maxX);
-                    const randomY = Math.floor(Math.random() * maxY);
-
-                    button.style.position = 'absolute';
-                    button.style.left = `${randomX}px`;
-                    button.style.top = `${randomY}px`;
-
-                    dodgeCount++;
-                }
-            });
-
             button.addEventListener('click', () => {
-                if (dodgeCount >= 5) {
-                    const modal = button.closest('.modal');
+                const modal = button.closest('.modal');
+                if (modal) {
                     modal.style.display = 'none';
-
-                    // Reset for next time
-                    setTimeout(() => {
-                        dodgeCount = 0;
-                        button.style.position = '';
-                        button.style.left = '';
-                        button.style.top = '';
-                    }, 500);
                 }
             });
         });
 
+        // Close modal when clicking outside content
+        window.addEventListener('click', (event) => {
+            if (event.target.classList.contains('modal')) {
+                event.target.style.display = 'none';
+            }
+        });
     </script>
 
     <!-- Modals -->
@@ -239,213 +190,4 @@
             <p>Closing a Jira ticket is often considered the most challenging task in software development. Matthew Bubb does it daily, with a smile. His efficiency in resolving complex issues is legendary, making him the undisputed Jira Master. Matthew Bubb, the ultimate problem solver.</p>
         </div>
     </div>
-
-    <!-- Anti-UX Slider Modal -->
-    <div id="modal-anti-ux-slider" class="modal" style="z-index: 1000000; background-color: rgba(26,26,26,0.98);">
-        <div class="modal-content" style="text-align: center; border: 2px solid #00aaff; box-shadow: 0 0 20px #00aaff;">
-            <h2 style="color: #00aaff; filter: none; margin-bottom: 20px;">Prove You Are Human</h2>
-            <p style="filter: none; margin-bottom: 30px;">To proceed, please calibrate the precision volume slider to exactly <strong id="target-slider-value" style="color: red; font-size: 1.5em; filter: none;"></strong>.</p>
-
-            <div style="margin: 40px 0; position: relative;">
-                <input type="range" id="anti-ux-range" min="0" max="100" step="0.01" value="0" style="width: 80%; cursor: none;">
-                <div style="margin-top: 20px; font-size: 1.2em;">
-                    Current Value: <span id="current-slider-value" style="font-family: monospace; filter: none; color: #aaa;">0.00</span>
-                </div>
-            </div>
-
-            <button id="submit-slider-btn" style="background: #222; border: 1px solid #00aaff; color: #00aaff; padding: 10px 20px; font-size: 1.1em; border-radius: 5px; cursor: none; filter: none; opacity: 0.5;" disabled>Verify & Proceed</button>
-        </div>
-    </div>
-
-    <script>
-        document.addEventListener('click', (e) => {
-            if (!e.isTrusted) return; // Ignore programmatic clicks
-
-            const target = e.target.closest('a, .modal-trigger, .close-button, #music-icon');
-            if (!target) return; // Only intercept interactive elements
-
-            // Ignore if we clicked our submit button
-            if (e.target.closest('#submit-slider-btn') || e.target.closest('#anti-ux-range')) return;
-
-            e.preventDefault();
-            e.stopPropagation();
-
-            // Set up anti-ux slider modal
-            pendingClickTarget = target;
-            sliderActive = true;
-            sliderTargetValue = +(Math.random() * 100).toFixed(2);
-            targetSliderValSpan.innerText = sliderTargetValue.toFixed(2);
-
-            antiUxSlider.value = 0;
-            currentSliderValSpan.innerText = '0.00';
-            currentSliderValSpan.style.color = '#aaa';
-
-            submitSliderBtn.disabled = true;
-            submitSliderBtn.style.opacity = '0.5';
-
-            antiUxModal.style.display = 'block';
-
-            // Original loading overlay moved to submitSliderBtn click handler
-        }, { capture: true });
-
-        // Original loading logic overlay function was replaced by slider modal invocation
-        // But we need to keep the event listener syntax correct:
-
-        // Palette's Anti-UX: High Precision Action Interceptor
-        let pendingClickTarget = null;
-        let sliderTargetValue = 0;
-        let sliderActive = false;
-
-        const antiUxModal = document.getElementById('modal-anti-ux-slider');
-        const antiUxSlider = document.getElementById('anti-ux-range');
-        const currentSliderValSpan = document.getElementById('current-slider-value');
-        const targetSliderValSpan = document.getElementById('target-slider-value');
-        const submitSliderBtn = document.getElementById('submit-slider-btn');
-
-        // Ensure slider behaves erratically (adds tiny amounts of jitter when moved)
-        antiUxSlider.addEventListener('input', (e) => {
-            if (!sliderActive) return;
-
-            let val = parseFloat(e.target.value);
-
-            // Random tiny jitter to make it impossible to stay on a value easily
-            const jitter = (Math.random() - 0.5) * 0.1;
-            val = Math.max(0, Math.min(100, val + jitter));
-
-            antiUxSlider.value = val;
-            currentSliderValSpan.innerText = val.toFixed(2);
-
-            // Check precision (within very tight bound)
-            if (Math.abs(val - sliderTargetValue) < 0.02) {
-                currentSliderValSpan.style.color = '#0f0';
-                submitSliderBtn.disabled = false;
-                submitSliderBtn.style.opacity = '1';
-                submitSliderBtn.style.cursor = 'none'; // still use mindful cursor
-            } else {
-                currentSliderValSpan.style.color = '#aaa';
-                submitSliderBtn.disabled = true;
-                submitSliderBtn.style.opacity = '0.5';
-            }
-        });
-
-        submitSliderBtn.addEventListener('click', (e) => {
-            if (!e.isTrusted && !sliderActive) return;
-
-            antiUxModal.style.display = 'none';
-            sliderActive = false;
-
-            if (pendingClickTarget) {
-                const target = pendingClickTarget;
-                pendingClickTarget = null;
-
-                // Now perform the original click logic
-                const overlay = document.createElement('div');
-                overlay.style.cssText = 'position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(26,26,26,0.95);color:#f4f4f4;display:flex;align-items:center;justify-content:center;z-index:999999;flex-direction:column;font-family:sans-serif;cursor:wait;';
-
-                let timeLeft = 3;
-                overlay.innerHTML = `
-                    <h2 style="font-size: 2rem; color: #00aaff;">Optimizing Enhanced User Experience™</h2>
-                    <p>Please wait <span id="waste-timer" style="color:red;font-weight:bold;font-size:1.5em;">${timeLeft}</span> seconds</p>
-                    <div style="width: 200px; height: 10px; border: 1px solid #333; margin-top: 20px; border-radius: 5px; overflow: hidden;">
-                        <div id="waste-bar" style="width: 0%; height: 100%; background: #00aaff; transition: width 1s linear;"></div>
-                    </div>
-                `;
-                document.body.appendChild(overlay);
-
-                setTimeout(() => {
-                    const bar = document.getElementById('waste-bar');
-                    if (bar) bar.style.width = '100%';
-                }, 50);
-
-                const int = setInterval(() => {
-                    timeLeft--;
-                    const t = document.getElementById('waste-timer');
-                    if (t) t.innerText = timeLeft;
-
-                    if (timeLeft <= 0) {
-                        clearInterval(int);
-                        if (document.body.contains(overlay)) {
-                            document.body.removeChild(overlay);
-                        }
-                        if (target.tagName.toLowerCase() === 'a') {
-                            if (target.target === '_blank') {
-                                window.open(target.href, '_blank');
-                            } else {
-                                window.location.href = target.href;
-                            }
-                        } else {
-                            target.dispatchEvent(new MouseEvent('click', {
-                                bubbles: true, cancelable: true, view: window
-                            }));
-                        }
-                    }
-                }, 1000);
-            }
-        });
-
-        // Palette's Anti-UX: Mindful Cursor
-        const mindfulCursor = document.createElement('div');
-        mindfulCursor.id = 'mindful-cursor';
-        document.body.appendChild(mindfulCursor);
-
-        document.addEventListener('mousemove', (e) => {
-            mindfulCursor.style.left = e.clientX + 'px';
-            mindfulCursor.style.top = e.clientY + 'px';
-        });
-
-        // Palette's Anti-UX: Molasses Scrolling
-        document.addEventListener('wheel', (e) => {
-            e.preventDefault();
-            // Scroll by a painfully small amount (5 pixels)
-            window.scrollBy({
-                top: e.deltaY > 0 ? 5 : -5,
-                left: 0,
-                behavior: 'smooth'
-            });
-            if (e.target.closest('#tos-box')) {
-                const box = e.target.closest('#tos-box');
-                box.scrollBy({ top: e.deltaY > 0 ? 5 : -5, behavior: 'smooth' });
-            }
-        }, { passive: false });
-
-        // Palette's Anti-UX: Mandatory Continuous Scrolling TOS
-        const tosBox = document.getElementById('tos-box');
-        const acceptBtn = document.getElementById('accept-tos-btn');
-        const tosModal = document.getElementById('tos-modal');
-        let tosTimer;
-        tosBox.addEventListener('scroll', () => {
-            clearTimeout(tosTimer);
-            if (tosBox.scrollHeight - tosBox.scrollTop <= tosBox.clientHeight + 5) {
-                acceptBtn.disabled = false;
-                acceptBtn.style.opacity = '1';
-                acceptBtn.style.cursor = 'pointer';
-            } else {
-                acceptBtn.disabled = true;
-                acceptBtn.style.opacity = '0.5';
-                acceptBtn.style.cursor = 'none';
-                tosTimer = setTimeout(() => {
-                    tosBox.scrollTo({ top: 0, behavior: 'smooth' });
-                }, 1000); // 1 second of pause and you lose progress
-            }
-        });
-        acceptBtn.addEventListener('click', (e) => {
-            if (!acceptBtn.disabled) {
-                tosModal.style.display = 'none';
-            }
-        });
-    </script>
-    <div id="tos-modal" class="modal" style="display: flex; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 10000000; align-items: center; justify-content: center;">
-        <div class="modal-content" style="background: #222; padding: 20px; border: 2px solid #00aaff; border-radius: 8px; width: 400px; text-align: center; color: #f4f4f4;">
-            <h2 style="color: #00aaff; filter: none; margin-bottom: 10px;">Mandatory Terms & Conditions</h2>
-            <p style="filter: none; margin-bottom: 20px;">You must actively read the entire terms to proceed. Do not stop scrolling.</p>
-            <div id="tos-box" style="height: 150px; overflow-y: scroll; scrollbar-width: none; -ms-overflow-style: none;">
-                <div style="height: 2000px; background: repeating-linear-gradient(0deg, #222, #2a2a2a 40px); padding: 10px;">
-                    <p style="filter: none; margin-bottom: 20px;">Section 1: The Wasting of Time...</p>
-                    <div style="margin-top: 1800px; color:#0f0; filter: none;">End of Terms.</div>
-                </div>
-            </div>
-            <button id="accept-tos-btn" disabled style="background: #222; border: 1px solid #00aaff; color: #00aaff; padding: 10px 20px; font-size: 1.1em; border-radius: 5px; cursor: none; filter: none; margin-top: 20px; opacity: 0.5;">Accept Terms</button>
-        </div>
-    </div>
-</body>
-</html>
+</html>
