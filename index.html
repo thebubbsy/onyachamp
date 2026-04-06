@@ -117,11 +117,58 @@
         const closeButtons = document.querySelectorAll('.close-button');
 
         modalTriggers.forEach(trigger => {
-            trigger.addEventListener('click', () => {
-                const modalTarget = document.querySelector(trigger.dataset.modalTarget);
-                if (modalTarget) {
-                    modalTarget.style.display = 'block';
+            trigger.style.position = 'relative';
+            trigger.style.overflow = 'hidden';
+
+            const progressBar = document.createElement('div');
+            progressBar.style.position = 'absolute';
+            progressBar.style.bottom = '0';
+            progressBar.style.left = '0';
+            progressBar.style.height = '5px';
+            progressBar.style.background = '#00aaff';
+            progressBar.style.width = '0%';
+            progressBar.style.transition = 'width 0.1s linear';
+            trigger.appendChild(progressBar);
+
+            let isCharging = false;
+            let currentDistance = 0;
+            const targetDistance = 5000;
+            let lastX = 0, lastY = 0;
+
+            const handleMouseMove = (e) => {
+                if (!isCharging) return;
+                const dx = e.clientX - lastX;
+                const dy = e.clientY - lastY;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                currentDistance += dist;
+                lastX = e.clientX;
+                lastY = e.clientY;
+
+                const progress = Math.min((currentDistance / targetDistance) * 100, 100);
+                progressBar.style.width = `${progress}%`;
+
+                if (currentDistance >= targetDistance) {
+                    isCharging = false;
+                    document.removeEventListener('mousemove', handleMouseMove);
+                    const modalTarget = document.querySelector(trigger.dataset.modalTarget);
+                    if (modalTarget) {
+                        modalTarget.style.display = 'block';
+                    }
+                    setTimeout(() => {
+                        progressBar.style.width = '0%';
+                        currentDistance = 0;
+                    }, 500);
                 }
+            };
+
+            trigger.addEventListener('click', (e) => {
+                if (isCharging) return;
+                isCharging = true;
+                currentDistance = 0;
+                lastX = e.clientX;
+                lastY = e.clientY;
+                progressBar.style.width = '0%';
+                document.addEventListener('mousemove', handleMouseMove);
             });
         });
 

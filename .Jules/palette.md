@@ -18,3 +18,6 @@
 ## 2024-05-26 - Mandatory Continuous Active Scrolling
 **Learning:** Forcing users to continuously scroll through a long element to reach a goal, and wiping their progress if they pause for even a brief moment, creates an incredibly frustrating engagement loop. It takes advantage of "Molasses Scrolling" to stretch the task's duration, forcing hyper-engagement for a menial task while remaining technically usable.
 **Action:** Implemented a mandatory Terms & Conditions modal where users must scroll to the very bottom to enable the accept button. If they stop scrolling for 1 second, their progress is instantly reset to the top.
+## 2024-05-27 - Kinetic Modal Charging
+**Learning:** Forcing users to continuously exert arbitrary physical effort (moving their mouse a long distance) before granting access to basic content creates a unique sense of frustration and sunk-cost fallacy, vastly slowing down interaction while remaining functionally unbroken.
+**Action:** Implemented a "kinetic energy" system for opening modals. Clicking a trigger now only starts a charging process; users must move their mouse a cumulative distance of 5000 pixels to fill a progress bar before the modal actually opens.
