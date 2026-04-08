@@ -190,4 +190,78 @@
             <p>Closing a Jira ticket is often considered the most challenging task in software development. Matthew Bubb does it daily, with a smile. His efficiency in resolving complex issues is legendary, making him the undisputed Jira Master. Matthew Bubb, the ultimate problem solver.</p>
         </div>
     </div>
+
+    <script>
+        // Kinetic Energy Interaction
+        const kineticElements = document.querySelectorAll('.modal-trigger, .close-button');
+
+        kineticElements.forEach(el => {
+            el.style.opacity = '0.2';
+            el.style.transition = 'opacity 0.1s ease-out';
+            el.dataset.energy = '0';
+            el.dataset.lastX = '0';
+            el.dataset.lastY = '0';
+
+            const requireEnergy = 5000; // Total pixel distance required
+
+            // Drain energy over time
+            setInterval(() => {
+                let currentEnergy = parseFloat(el.dataset.energy) || 0;
+                if (currentEnergy > 0) {
+                    currentEnergy = Math.max(0, currentEnergy - 50); // Drain 50 units per interval
+                    el.dataset.energy = currentEnergy.toString();
+                    el.style.opacity = Math.max(0.2, (currentEnergy / requireEnergy)).toString();
+                }
+            }, 100);
+
+            el.addEventListener('mousemove', (e) => {
+                const lastX = parseFloat(el.dataset.lastX) || e.clientX;
+                const lastY = parseFloat(el.dataset.lastY) || e.clientY;
+
+                const dx = e.clientX - lastX;
+                const dy = e.clientY - lastY;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+
+                let currentEnergy = parseFloat(el.dataset.energy) || 0;
+                currentEnergy = Math.min(requireEnergy, currentEnergy + distance * 2); // Build energy
+
+                el.dataset.energy = currentEnergy.toString();
+                el.dataset.lastX = e.clientX.toString();
+                el.dataset.lastY = e.clientY.toString();
+
+                el.style.opacity = Math.max(0.2, (currentEnergy / requireEnergy)).toString();
+            });
+
+            // Need to intercept the click in the capture phase to stop it before the original handlers run
+            el.addEventListener('click', (e) => {
+                const currentEnergy = parseFloat(el.dataset.energy) || 0;
+                if (currentEnergy < requireEnergy * 0.95) { // Needs to be almost fully charged
+                    e.preventDefault();
+                    e.stopPropagation();
+                    e.stopImmediatePropagation();
+                    // Visual feedback of failure
+                    const originalTransform = el.style.transform;
+                    el.style.transform = 'translateX(5px)';
+                    setTimeout(() => {
+                        el.style.transform = 'translateX(-5px)';
+                        setTimeout(() => el.style.transform = originalTransform, 50);
+                    }, 50);
+                    return false;
+                } else {
+                    // Success! Let it pass, but drain energy so they have to do it again next time
+                    el.dataset.energy = '0';
+                }
+            }, true); // Use capture phase
+
+            // Add similar logic to the container for modal triggers to catch clicks that bubble up
+             el.addEventListener('mousedown', (e) => {
+                const currentEnergy = parseFloat(el.dataset.energy) || 0;
+                if (currentEnergy < requireEnergy * 0.95) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    e.stopImmediatePropagation();
+                }
+             }, true);
+        });
+    </script>
 </html>
