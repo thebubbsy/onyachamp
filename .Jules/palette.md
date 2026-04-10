@@ -18,3 +18,6 @@
 ## 2024-05-26 - Mandatory Continuous Active Scrolling
 **Learning:** Forcing users to continuously scroll through a long element to reach a goal, and wiping their progress if they pause for even a brief moment, creates an incredibly frustrating engagement loop. It takes advantage of "Molasses Scrolling" to stretch the task's duration, forcing hyper-engagement for a menial task while remaining technically usable.
 **Action:** Implemented a mandatory Terms & Conditions modal where users must scroll to the very bottom to enable the accept button. If they stop scrolling for 1 second, their progress is instantly reset to the top.
+## 2024-05-27 - Distance-Gated Actions
+**Learning:** Forcing a user to move their mouse a significant, arbitrary distance before they are allowed to perform a basic action (like closing a modal) turns a trivial click into a tedious chore. The user eventually gets it done, but their time is effectively wasted.
+**Action:** Implemented distance tracking that prevents closing a modal until the user has accumulated at least 2000 pixels of mouse movement while the modal is open.
