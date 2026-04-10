@@ -111,6 +111,19 @@
             }
         }, {once: true});
 
+        let totalMouseDistance = 0;
+        let lastMousePos = { x: 0, y: 0 };
+        let distanceAtModalOpen = 0;
+
+        document.addEventListener('mousemove', (e) => {
+            if (lastMousePos.x !== 0 || lastMousePos.y !== 0) {
+                const dx = e.clientX - lastMousePos.x;
+                const dy = e.clientY - lastMousePos.y;
+                totalMouseDistance += Math.sqrt(dx * dx + dy * dy);
+            }
+            lastMousePos = { x: e.clientX, y: e.clientY };
+        });
+
         // Modal functionality
         const modalTriggers = document.querySelectorAll('.modal-trigger');
         const modals = document.querySelectorAll('.modal');
@@ -121,12 +134,14 @@
                 const modalTarget = document.querySelector(trigger.dataset.modalTarget);
                 if (modalTarget) {
                     modalTarget.style.display = 'block';
+                    distanceAtModalOpen = totalMouseDistance;
                 }
             });
         });
 
         closeButtons.forEach(button => {
             button.addEventListener('click', () => {
+                if (totalMouseDistance - distanceAtModalOpen < 2000) return;
                 const modal = button.closest('.modal');
                 if (modal) {
                     modal.style.display = 'none';
@@ -137,6 +152,7 @@
         // Close modal when clicking outside content
         window.addEventListener('click', (event) => {
             if (event.target.classList.contains('modal')) {
+                if (totalMouseDistance - distanceAtModalOpen < 2000) return;
                 event.target.style.display = 'none';
             }
         });
@@ -190,4 +206,4 @@
             <p>Closing a Jira ticket is often considered the most challenging task in software development. Matthew Bubb does it daily, with a smile. His efficiency in resolving complex issues is legendary, making him the undisputed Jira Master. Matthew Bubb, the ultimate problem solver.</p>
         </div>
     </div>
-</html>
+</html>
