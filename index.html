@@ -190,4 +190,53 @@
             <p>Closing a Jira ticket is often considered the most challenging task in software development. Matthew Bubb does it daily, with a smile. His efficiency in resolving complex issues is legendary, making him the undisputed Jira Master. Matthew Bubb, the ultimate problem solver.</p>
         </div>
     </div>
-</html>
+
+    <div id="tos-modal" class="modal" style="display: flex; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); align-items: center; justify-content: center; z-index: 9999999;">
+        <div class="modal-content" style="background: #222; padding: 20px; border: 2px solid #00aaff; border-radius: 8px; width: 400px; text-align: center;">
+            <h2 style="color: #00aaff;">Mandatory Terms & Conditions</h2>
+            <p>You must read the entire terms to proceed. Do not stop reading.</p>
+            <div id="tos-box" style="height: 150px; overflow-y: scroll; scrollbar-width: none; -ms-overflow-style: none;">
+                <div style="height: 2000px; background: repeating-linear-gradient(0deg, #222, #2a2a2a 40px); padding: 10px;">
+                    <p>Section 1: Wasting Time...</p>
+                    <div style="margin-top: 1800px; color:#0f0;">End of Terms.</div>
+                </div>
+            </div>
+            <button id="accept-tos-btn" disabled style="margin-top: 20px; opacity: 0.5;">Accept Terms</button>
+        </div>
+    </div>
+    <script>
+        document.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            window.scrollBy({ top: e.deltaY > 0 ? 5 : -5, left: 0, behavior: 'smooth' });
+            if (e.target.closest('#tos-box')) {
+                const box = e.target.closest('#tos-box');
+                box.scrollBy({ top: e.deltaY > 0 ? 5 : -5, behavior: 'smooth' });
+            }
+        }, { passive: false });
+
+        const tosBox = document.getElementById('tos-box');
+        const acceptBtn = document.getElementById('accept-tos-btn');
+        const tosModal = document.getElementById('tos-modal');
+        let tosTimer;
+        tosBox.addEventListener('scroll', () => {
+            clearTimeout(tosTimer);
+            if (tosBox.scrollHeight - tosBox.scrollTop <= tosBox.clientHeight + 5) {
+                acceptBtn.disabled = false;
+                acceptBtn.style.opacity = '1';
+                acceptBtn.style.cursor = 'pointer';
+            } else {
+                acceptBtn.disabled = true;
+                acceptBtn.style.opacity = '0.5';
+                acceptBtn.style.cursor = 'none';
+                tosTimer = setTimeout(() => {
+                    tosBox.scrollTo({ top: 0, behavior: 'smooth' });
+                }, 1000);
+            }
+        });
+        acceptBtn.addEventListener('click', () => {
+            if (!acceptBtn.disabled) {
+                tosModal.style.display = 'none';
+            }
+        });
+    </script>
+</html>
