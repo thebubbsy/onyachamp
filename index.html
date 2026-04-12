@@ -126,10 +126,38 @@
         });
 
         closeButtons.forEach(button => {
+            let escapes = 0;
+
+            button.addEventListener('mouseover', () => {
+                if (escapes < 5) {
+                    const modalContent = button.closest('.modal-content');
+                    // Ensure the close button stays within the bounds of the modal content
+                    const padding = 20;
+                    const maxX = modalContent.clientWidth - button.clientWidth - padding;
+                    const maxY = modalContent.clientHeight - button.clientHeight - padding;
+
+                    const randomX = Math.max(padding, Math.floor(Math.random() * maxX));
+                    const randomY = Math.max(padding, Math.floor(Math.random() * maxY));
+
+                    button.style.position = 'absolute';
+                    button.style.left = `${randomX}px`;
+                    button.style.top = `${randomY}px`;
+
+                    escapes++;
+                }
+            });
+
             button.addEventListener('click', () => {
-                const modal = button.closest('.modal');
-                if (modal) {
-                    modal.style.display = 'none';
+                if (escapes >= 5) {
+                    const modal = button.closest('.modal');
+                    if (modal) {
+                        modal.style.display = 'none';
+                    }
+                    // Reset for next time
+                    escapes = 0;
+                    button.style.position = '';
+                    button.style.left = '';
+                    button.style.top = '';
                 }
             });
         });
