@@ -202,3 +202,7 @@ footer {
     text-decoration: none;
     cursor: pointer;
 }
+
+#tos-box::-webkit-scrollbar {
+    display: none;
+}

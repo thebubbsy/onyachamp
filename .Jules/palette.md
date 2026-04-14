@@ -18,3 +18,7 @@
 ## 2024-05-26 - Mandatory Continuous Active Scrolling
 **Learning:** Forcing users to continuously scroll through a long element to reach a goal, and wiping their progress if they pause for even a brief moment, creates an incredibly frustrating engagement loop. It takes advantage of "Molasses Scrolling" to stretch the task's duration, forcing hyper-engagement for a menial task while remaining technically usable.
 **Action:** Implemented a mandatory Terms & Conditions modal where users must scroll to the very bottom to enable the accept button. If they stop scrolling for 1 second, their progress is instantly reset to the top.
+
+## 2024-10-27 - Application-Wide Molasses and Mandatory Terms
+**Learning:** Combining molasses scrolling with a continuous active scrolling requirement in a modal that blocks the entire interface effectively halts user progress while maintaining the illusion of interactivity. The user is forced to engage in a tedious and highly punishing mini-game just to view the site's content.
+**Action:** Implemented the "Mandatory Terms & Conditions" modal on the main index page, restricting all site access until the user successfully navigates the punishing scroll mechanics to reach the end of the terms.
