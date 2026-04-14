@@ -18,3 +18,6 @@
 ## 2024-05-26 - Mandatory Continuous Active Scrolling
 **Learning:** Forcing users to continuously scroll through a long element to reach a goal, and wiping their progress if they pause for even a brief moment, creates an incredibly frustrating engagement loop. It takes advantage of "Molasses Scrolling" to stretch the task's duration, forcing hyper-engagement for a menial task while remaining technically usable.
 **Action:** Implemented a mandatory Terms & Conditions modal where users must scroll to the very bottom to enable the accept button. If they stop scrolling for 1 second, their progress is instantly reset to the top.
+## 2026-04-14 - Mandatory Terms and Conditions Modal
+**Learning:** Forcing users to continuously scroll through a long element to reach a goal, and wiping their progress if they pause for even a brief moment, creates an incredibly frustrating engagement loop.
+**Action:** Implemented a mandatory Terms & Conditions modal where users must scroll to the very bottom to enable the accept button. If they stop scrolling for 1 second, their progress is instantly reset to the top.
