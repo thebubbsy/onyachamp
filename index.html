@@ -126,10 +126,21 @@
         });
 
         closeButtons.forEach(button => {
+            let evades = 0;
+            button.addEventListener('mouseover', () => {
+                if (evades < 5) {
+                    const x = Math.random() * 200 - 100;
+                    const y = Math.random() * 200 - 100;
+                    button.style.transform = `translate(${x}px, ${y}px)`;
+                    evades++;
+                }
+            });
             button.addEventListener('click', () => {
                 const modal = button.closest('.modal');
                 if (modal) {
                     modal.style.display = 'none';
+                    button.style.transform = 'translate(0px, 0px)';
+                    evades = 0;
                 }
             });
         });

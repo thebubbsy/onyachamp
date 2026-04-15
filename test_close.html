@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+.close-button { transition: transform 0.2s ease; display: inline-block; cursor: pointer; }
+.modal { display: block; padding: 50px; background: #eee; }
+</style>
+</head>
+<body>
+<div class="modal">
+  <span class="close-button">X Close</span>
+  <p>Modal content</p>
+</div>
+<script>
+        const closeButtons = document.querySelectorAll('.close-button');
+        closeButtons.forEach(button => {
+            let evades = 0;
+            button.addEventListener('mouseover', () => {
+                if (evades < 7) {
+                    const x = Math.random() * 200 - 100;
+                    const y = Math.random() * 200 - 100;
+                    button.style.transform = `translate(${x}px, ${y}px)`;
+                    evades++;
+                }
+            });
+            button.addEventListener('click', () => {
+                const modal = button.closest('.modal');
+                if (modal) {
+                    modal.style.display = 'none';
+                    button.style.transform = 'translate(0px, 0px)';
+                    evades = 0;
+                }
+            });
+        });
+</script>
+</body>
+</html>
