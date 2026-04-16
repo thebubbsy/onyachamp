@@ -22,3 +22,7 @@
 ## 2024-10-27 - Application-Wide Molasses and Mandatory Terms
 **Learning:** Combining molasses scrolling with a continuous active scrolling requirement in a modal that blocks the entire interface effectively halts user progress while maintaining the illusion of interactivity. The user is forced to engage in a tedious and highly punishing mini-game just to view the site's content.
 **Action:** Implemented the "Mandatory Terms & Conditions" modal on the main index page, restricting all site access until the user successfully navigates the punishing scroll mechanics to reach the end of the terms.
+
+## 2024-10-28 - Global Text Blur Implementation
+**Learning:** Applying a heavy blur to all textual content that slowly clears only on sustained hover severely degrades reading efficiency, turning simple browsing into a test of patience while maintaining bare-minimum functionality.
+**Action:** Implemented a global text blur via CSS on typography elements, requiring a 1-second hover delay and 3-second transition to read.
