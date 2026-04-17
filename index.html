@@ -248,6 +248,58 @@
                 // But wait, the site already doesn't have overflow hidden.
             }
         });
+
+        // Anti-UX Mandatory Long Press
+        const interactiveElements = document.querySelectorAll('.modal-trigger, #accept-tos-btn, .close-button, #music-icon, .tweet-footer i, a');
+        interactiveElements.forEach(el => {
+            let pressTimer;
+            let startProgressTimer;
+            let isHolding = false;
+            let heldLongEnough = false;
+
+            el.addEventListener('mousedown', (e) => {
+                if (e.button !== 0) return; // Only left click
+                isHolding = true;
+                heldLongEnough = false;
+                el.style.transition = 'outline 3s linear';
+                el.style.outline = '5px solid #00aaff';
+                el.style.outlineOffset = '2px';
+
+                pressTimer = setTimeout(() => {
+                    heldLongEnough = true;
+                    el.style.outline = '5px solid #00ff00'; // Green when ready
+                }, 3000);
+            });
+
+            const cancelHold = () => {
+                clearTimeout(pressTimer);
+                isHolding = false;
+                heldLongEnough = false;
+                el.style.transition = 'outline 0.1s linear';
+                el.style.outline = '0px solid transparent';
+            };
+
+            el.addEventListener('mouseup', (e) => {
+                if (isHolding && !heldLongEnough) {
+                    // Didn't hold long enough, prevent the click
+                    e.preventDefault();
+                    e.stopPropagation();
+                    e.stopImmediatePropagation();
+                }
+                cancelHold();
+            });
+
+            el.addEventListener('mouseleave', cancelHold);
+
+            el.addEventListener('click', (e) => {
+                if (!heldLongEnough) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    e.stopImmediatePropagation();
+                }
+                heldLongEnough = false; // Reset for next time
+            }, { capture: true }); // Use capture phase to intercept before actual click handlers
+        });
     </script>
 </body>
 </html>
