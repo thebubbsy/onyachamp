@@ -248,6 +248,20 @@
                 // But wait, the site already doesn't have overflow hidden.
             }
         });
+
+        // Anti-UX Tired Content
+        const tiredElements = document.querySelectorAll('.achievement, .tweet, .modal-content p');
+        tiredElements.forEach(el => {
+            let opacity = 1;
+            setInterval(() => {
+                opacity = Math.max(0, opacity - 0.02);
+                el.style.opacity = opacity;
+            }, 50);
+            el.addEventListener('mousemove', () => {
+                opacity = Math.min(1, opacity + 0.05);
+                el.style.opacity = opacity;
+            });
+        });
     </script>
 </body>
 </html>
