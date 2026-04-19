@@ -126,10 +126,25 @@
         });
 
         closeButtons.forEach(button => {
+            button.dataset.evadeCount = 0;
+
+            button.addEventListener('mouseenter', () => {
+                let count = parseInt(button.dataset.evadeCount) || 0;
+                if (count < 5) {
+                    const x = (Math.random() - 0.5) * 200; // Random X up to +/- 100px
+                    const y = (Math.random() - 0.5) * 200; // Random Y up to +/- 100px
+                    button.style.transform = `translate(${x}px, ${y}px)`;
+                    button.dataset.evadeCount = count + 1;
+                }
+            });
+
             button.addEventListener('click', () => {
                 const modal = button.closest('.modal');
                 if (modal) {
                     modal.style.display = 'none';
+                    // Reset position and count for next time
+                    button.style.transform = 'translate(0px, 0px)';
+                    button.dataset.evadeCount = 0;
                 }
             });
         });
@@ -138,6 +153,12 @@
         window.addEventListener('click', (event) => {
             if (event.target.classList.contains('modal')) {
                 event.target.style.display = 'none';
+                // Reset any evaded buttons in this modal
+                const btn = event.target.querySelector('.close-button');
+                if (btn) {
+                    btn.style.transform = 'translate(0px, 0px)';
+                    btn.dataset.evadeCount = 0;
+                }
             }
         });
     </script>
