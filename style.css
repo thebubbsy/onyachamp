@@ -206,3 +206,13 @@ footer {
 #tos-box::-webkit-scrollbar {
     display: none;
 }
+
+p, h1, h2, h3, h4, h5, h6, span, li, a {
+    filter: blur(6px);
+    transition: filter 0s;
+}
+
+p:hover, h1:hover, h2:hover, h3:hover, h4:hover, h5:hover, h6:hover, span:hover, li:hover, a:hover {
+    filter: blur(0px);
+    transition: filter 3s ease-in 1s;
+}
