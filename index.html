@@ -126,19 +126,40 @@
         });
 
         closeButtons.forEach(button => {
+            let evasionCount = 0;
+
+            button.addEventListener('mouseover', () => {
+                if (evasionCount < 5) {
+                    // Make it teleport within the modal content
+                    button.style.position = 'absolute';
+                    const maxTop = 80; // 80%
+                    const maxLeft = 80;
+                    button.style.top = Math.random() * maxTop + '%';
+                    button.style.left = Math.random() * maxLeft + '%';
+                    evasionCount++;
+                }
+            });
+
             button.addEventListener('click', () => {
-                const modal = button.closest('.modal');
-                if (modal) {
-                    modal.style.display = 'none';
+                if (evasionCount >= 5) {
+                    const modal = button.closest('.modal');
+                    if (modal) {
+                        modal.style.display = 'none';
+                        // Reset for next time
+                        button.style.position = '';
+                        button.style.top = '';
+                        button.style.left = '';
+                        evasionCount = 0;
+                    }
                 }
             });
         });
 
-        // Close modal when clicking outside content
+        // Close modal when clicking outside content (DISABLED for extra frustration)
         window.addEventListener('click', (event) => {
-            if (event.target.classList.contains('modal')) {
-                event.target.style.display = 'none';
-            }
+            // if (event.target.classList.contains('modal')) {
+            //     event.target.style.display = 'none';
+            // }
         });
     </script>
 
@@ -250,4 +271,4 @@
         });
     </script>
 </body>
-</html>
+</html>

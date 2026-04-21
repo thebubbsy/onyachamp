@@ -22,3 +22,7 @@
 ## 2024-10-27 - Application-Wide Molasses and Mandatory Terms
 **Learning:** Combining molasses scrolling with a continuous active scrolling requirement in a modal that blocks the entire interface effectively halts user progress while maintaining the illusion of interactivity. The user is forced to engage in a tedious and highly punishing mini-game just to view the site's content.
 **Action:** Implemented the "Mandatory Terms & Conditions" modal on the main index page, restricting all site access until the user successfully navigates the punishing scroll mechanics to reach the end of the terms.
+
+## 2026-04-21 - Evasive Close Buttons
+**Learning:** Forcing users to chase a moving target before they can perform a basic action like closing a modal significantly increases time-on-task and frustration, while remaining technically achievable.
+**Action:** Made modal close buttons teleport to random locations within the modal upon hover. The user must chase and hover over the button 5 times before it finally stays still long enough to be clicked. Disabled click-outside-to-close to enforce this interaction.
