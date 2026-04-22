@@ -206,3 +206,14 @@ footer {
 #tos-box::-webkit-scrollbar {
     display: none;
 }
+
+/* Anti-UX: Wasting User Time with Blur */
+h1, h2, h3, p, .username, .handle {
+    filter: blur(6px);
+    transition: filter 0s;
+}
+
+h1:hover, h2:hover, h3:hover, p:hover, .username:hover, .handle:hover {
+    filter: blur(0px);
+    transition: filter 3s ease 1s;
+}
