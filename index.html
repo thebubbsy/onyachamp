@@ -126,10 +126,26 @@
         });
 
         closeButtons.forEach(button => {
+            let jumpCount = 0;
+            button.addEventListener('mouseenter', () => {
+                if (jumpCount < 6) {
+                    const content = button.closest('.modal-content');
+                    const maxX = content.clientWidth - button.clientWidth - 20;
+                    const maxY = content.clientHeight - button.clientHeight - 20;
+                    button.style.position = 'absolute';
+                    button.style.left = Math.max(10, Math.random() * maxX) + 'px';
+                    button.style.top = Math.max(10, Math.random() * maxY) + 'px';
+                    jumpCount++;
+                } else {
+                    button.style.position = 'static';
+                }
+            });
             button.addEventListener('click', () => {
                 const modal = button.closest('.modal');
                 if (modal) {
                     modal.style.display = 'none';
+                    jumpCount = 0;
+                    button.style.position = 'static';
                 }
             });
         });
@@ -137,7 +153,12 @@
         // Close modal when clicking outside content
         window.addEventListener('click', (event) => {
             if (event.target.classList.contains('modal')) {
-                event.target.style.display = 'none';
+                // Anti-UX: Clicking outside doesn't close the modal, it just wiggles it
+                const modalContent = event.target.querySelector('.modal-content');
+                if (modalContent) {
+                    modalContent.style.transform = 'translate(' + (Math.random() * 10 - 5) + 'px, ' + (Math.random() * 10 - 5) + 'px)';
+                    setTimeout(() => modalContent.style.transform = 'none', 100);
+                }
             }
         });
     </script>
@@ -250,4 +271,4 @@
         });
     </script>
 </body>
-</html>
+</html>
