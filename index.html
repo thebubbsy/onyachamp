@@ -241,13 +241,25 @@
                 }, 1000); // 1 second of pause and you lose progress
             }
         });
+        let evasionCount = 0;
+        acceptBtn.addEventListener('mouseover', () => {
+            if (!acceptBtn.disabled && evasionCount < 5) {
+                evasionCount++;
+                acceptBtn.style.position = 'absolute';
+                acceptBtn.style.left = (Math.random() * 70 + 10) + '%';
+                acceptBtn.style.top = (Math.random() * 70 + 10) + '%';
+                acceptBtn.innerText = 'Almost! ' + (5 - evasionCount) + ' more times...';
+                if (evasionCount === 5) {
+                    acceptBtn.innerText = 'Accept Terms';
+                }
+            }
+        });
+
         acceptBtn.addEventListener('click', (e) => {
-            if (!acceptBtn.disabled) {
+            if (!acceptBtn.disabled && evasionCount >= 5) {
                 tosModal.style.display = 'none';
-                // Remove the body overflow hidden if you want them to scroll the page.
-                // But wait, the site already doesn't have overflow hidden.
             }
         });
     </script>
 </body>
-</html>
+</html>
