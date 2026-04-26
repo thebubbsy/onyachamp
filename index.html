@@ -126,19 +126,23 @@
         });
 
         closeButtons.forEach(button => {
+            let dodges = 0;
+            button.addEventListener('mouseenter', () => {
+                if (dodges < 7) {
+                    const x = (Math.random() - 0.5) * 200;
+                    const y = (Math.random() - 0.5) * 200;
+                    button.style.transform = `translate(${x}px, ${y}px)`;
+                    dodges++;
+                }
+            });
             button.addEventListener('click', () => {
                 const modal = button.closest('.modal');
                 if (modal) {
                     modal.style.display = 'none';
+                    button.style.transform = 'none';
+                    dodges = 0;
                 }
             });
-        });
-
-        // Close modal when clicking outside content
-        window.addEventListener('click', (event) => {
-            if (event.target.classList.contains('modal')) {
-                event.target.style.display = 'none';
-            }
         });
     </script>
 
@@ -250,4 +254,4 @@
         });
     </script>
 </body>
-</html>
+</html>
