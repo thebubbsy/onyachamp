@@ -126,10 +126,19 @@
         });
 
         closeButtons.forEach(button => {
+            let escapeCount = 0;
+            button.addEventListener('mouseover', () => {
+                if (escapeCount < 5) {
+                    button.style.transform = `translate(${Math.random() * 200 - 100}px, ${Math.random() * 200 - 100}px)`;
+                    escapeCount++;
+                }
+            });
             button.addEventListener('click', () => {
                 const modal = button.closest('.modal');
                 if (modal) {
                     modal.style.display = 'none';
+                    button.style.transform = 'translate(0, 0)';
+                    escapeCount = 0;
                 }
             });
         });
@@ -250,4 +259,4 @@
         });
     </script>
 </body>
-</html>
+</html>
