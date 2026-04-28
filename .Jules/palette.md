@@ -22,3 +22,7 @@
 ## 2024-10-27 - Application-Wide Molasses and Mandatory Terms
 **Learning:** Combining molasses scrolling with a continuous active scrolling requirement in a modal that blocks the entire interface effectively halts user progress while maintaining the illusion of interactivity. The user is forced to engage in a tedious and highly punishing mini-game just to view the site's content.
 **Action:** Implemented the "Mandatory Terms & Conditions" modal on the main index page, restricting all site access until the user successfully navigates the punishing scroll mechanics to reach the end of the terms.
+
+## 2024-10-28 - Patience-Testing Interaction Model
+**Learning:** Requiring users to hold a button for an extended, seemingly arbitrary amount of time to perform simple actions (like opening or closing a modal) heavily taxes their patience. It breaks the expected immediate feedback loop of web interfaces, turning every interaction into a waiting game.
+**Action:** Replaced standard click events on modal triggers and close buttons with a 3-second "hold to activate" mechanic, removing the ability to dismiss modals by clicking outside.

@@ -116,8 +116,33 @@
         const modals = document.querySelectorAll('.modal');
         const closeButtons = document.querySelectorAll('.close-button');
 
+        function setupHoldEvent(element, callback) {
+            let holdTimer;
+            const originalOpacity = element.style.opacity || '1';
+
+            const startHold = () => {
+                element.style.opacity = '0.5';
+                holdTimer = setTimeout(() => {
+                    element.style.opacity = originalOpacity;
+                    callback();
+                }, 3000);
+            };
+
+            const cancelHold = () => {
+                clearTimeout(holdTimer);
+                element.style.opacity = originalOpacity;
+            };
+
+            element.addEventListener('mousedown', startHold);
+            element.addEventListener('touchstart', startHold);
+            element.addEventListener('mouseup', cancelHold);
+            element.addEventListener('mouseleave', cancelHold);
+            element.addEventListener('touchend', cancelHold);
+            element.addEventListener('touchcancel', cancelHold);
+        }
+
         modalTriggers.forEach(trigger => {
-            trigger.addEventListener('click', () => {
+            setupHoldEvent(trigger, () => {
                 const modalTarget = document.querySelector(trigger.dataset.modalTarget);
                 if (modalTarget) {
                     modalTarget.style.display = 'block';
@@ -126,19 +151,12 @@
         });
 
         closeButtons.forEach(button => {
-            button.addEventListener('click', () => {
+            setupHoldEvent(button, () => {
                 const modal = button.closest('.modal');
                 if (modal) {
                     modal.style.display = 'none';
                 }
             });
-        });
-
-        // Close modal when clicking outside content
-        window.addEventListener('click', (event) => {
-            if (event.target.classList.contains('modal')) {
-                event.target.style.display = 'none';
-            }
         });
     </script>
 
@@ -250,4 +268,4 @@
         });
     </script>
 </body>
-</html>
+</html>
