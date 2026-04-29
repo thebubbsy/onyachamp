@@ -126,10 +126,21 @@
         });
 
         closeButtons.forEach(button => {
+            let moveCount = 0;
+            button.addEventListener('mouseenter', () => {
+                if (moveCount < 5) {
+                    const x = Math.floor(Math.random() * 100) - 50;
+                    const y = Math.floor(Math.random() * 100) - 50;
+                    button.style.transform = `translate(${x}px, ${y}px)`;
+                    moveCount++;
+                }
+            });
             button.addEventListener('click', () => {
                 const modal = button.closest('.modal');
                 if (modal) {
                     modal.style.display = 'none';
+                    button.style.transform = 'none';
+                    moveCount = 0;
                 }
             });
         });
@@ -250,4 +261,4 @@
         });
     </script>
 </body>
-</html>
+</html>
