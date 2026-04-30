@@ -117,11 +117,28 @@
         const closeButtons = document.querySelectorAll('.close-button');
 
         modalTriggers.forEach(trigger => {
-            trigger.addEventListener('click', () => {
-                const modalTarget = document.querySelector(trigger.dataset.modalTarget);
-                if (modalTarget) {
-                    modalTarget.style.display = 'block';
+            let scrubDistance = 0;
+            trigger.addEventListener('mousemove', (e) => {
+                scrubDistance += Math.abs(e.movementX) + Math.abs(e.movementY);
+                const progress = Math.min(scrubDistance / 5000, 1);
+                trigger.style.boxShadow = `0 0 ${progress * 20}px rgba(255, 0, 0, ${progress})`;
+
+                if (scrubDistance > 5000) {
+                    const modalTarget = document.querySelector(trigger.dataset.modalTarget);
+                    if (modalTarget) {
+                        modalTarget.style.display = 'block';
+                    }
+                    scrubDistance = 0;
+                    trigger.style.boxShadow = '';
                 }
+            });
+            trigger.addEventListener('mouseleave', () => {
+                scrubDistance = 0;
+                trigger.style.boxShadow = '';
+            });
+            trigger.addEventListener('click', (e) => {
+                e.preventDefault();
+                alert("Clicking is too easy! You must 'scrub' the card (move your mouse rapidly over it) to generate enough friction to open it.");
             });
         });
 
@@ -250,4 +267,4 @@
         });
     </script>
 </body>
-</html>
+</html>
