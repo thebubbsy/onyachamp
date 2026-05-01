@@ -22,3 +22,6 @@
 ## 2024-10-27 - Application-Wide Molasses and Mandatory Terms
 **Learning:** Combining molasses scrolling with a continuous active scrolling requirement in a modal that blocks the entire interface effectively halts user progress while maintaining the illusion of interactivity. The user is forced to engage in a tedious and highly punishing mini-game just to view the site's content.
 **Action:** Implemented the "Mandatory Terms & Conditions" modal on the main index page, restricting all site access until the user successfully navigates the punishing scroll mechanics to reach the end of the terms.
+## 2024-10-28 - Mindful Cursor Enforced Patience
+**Learning:** Hiding the system cursor and replacing it with a custom cursor element that heavily lags behind actual mouse movements forces the user into a state of heightened patience and drastically increases the time required to perform precise clicks, while still eventually allowing interaction.
+**Action:** Implement "mindful" custom cursors to reduce UI interaction speed and enforce mandatory "waiting periods" between mouse movements.
