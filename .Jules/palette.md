@@ -22,3 +22,6 @@
 ## 2024-10-27 - Application-Wide Molasses and Mandatory Terms
 **Learning:** Combining molasses scrolling with a continuous active scrolling requirement in a modal that blocks the entire interface effectively halts user progress while maintaining the illusion of interactivity. The user is forced to engage in a tedious and highly punishing mini-game just to view the site's content.
 **Action:** Implemented the "Mandatory Terms & Conditions" modal on the main index page, restricting all site access until the user successfully navigates the punishing scroll mechanics to reach the end of the terms.
+## 2024-10-28 - Hold to Close Modals
+**Learning:** Changing a simple click action into a continuous 3-second hold action to close a modal drastically increases user frustration. The visual feedback (scaling and color fading) provides the illusion of progress but forces the user to invest an unreasonable amount of time for a trivial task.
+**Action:** Implemented a 'hold to close' mechanism on all modal close buttons, requiring the user to continuously press the button for 3 seconds to trigger the close action, completely overriding the default click behavior.

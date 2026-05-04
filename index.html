@@ -126,11 +126,48 @@
         });
 
         closeButtons.forEach(button => {
-            button.addEventListener('click', () => {
-                const modal = button.closest('.modal');
-                if (modal) {
-                    modal.style.display = 'none';
-                }
+            let holdProgress = 0;
+            let holdInterval;
+
+            button.title = "Hold for 3 seconds to close";
+            button.style.userSelect = "none";
+
+            const updateVisuals = () => {
+                const percentage = holdProgress / 30;
+                button.style.transform = `scale(${1 - (percentage * 0.5)})`;
+                button.style.color = `rgba(255, ${255 * (1 - percentage)}, ${255 * (1 - percentage)}, 1)`;
+            };
+
+            button.addEventListener('mousedown', () => {
+                holdProgress = 0;
+                clearInterval(holdInterval);
+                holdInterval = setInterval(() => {
+                    holdProgress++;
+                    updateVisuals();
+                    if (holdProgress >= 30) {
+                        clearInterval(holdInterval);
+                        const modal = button.closest('.modal');
+                        if (modal) {
+                            modal.style.display = 'none';
+                        }
+                        holdProgress = 0;
+                        updateVisuals();
+                    }
+                }, 100);
+            });
+
+            const resetHold = () => {
+                clearInterval(holdInterval);
+                holdProgress = 0;
+                updateVisuals();
+            };
+
+            button.addEventListener('mouseup', resetHold);
+            button.addEventListener('mouseleave', resetHold);
+
+            button.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
             });
         });
 
@@ -250,4 +287,4 @@
         });
     </script>
 </body>
-</html>
+</html>
