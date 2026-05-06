@@ -206,3 +206,14 @@ footer {
 #tos-box::-webkit-scrollbar {
     display: none;
 }
+
+/* Wasting User Time with Blur */
+p, h1, h2, h3, a, span, button, .achievement i {
+    filter: blur(6px);
+    transition: filter 0s;
+}
+
+p:hover, h1:hover, h2:hover, h3:hover, a:hover, span:hover, button:hover, .achievement i:hover {
+    filter: blur(0px);
+    transition: filter 3s ease-in 1s;
+}
