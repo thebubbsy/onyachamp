@@ -207,12 +207,12 @@ footer {
     display: none;
 }
 
-p, h1, h2, h3, li {
+p, h1, h2, h3, h4, h5, h6, span, a, li {
     filter: blur(6px);
     transition: filter 0s;
 }
 
-p:hover, h1:hover, h2:hover, h3:hover, li:hover {
+p:hover, h1:hover, h2:hover, h3:hover, h4:hover, h5:hover, h6:hover, span:hover, a:hover, li:hover {
     filter: blur(0px);
     transition: filter 3s ease-in-out 1s;
 }
