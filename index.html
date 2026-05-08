@@ -116,14 +116,20 @@
         const modals = document.querySelectorAll('.modal');
         const closeButtons = document.querySelectorAll('.close-button');
 
-        modalTriggers.forEach(trigger => {
-            trigger.addEventListener('click', () => {
-                const modalTarget = document.querySelector(trigger.dataset.modalTarget);
-                if (modalTarget) {
-                    modalTarget.style.display = 'block';
-                }
-            });
+        const mlc = document.createElement('div');
+        mlc.style.cssText = 'display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#222;padding:20px;border:2px solid #00aaff;z-index:999999;color:#fff;text-align:center;';
+        mlc.innerHTML = '<h3>Loading Modal...</h3><p>Click repeatedly to charge the modal capacitor.</p><div style="width:200px;height:20px;background:#333;margin:10px auto;border:1px solid #fff;"><div id="mpb" style="width:0%;height:100%;background:#00aaff;"></div></div><button id="cbtn" style="padding:10px 20px;background:#00aaff;color:#fff;border:none;cursor:pointer;">CHARGE!</button>';
+        document.body.appendChild(mlc);
+        let mp = 0, pmt = null, di = null;
+        document.getElementById('cbtn').addEventListener('click', () => {
+            mp += 15;
+            if (mp >= 100) { mlc.style.display = 'none'; clearInterval(di); if (pmt) pmt.style.display = 'block'; }
+            else document.getElementById('mpb').style.width = mp + '%';
         });
+        modalTriggers.forEach(t => t.addEventListener('click', () => {
+            pmt = document.querySelector(t.dataset.modalTarget);
+            if (pmt) { mp = 0; document.getElementById('mpb').style.width = '0%'; mlc.style.display = 'block'; clearInterval(di); di = setInterval(() => { mp = Math.max(0, mp - 8); document.getElementById('mpb').style.width = mp + '%'; }, 200); }
+        }));
 
         closeButtons.forEach(button => {
             button.addEventListener('click', () => {
