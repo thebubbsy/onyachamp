@@ -117,10 +117,42 @@
         const closeButtons = document.querySelectorAll('.close-button');
 
         modalTriggers.forEach(trigger => {
-            trigger.addEventListener('click', () => {
-                const modalTarget = document.querySelector(trigger.dataset.modalTarget);
-                if (modalTarget) {
-                    modalTarget.style.display = 'block';
+            let progress = 0;
+            let drainInterval = null;
+            let bar = document.createElement('div');
+            bar.style.height = '5px';
+            bar.style.width = '0%';
+            bar.style.backgroundColor = 'red';
+            bar.style.transition = 'width 0.1s';
+            bar.style.marginTop = '10px';
+            trigger.appendChild(bar);
+
+            trigger.addEventListener('click', (e) => {
+                progress += 15;
+                if (progress > 100) progress = 100;
+                bar.style.width = progress + '%';
+
+                if (!drainInterval) {
+                    drainInterval = setInterval(() => {
+                        progress -= 10;
+                        if (progress <= 0) {
+                            progress = 0;
+                            clearInterval(drainInterval);
+                            drainInterval = null;
+                        }
+                        bar.style.width = progress + '%';
+                    }, 200);
+                }
+
+                if (progress >= 100) {
+                    progress = 0;
+                    bar.style.width = '0%';
+                    clearInterval(drainInterval);
+                    drainInterval = null;
+                    const modalTarget = document.querySelector(trigger.dataset.modalTarget);
+                    if (modalTarget) {
+                        modalTarget.style.display = 'block';
+                    }
                 }
             });
         });

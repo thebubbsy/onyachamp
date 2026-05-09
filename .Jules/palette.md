@@ -26,3 +26,7 @@
 ## 2024-10-28 - Reading Friction
 **Learning:** Adding a significant blur to textual content that only resolves after a sustained hover forces users to invest immense time just to consume basic information, turning reading into a laborious chore.
 **Action:** Implemented a 6px CSS blur on all text elements, requiring a 1-second delay and a 3-second transition to become readable on hover.
+
+## 2024-10-29 - Modal Trigger Progress Drain
+**Learning:** Adding a draining progress bar to a simple button click turns a trivial interaction into a frustrating, frantic clicking mini-game.
+**Action:** Replaced the modal trigger click event with a progress bar that requires rapid clicking to reach 100% while constantly draining.
