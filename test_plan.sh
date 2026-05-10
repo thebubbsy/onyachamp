@@ -1,1 +1,2 @@
-echo "Test plan script executed!"
+#!/bin/bash
+curl -I http://localhost:3000

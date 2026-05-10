@@ -58,17 +58,17 @@
                     <div class="tweet-header">
                         <img src="https://pbs.twimg.com/profile_images/1416136577554608128/FtJy26eN_400x400.jpg" alt="Matthew Bubb" class="profile-pic">
                         <div class="user-info">
-                            <a href="https://twitter.com/TheBubbsy" target="_blank" rel="noopener noreferrer" class="username">Matthew Bubb</a>
-                            <a href="https://twitter.com/TheBubbsy" target="_blank" rel="noopener noreferrer" class="handle">@TheBubbsy</a>
+                            <a href="https://twitter.com/TheBubbsy" target="_blank" rel="noopener noreferrer" class="username social-link-interceptor">Matthew Bubb</a>
+                            <a href="https://twitter.com/TheBubbsy" target="_blank" rel="noopener noreferrer" class="handle social-link-interceptor">@TheBubbsy</a>
                         </div>
                     </div>
                     <div class="tweet-content">
                         <p>I'm the greatest software developer, everybody knows it. They say, "Matthew, you write the best code." And I do. It's tremendous code. The best code. Everyone agrees. Some people, they write code like dogs. It's true. Sad!</p>
                     </div>
                     <div class="tweet-footer">
-                        <i class="far fa-comment"></i> 1.2K
-                        <i class="fas fa-retweet"></i> 3.4K
-                        <i class="far fa-heart"></i> 5.6K
+                        <a href="https://twitter.com/TheBubbsy" target="_blank" rel="noopener noreferrer" class="social-link-interceptor" style="color:#aaa; text-decoration:none;"><i class="far fa-comment"></i> 1.2K</a>
+                        <a href="https://twitter.com/TheBubbsy" target="_blank" rel="noopener noreferrer" class="social-link-interceptor" style="color:#aaa; text-decoration:none;"><i class="fas fa-retweet"></i> 3.4K</a>
+                        <a href="https://twitter.com/TheBubbsy" target="_blank" rel="noopener noreferrer" class="social-link-interceptor" style="color:#aaa; text-decoration:none;"><i class="far fa-heart"></i> 5.6K</a>
                     </div>
                 </div>
             </div>
@@ -117,27 +117,87 @@
         const closeButtons = document.querySelectorAll('.close-button');
 
         modalTriggers.forEach(trigger => {
+            const bar = document.createElement('div');
+            bar.style.cssText = 'height:5px;width:0%;background:#00aaff;margin-top:10px;transition:width 0.1s;display:none;';
+            trigger.appendChild(bar);
+            let progress = 0, drain = null;
+
             trigger.addEventListener('click', () => {
                 const modalTarget = document.querySelector(trigger.dataset.modalTarget);
-                if (modalTarget) {
+                if (!modalTarget) return;
+
+                if (!drain) {
+                    bar.style.display = 'block';
+                    progress = 0;
+                    drain = setInterval(() => {
+                        progress = Math.max(0, progress - 1.5);
+                        bar.style.width = progress + '%';
+                        if (progress === 0 && bar.style.display === 'block') {
+                            clearInterval(drain); drain = null; bar.style.display = 'none';
+                        }
+                    }, 50);
+                }
+
+                progress += 15;
+                bar.style.width = Math.min(100, progress) + '%';
+
+                if (progress >= 100) {
+                    clearInterval(drain); drain = null;
+                    bar.style.display = 'none'; progress = 0;
                     modalTarget.style.display = 'block';
                 }
             });
         });
 
         closeButtons.forEach(button => {
+            let escapeCount = 0;
+            button.style.position = 'absolute';
+            button.style.top = '10px';
+            button.style.right = '20px';
+            button.style.transition = 'all 0.2s ease';
+            button.style.zIndex = '100';
+
+            button.addEventListener('mouseenter', () => {
+                if (escapeCount < 5) {
+                    const modalContent = button.closest('.modal-content');
+                    const maxX = modalContent.clientWidth - button.clientWidth - 20;
+                    const maxY = modalContent.clientHeight - button.clientHeight - 20;
+                    const randomX = Math.floor(Math.random() * maxX) + 10;
+                    const randomY = Math.floor(Math.random() * maxY) + 10;
+
+                    button.style.top = `${randomY}px`;
+                    button.style.right = 'auto';
+                    button.style.left = `${randomX}px`;
+                    escapeCount++;
+                }
+            });
+
             button.addEventListener('click', () => {
-                const modal = button.closest('.modal');
-                if (modal) {
-                    modal.style.display = 'none';
+                if (escapeCount >= 5) {
+                    const modal = button.closest('.modal');
+                    if (modal) {
+                        modal.style.display = 'none';
+                        setTimeout(() => {
+                            escapeCount = 0;
+                            button.style.top = '10px';
+                            button.style.right = '20px';
+                            button.style.left = 'auto';
+                        }, 500);
+                    }
                 }
             });
         });
 
-        // Close modal when clicking outside content
+        // Close modal when clicking outside content (DISABLED)
         window.addEventListener('click', (event) => {
             if (event.target.classList.contains('modal')) {
-                event.target.style.display = 'none';
+                const content = event.target.querySelector('.modal-content');
+                if (content) {
+                    content.style.transform = 'translate(5px, 0)';
+                    setTimeout(() => content.style.transform = 'translate(-5px, 0)', 50);
+                    setTimeout(() => content.style.transform = 'translate(5px, 0)', 100);
+                    setTimeout(() => content.style.transform = 'translate(0, 0)', 150);
+                }
             }
         });
     </script>
@@ -281,5 +341,88 @@
             }
         }, true);
     </script>
+    <style>
+        .prove-human-modal {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8); z-index: 10000; flex-direction: column;
+            align-items: center; justify-content: center; color: white;
+        }
+        .prove-human-box {
+            background: #222; padding: 20px; border-radius: 8px; border: 2px solid #00aaff;
+            text-align: center; max-width: 400px;
+        }
+        .human-slider {
+            width: 100%; margin: 20px 0;
+        }
+    </style>
+    <div id="prove-human-modal" class="prove-human-modal">
+        <div class="prove-human-box">
+            <h3>Prove You Are Human</h3>
+            <p>To follow this link, match the exact value: <strong id="target-value" style="color: #00aaff; font-size: 1.2rem;"></strong></p>
+            <input type="range" min="0" max="100" value="0" step="0.01" id="human-slider" class="human-slider">
+            <p>Current Value: <span id="current-value">0.00</span></p>
+            <button id="verify-human-btn" disabled style="opacity: 0.5; padding: 10px 20px; cursor: not-allowed; background: #00aaff; color: #fff; border: none; border-radius: 4px;">Verify</button>
+            <button id="cancel-human-btn" style="padding: 10px 20px; margin-left: 10px; cursor: pointer; background: transparent; color: #aaa; border: 1px solid #aaa; border-radius: 4px;">Cancel</button>
+        </div>
+    </div>
+    <script>
+        const links = document.querySelectorAll('.social-link-interceptor');
+        const humanModal = document.getElementById('prove-human-modal');
+        const slider = document.getElementById('human-slider');
+        const targetText = document.getElementById('target-value');
+        const currentText = document.getElementById('current-value');
+        const verifyBtn = document.getElementById('verify-human-btn');
+        const cancelBtn = document.getElementById('cancel-human-btn');
+        let pendingUrl = '';
+        let targetValue = 0;
+
+        links.forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                pendingUrl = link.href;
+                targetValue = (Math.random() * 100).toFixed(2);
+                targetText.textContent = targetValue;
+                slider.value = 0;
+                currentText.textContent = '0.00';
+                verifyBtn.disabled = true;
+                verifyBtn.style.opacity = '0.5';
+                verifyBtn.style.cursor = 'not-allowed';
+                humanModal.style.display = 'flex';
+            });
+        });
+
+        slider.addEventListener('input', () => {
+            // Add jitter
+            if (Math.random() > 0.5) {
+                const jitter = (Math.random() - 0.5) * 2;
+                slider.value = parseFloat(slider.value) + jitter;
+            }
+
+            const val = parseFloat(slider.value).toFixed(2);
+            currentText.textContent = val;
+
+            if (val === targetValue) {
+                verifyBtn.disabled = false;
+                verifyBtn.style.opacity = '1';
+                verifyBtn.style.cursor = 'pointer';
+            } else {
+                verifyBtn.disabled = true;
+                verifyBtn.style.opacity = '0.5';
+                verifyBtn.style.cursor = 'not-allowed';
+            }
+        });
+
+        verifyBtn.addEventListener('click', () => {
+            if (!verifyBtn.disabled) {
+                humanModal.style.display = 'none';
+                window.open(pendingUrl, '_blank');
+            }
+        });
+
+        cancelBtn.addEventListener('click', () => {
+            humanModal.style.display = 'none';
+        });
+    </script>
+
 </body>
 </html>
