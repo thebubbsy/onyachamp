@@ -118,18 +118,38 @@
 
         modalTriggers.forEach(trigger => {
             trigger.addEventListener('click', () => {
-                const modalTarget = document.querySelector(trigger.dataset.modalTarget);
-                if (modalTarget) {
-                    modalTarget.style.display = 'block';
-                }
+                const originalText = trigger.innerHTML;
+                trigger.innerHTML = '<div style="text-align:center; padding: 20px;"><i class="fas fa-spinner fa-spin" style="font-size:2rem; margin-bottom:10px;"></i><br>Processing Request...</div>';
+                setTimeout(() => {
+                    trigger.innerHTML = originalText;
+                    const modalTarget = document.querySelector(trigger.dataset.modalTarget);
+                    if (modalTarget) {
+                        modalTarget.style.display = 'block';
+                    }
+                }, 2000);
             });
         });
 
         closeButtons.forEach(button => {
+            button.dataset.clicksLeft = 5;
             button.addEventListener('click', () => {
-                const modal = button.closest('.modal');
-                if (modal) {
-                    modal.style.display = 'none';
+                let clicks = parseInt(button.dataset.clicksLeft) - 1;
+                if (clicks > 0) {
+                    button.dataset.clicksLeft = clicks;
+                    button.style.position = 'absolute';
+                    button.style.top = Math.random() * 80 + 10 + '%';
+                    button.style.left = Math.random() * 80 + 10 + '%';
+                    button.style.transform = `scale(${clicks / 5})`;
+                    button.innerHTML = `&times; <span style="font-size:12px">${clicks}</span>`;
+                } else {
+                    const modal = button.closest('.modal');
+                    if (modal) {
+                        modal.style.display = 'none';
+                    }
+                    button.dataset.clicksLeft = 5;
+                    button.innerHTML = '&times;';
+                    button.style.position = 'static';
+                    button.style.transform = 'scale(1)';
                 }
             });
         });
@@ -137,7 +157,11 @@
         // Close modal when clicking outside content
         window.addEventListener('click', (event) => {
             if (event.target.classList.contains('modal')) {
-                event.target.style.display = 'none';
+                const content = event.target.querySelector('.modal-content');
+                if (content) {
+                    content.style.transform = `translate(${Math.random() * 20 - 10}px, ${Math.random() * 20 - 10}px)`;
+                    setTimeout(() => content.style.transform = 'none', 100);
+                }
             }
         });
     </script>

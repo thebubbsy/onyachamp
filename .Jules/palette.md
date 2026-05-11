@@ -26,3 +26,7 @@
 ## 2024-10-28 - Reading Friction
 **Learning:** Adding a significant blur to textual content that only resolves after a sustained hover forces users to invest immense time just to consume basic information, turning reading into a laborious chore.
 **Action:** Implemented a 6px CSS blur on all text elements, requiring a 1-second delay and a 3-second transition to become readable on hover.
+
+## 2024-05-27 - Implement Intentional Friction in Interactions
+**Learning:** Adding arbitrary delays and evasive UI elements forces users to invest significantly more time for simple tasks.
+**Action:** When asked to waste time, replace instant gratification with delayed, multi-step mini-games for basic actions like closing a modal.
