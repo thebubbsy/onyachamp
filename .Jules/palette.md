@@ -26,3 +26,7 @@
 ## 2024-10-28 - Reading Friction
 **Learning:** Adding a significant blur to textual content that only resolves after a sustained hover forces users to invest immense time just to consume basic information, turning reading into a laborious chore.
 **Action:** Implemented a 6px CSS blur on all text elements, requiring a 1-second delay and a 3-second transition to become readable on hover.
+
+## 2024-10-30 - Evasive Manual Loading Bar
+**Learning:** Combining a manual loading bar with slight evasive jittering forces the user to balance rapid clicking with careful mouse movements, exploiting the mindful cursor's click interception to drastically increase the time and effort required to open a simple modal.
+**Action:** Implemented an evasive manual loading bar on modal triggers. Users must rapidly click to overcome a constant progress drain, but each click causes the element to jitter. If they move the mouse too quickly to track it, the mindful cursor intercepts their clicks, forcing a frustratingly slow and deliberate engagement loop.
