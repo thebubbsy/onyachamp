@@ -116,11 +116,50 @@
         const modals = document.querySelectorAll('.modal');
         const closeButtons = document.querySelectorAll('.close-button');
 
+        const manualLoadModal = document.getElementById('manual-load-modal');
+        const manualLoadProgress = document.getElementById('manual-load-progress');
+        const manualLoadCrank = document.getElementById('manual-load-crank');
+        let loadProgress = 0;
+        let drainInterval;
+        let pendingModalTarget = null;
+
+        function startDrain() {
+            if (drainInterval) clearInterval(drainInterval);
+            drainInterval = setInterval(() => {
+                if (loadProgress > 0) {
+                    loadProgress -= 2;
+                    if (loadProgress < 0) loadProgress = 0;
+                    manualLoadProgress.style.width = loadProgress + '%';
+                }
+            }, 100);
+        }
+
+        manualLoadCrank.addEventListener('click', (e) => {
+            // Must prevent default to avoid triggering the mindful cursor click penalty easily? The mindful cursor is document-level.
+            loadProgress += 15;
+            if (loadProgress >= 100) {
+                loadProgress = 100;
+                manualLoadProgress.style.width = '100%';
+                clearInterval(drainInterval);
+                setTimeout(() => {
+                    manualLoadModal.style.display = 'none';
+                    if (pendingModalTarget) {
+                        pendingModalTarget.style.display = 'block';
+                    }
+                }, 300);
+            } else {
+                manualLoadProgress.style.width = loadProgress + '%';
+            }
+        });
+
         modalTriggers.forEach(trigger => {
             trigger.addEventListener('click', () => {
-                const modalTarget = document.querySelector(trigger.dataset.modalTarget);
-                if (modalTarget) {
-                    modalTarget.style.display = 'block';
+                pendingModalTarget = document.querySelector(trigger.dataset.modalTarget);
+                if (pendingModalTarget) {
+                    loadProgress = 0;
+                    manualLoadProgress.style.width = '0%';
+                    manualLoadModal.style.display = 'flex';
+                    startDrain();
                 }
             });
         });
@@ -188,6 +227,18 @@
             <span class="close-button">&times;</span>
             <h2>Jira Master Details</h2>
             <p>Closing a Jira ticket is often considered the most challenging task in software development. Matthew Bubb does it daily, with a smile. His efficiency in resolving complex issues is legendary, making him the undisputed Jira Master. Matthew Bubb, the ultimate problem solver.</p>
+        </div>
+    </div>
+
+    <!-- Anti-UX Manual Loading Modal -->
+    <div id="manual-load-modal" class="modal" style="display: none; align-items: center; justify-content: center; z-index: 999999; background: rgba(0,0,0,0.8);">
+        <div class="modal-content" style="text-align: center; border: 2px solid #ffaa00;">
+            <h2 style="color: #ffaa00;">Warming up modal...</h2>
+            <p>Please crank the handle to generate enough power to open the modal.</p>
+            <div style="width: 100%; background: #333; height: 20px; border-radius: 10px; margin: 20px 0; overflow: hidden; position: relative;">
+                <div id="manual-load-progress" style="width: 0%; height: 100%; background: #ffaa00; transition: width 0.1s;"></div>
+            </div>
+            <button id="manual-load-crank" style="padding: 15px 30px; font-size: 1.2rem; cursor: pointer; background: #ffaa00; color: #111; border: none; border-radius: 5px; font-weight: bold;">CRANK</button>
         </div>
     </div>
 
