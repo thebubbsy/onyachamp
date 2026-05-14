@@ -126,18 +126,37 @@
         });
 
         closeButtons.forEach(button => {
-            button.addEventListener('click', () => {
-                const modal = button.closest('.modal');
-                if (modal) {
-                    modal.style.display = 'none';
-                }
+            let pressTimer;
+            const startPress = () => {
+                button.style.fontSize = "12px";
+                button.innerHTML = "Wait 3s";
+                pressTimer = setTimeout(() => {
+                    const modal = button.closest('.modal');
+                    if (modal) {
+                        modal.style.display = 'none';
+                        button.innerHTML = "&times;";
+                        button.style.fontSize = "28px";
+                    }
+                }, 3000);
+            };
+            const endPress = () => {
+                clearTimeout(pressTimer);
+                button.innerHTML = "&times;";
+                button.style.fontSize = "28px";
+            };
+
+            button.addEventListener('mousedown', startPress);
+            button.addEventListener('touchstart', startPress);
+            ['mouseup', 'mouseleave', 'touchend'].forEach(evt => {
+                button.addEventListener(evt, endPress);
             });
+            button.addEventListener('click', (e) => e.preventDefault());
         });
 
-        // Close modal when clicking outside content
+        // Helpful anti-UX feature
         window.addEventListener('click', (event) => {
             if (event.target.classList.contains('modal')) {
-                event.target.style.display = 'none';
+                alert("Accessibility feature: Please HOLD the close button for 3 seconds to prevent accidental closures.");
             }
         });
     </script>
