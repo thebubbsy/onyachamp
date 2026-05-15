@@ -281,5 +281,89 @@
             }
         }, true);
     </script>
+
+    <!-- High Precision Action Interceptor -->
+    <div id="captcha-modal" class="modal" style="display: none; align-items: center; justify-content: center; z-index: 10000000; background: rgba(0,0,0,0.9);">
+        <div class="modal-content" style="text-align: center; border: 2px solid #ff0055; color: white;">
+            <h2 style="color: #ff0055;">Prove You Are Human</h2>
+            <p>Match the target value exactly to proceed with your click.</p>
+            <div style="font-size: 24px; margin: 20px;">Target: <span id="captcha-target">50.00</span></div>
+            <div style="font-size: 24px; margin: 20px;">Current: <span id="captcha-current">0.00</span></div>
+            <input type="range" id="captcha-slider" min="0" max="100" step="0.01" value="0" style="width: 80%;">
+            <br>
+            <button id="captcha-verify-btn" style="margin-top: 20px; opacity: 1; cursor: pointer; color: black; padding: 10px 20px;">Verify</button>
+        </div>
+    </div>
+
+    <script>
+        const captchaModal = document.getElementById('captcha-modal');
+        const captchaTargetSpan = document.getElementById('captcha-target');
+        const captchaCurrentSpan = document.getElementById('captcha-current');
+        const captchaSlider = document.getElementById('captcha-slider');
+        const captchaVerifyBtn = document.getElementById('captcha-verify-btn');
+
+        let pendingClickEvent = null;
+        let captchaTargetValue = "0.00";
+
+        document.addEventListener('click', (e) => {
+            if (e.target.closest('#captcha-modal')) return;
+
+            const isInteractable = e.target.closest('.modal-trigger') ||
+                                   e.target.closest('.close-button') ||
+                                   e.target.closest('#music-icon');
+
+            if (isInteractable) {
+                if (e.isCaptchaVerified) return;
+
+                e.preventDefault();
+                e.stopPropagation();
+
+                pendingClickEvent = {
+                    target: e.target.closest('.modal-trigger') || e.target.closest('.close-button') || e.target,
+                    clientX: e.clientX,
+                    clientY: e.clientY
+                };
+
+                captchaTargetValue = (Math.random() * 100).toFixed(2);
+                captchaTargetSpan.textContent = captchaTargetValue;
+                captchaSlider.value = 0;
+                captchaCurrentSpan.textContent = "0.00";
+
+                captchaModal.style.display = 'flex';
+            }
+        }, true);
+
+        captchaSlider.addEventListener('input', (e) => {
+            let val = parseFloat(captchaSlider.value);
+            if (Math.random() > 0.3) {
+                val += (Math.random() * 2 - 1);
+                val = Math.max(0, Math.min(100, val));
+                captchaSlider.value = val;
+            }
+            captchaCurrentSpan.textContent = parseFloat(captchaSlider.value).toFixed(2);
+        });
+
+        captchaVerifyBtn.addEventListener('click', () => {
+            if (parseFloat(captchaSlider.value).toFixed(2) === captchaTargetValue) {
+                captchaModal.style.display = 'none';
+                if (pendingClickEvent) {
+                    const verifiedEvent = new MouseEvent('click', {
+                        view: window,
+                        bubbles: true,
+                        cancelable: true,
+                        clientX: pendingClickEvent.clientX,
+                        clientY: pendingClickEvent.clientY
+                    });
+                    verifiedEvent.isCaptchaVerified = true;
+                    pendingClickEvent.target.dispatchEvent(verifiedEvent);
+                    pendingClickEvent = null;
+                }
+            } else {
+                alert("Verification failed. Values must match exactly.");
+                captchaSlider.value = 0;
+                captchaCurrentSpan.textContent = "0.00";
+            }
+        });
+    </script>
 </body>
 </html>
