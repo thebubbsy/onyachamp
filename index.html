@@ -117,10 +117,55 @@
         const closeButtons = document.querySelectorAll('.close-button');
 
         modalTriggers.forEach(trigger => {
-            trigger.addEventListener('click', () => {
-                const modalTarget = document.querySelector(trigger.dataset.modalTarget);
-                if (modalTarget) {
-                    modalTarget.style.display = 'block';
+            let progress = 0;
+            let drainInterval = null;
+            let progressBarContainer = null;
+            let progressBar = null;
+
+            trigger.addEventListener('click', (e) => {
+                if (!progressBarContainer) {
+                    progressBarContainer = document.createElement('div');
+                    progressBarContainer.style.width = '100%';
+                    progressBarContainer.style.height = '10px';
+                    progressBarContainer.style.backgroundColor = '#444';
+                    progressBarContainer.style.marginTop = '10px';
+                    progressBarContainer.style.borderRadius = '5px';
+                    progressBarContainer.style.overflow = 'hidden';
+
+                    progressBar = document.createElement('div');
+                    progressBar.style.width = '0%';
+                    progressBar.style.height = '100%';
+                    progressBar.style.backgroundColor = '#00aaff';
+                    progressBar.style.transition = 'width 0.1s linear';
+
+                    progressBarContainer.appendChild(progressBar);
+                    trigger.appendChild(progressBarContainer);
+
+                    drainInterval = setInterval(() => {
+                        if (progress > 0) {
+                            progress -= 2;
+                            if (progress < 0) progress = 0;
+                            progressBar.style.width = progress + '%';
+                        }
+                    }, 100);
+                }
+
+                progress += 15;
+                if (progress >= 100) {
+                    progress = 100;
+                    progressBar.style.width = progress + '%';
+                    clearInterval(drainInterval);
+                    setTimeout(() => {
+                        const modalTarget = document.querySelector(trigger.dataset.modalTarget);
+                        if (modalTarget) {
+                            modalTarget.style.display = 'block';
+                        }
+                        progress = 0;
+                        progressBarContainer.remove();
+                        progressBarContainer = null;
+                    }, 200);
+                } else {
+                    progressBar.style.width = progress + '%';
                 }
             });
         });
