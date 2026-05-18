@@ -116,13 +116,48 @@
         const modals = document.querySelectorAll('.modal');
         const closeButtons = document.querySelectorAll('.close-button');
 
+        let currentLoadTarget = null;
+        let loadProgress = 0;
+        let loadInterval = null;
+
         modalTriggers.forEach(trigger => {
             trigger.addEventListener('click', () => {
-                const modalTarget = document.querySelector(trigger.dataset.modalTarget);
-                if (modalTarget) {
-                    modalTarget.style.display = 'block';
+                const manualLoadModal = document.getElementById('manual-load-modal');
+                const manualLoadBar = document.getElementById('manual-load-bar');
+                currentLoadTarget = document.querySelector(trigger.dataset.modalTarget);
+                if (currentLoadTarget) {
+                    manualLoadModal.style.display = 'flex';
+                    loadProgress = 0;
+                    manualLoadBar.style.width = '0%';
+                    clearInterval(loadInterval);
+                    loadInterval = setInterval(() => {
+                        if (manualLoadModal.style.display === 'flex') {
+                            loadProgress -= 3; // Constant drain
+                            if (loadProgress < 0) loadProgress = 0;
+                            manualLoadBar.style.width = loadProgress + '%';
+                        } else {
+                            clearInterval(loadInterval);
+                        }
+                    }, 100);
                 }
             });
+        });
+
+        document.addEventListener('click', (e) => {
+            if (e.target.id === 'charge-btn') {
+                const manualLoadModal = document.getElementById('manual-load-modal');
+                const manualLoadBar = document.getElementById('manual-load-bar');
+                loadProgress += 15; // Manual charge
+                if (loadProgress >= 100) {
+                    loadProgress = 100;
+                    manualLoadModal.style.display = 'none';
+                    if (currentLoadTarget) {
+                        currentLoadTarget.style.display = 'block';
+                    }
+                    clearInterval(loadInterval);
+                }
+                manualLoadBar.style.width = loadProgress + '%';
+            }
         });
 
         closeButtons.forEach(button => {
@@ -143,6 +178,17 @@
     </script>
 
     <!-- Modals -->
+    <!-- Manual Loading Modal -->
+    <div id="manual-load-modal" class="modal" style="display: none; align-items: center; justify-content: center; z-index: 9999998; background: rgba(0,0,0,0.9);">
+        <div class="modal-content" style="text-align: center; border: 2px solid #ff0055;">
+            <h2 style="color: #ff0055; filter: none;">Manual Loading Required</h2>
+            <p style="filter: none;">Please manually charge the modal to view its contents. Keep clicking!</p>
+            <div style="width: 100%; background: #333; height: 30px; border-radius: 15px; margin: 20px 0; overflow: hidden;">
+                <div id="manual-load-bar" style="width: 0%; background: #ff0055; height: 100%; transition: width 0.1s;"></div>
+            </div>
+            <button id="charge-btn" style="padding: 10px 20px; font-size: 1.2rem; cursor: pointer; filter: none; background: #222; color: #fff; border: 1px solid #ff0055; border-radius: 5px;">CHARGE (+15%)</button>
+        </div>
+    </div>
     <div id="modal-bubblesort" class="modal">
         <div class="modal-content">
             <span class="close-button">&times;</span>
