@@ -126,19 +126,39 @@
         });
 
         closeButtons.forEach(button => {
-            button.addEventListener('click', () => {
-                const modal = button.closest('.modal');
-                if (modal) {
-                    modal.style.display = 'none';
-                }
-            });
-        });
+            let holdTimer;
+            let progress = 0;
+            let progressInterval;
 
-        // Close modal when clicking outside content
-        window.addEventListener('click', (event) => {
-            if (event.target.classList.contains('modal')) {
-                event.target.style.display = 'none';
-            }
+            const resetBtn = () => {
+                clearTimeout(holdTimer);
+                clearInterval(progressInterval);
+                progress = 0;
+                button.innerHTML = '&times;';
+                button.style.fontSize = '';
+            };
+
+            button.addEventListener('mousedown', () => {
+                button.style.fontSize = '12px';
+                button.textContent = 'Hold (0%)';
+                progressInterval = setInterval(() => {
+                    progress += 2;
+                    if (progress <= 100) {
+                        button.textContent = `Hold (${progress}%)`;
+                    }
+                }, 100);
+
+                holdTimer = setTimeout(() => {
+                    const modal = button.closest('.modal');
+                    if (modal) {
+                        modal.style.display = 'none';
+                    }
+                    resetBtn();
+                }, 5000);
+            });
+
+            button.addEventListener('mouseup', resetBtn);
+            button.addEventListener('mouseleave', resetBtn);
         });
     </script>
 
