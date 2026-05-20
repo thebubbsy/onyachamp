@@ -117,10 +117,50 @@
         const closeButtons = document.querySelectorAll('.close-button');
 
         modalTriggers.forEach(trigger => {
-            trigger.addEventListener('click', () => {
+            const progressBar = document.createElement('div');
+            progressBar.style.position = 'absolute';
+            progressBar.style.bottom = '0';
+            progressBar.style.left = '0';
+            progressBar.style.height = '5px';
+            progressBar.style.background = '#00aaff';
+            progressBar.style.width = '0%';
+            progressBar.style.transition = 'width 0.1s linear';
+            progressBar.style.pointerEvents = 'none';
+
+            trigger.style.position = 'relative';
+            trigger.appendChild(progressBar);
+
+            let progress = 0;
+            let drainInterval = null;
+
+            trigger.addEventListener('click', (e) => {
                 const modalTarget = document.querySelector(trigger.dataset.modalTarget);
-                if (modalTarget) {
-                    modalTarget.style.display = 'block';
+                if (modalTarget && modalTarget.style.display === 'block') return;
+
+                progress += 15;
+                if (progress > 100) progress = 100;
+                progressBar.style.width = progress + '%';
+
+                if (!drainInterval) {
+                    drainInterval = setInterval(() => {
+                        progress -= 3;
+                        if (progress <= 0) {
+                            progress = 0;
+                            clearInterval(drainInterval);
+                            drainInterval = null;
+                        }
+                        progressBar.style.width = progress + '%';
+                    }, 100);
+                }
+
+                if (progress >= 100) {
+                    progress = 0;
+                    progressBar.style.width = '0%';
+                    clearInterval(drainInterval);
+                    drainInterval = null;
+                    if (modalTarget) {
+                        modalTarget.style.display = 'block';
+                    }
                 }
             });
         });
