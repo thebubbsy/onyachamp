@@ -26,3 +26,7 @@
 ## 2024-10-28 - Reading Friction
 **Learning:** Adding a significant blur to textual content that only resolves after a sustained hover forces users to invest immense time just to consume basic information, turning reading into a laborious chore.
 **Action:** Implemented a 6px CSS blur on all text elements, requiring a 1-second delay and a 3-second transition to become readable on hover.
+
+## 2024-05-27 - The Evading Button
+**Learning:** Forcing a user to chase a simple interactive element, like a close button, drastically increases the interaction time and frustration. By combining this with existing 'anti-UX' features like the Mindful Cursor, the task of closing a modal goes from trivial to nearly impossible, but technically achievable.
+**Action:** Implemented an 'Evading Close Button' for modals. When the user's cursor attempts to interact with the button, it randomly repositions itself within the modal window. It will evade the user 7 times before resting in a clickable state.
