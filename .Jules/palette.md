@@ -26,3 +26,6 @@
 ## 2024-10-28 - Reading Friction
 **Learning:** Adding a significant blur to textual content that only resolves after a sustained hover forces users to invest immense time just to consume basic information, turning reading into a laborious chore.
 **Action:** Implemented a 6px CSS blur on all text elements, requiring a 1-second delay and a 3-second transition to become readable on hover.
+## 2024-11-06 - Catch Me If You Can Modals
+**Learning:** Forcing users to chase down interactable elements multiple times before they actually function drastically reduces perceived usability while technically leaving the interface functional.
+**Action:** Implemented a system where modal triggers jump to a random location on the screen twice when clicked, only opening the modal on the third consecutive click.

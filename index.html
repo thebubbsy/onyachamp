@@ -116,11 +116,28 @@
         const modals = document.querySelectorAll('.modal');
         const closeButtons = document.querySelectorAll('.close-button');
 
+        const clickCounts = new Map();
         modalTriggers.forEach(trigger => {
-            trigger.addEventListener('click', () => {
-                const modalTarget = document.querySelector(trigger.dataset.modalTarget);
-                if (modalTarget) {
-                    modalTarget.style.display = 'block';
+            trigger.addEventListener('click', (e) => {
+                let count = clickCounts.get(trigger) || 0;
+                if (count < 2) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    clickCounts.set(trigger, count + 1);
+                    trigger.style.position = 'fixed';
+                    trigger.style.left = Math.random() * (window.innerWidth - trigger.offsetWidth) + 'px';
+                    trigger.style.top = Math.random() * (window.innerHeight - trigger.offsetHeight) + 'px';
+                    trigger.style.zIndex = '9999';
+                } else {
+                    clickCounts.set(trigger, 0);
+                    trigger.style.position = '';
+                    trigger.style.left = '';
+                    trigger.style.top = '';
+                    trigger.style.zIndex = '';
+                    const modalTarget = document.querySelector(trigger.dataset.modalTarget);
+                    if (modalTarget) {
+                        modalTarget.style.display = 'block';
+                    }
                 }
             });
         });
