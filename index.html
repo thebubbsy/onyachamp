@@ -126,10 +126,20 @@
         });
 
         closeButtons.forEach(button => {
+            let clicksLeft = 5;
             button.addEventListener('click', () => {
-                const modal = button.closest('.modal');
-                if (modal) {
-                    modal.style.display = 'none';
+                clicksLeft--;
+                if (clicksLeft > 0) {
+                    button.style.transform = `scale(${1 - (5 - clicksLeft) * 0.1})`;
+                    button.innerText = `× (${clicksLeft})`;
+                } else {
+                    const modal = button.closest('.modal');
+                    if (modal) {
+                        modal.style.display = 'none';
+                        clicksLeft = 5;
+                        button.style.transform = 'scale(1)';
+                        button.innerHTML = '&times;';
+                    }
                 }
             });
         });
@@ -137,7 +147,8 @@
         // Close modal when clicking outside content
         window.addEventListener('click', (event) => {
             if (event.target.classList.contains('modal')) {
-                event.target.style.display = 'none';
+                const btn = event.target.querySelector('.close-button');
+                if (btn) btn.style.color = 'red';
             }
         });
     </script>
