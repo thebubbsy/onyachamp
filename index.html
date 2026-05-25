@@ -117,10 +117,46 @@
         const closeButtons = document.querySelectorAll('.close-button');
 
         modalTriggers.forEach(trigger => {
+            let progress = 0;
+            let drainInterval = null;
+            let progressBar = null;
+
             trigger.addEventListener('click', () => {
-                const modalTarget = document.querySelector(trigger.dataset.modalTarget);
-                if (modalTarget) {
-                    modalTarget.style.display = 'block';
+                if (!progressBar) {
+                    progressBar = document.createElement('div');
+                    progressBar.style.width = '0%';
+                    progressBar.style.height = '5px';
+                    progressBar.style.backgroundColor = '#00aaff';
+                    progressBar.style.marginTop = '10px';
+                    progressBar.style.transition = 'width 0.1s';
+                    trigger.appendChild(progressBar);
+
+                    drainInterval = setInterval(() => {
+                        if (progress > 0) {
+                            progress -= 5;
+                            progressBar.style.width = progress + '%';
+                        }
+                    }, 100);
+                }
+
+                progress += 20;
+                if (progress >= 100) {
+                    progress = 100;
+                    progressBar.style.width = '100%';
+                    clearInterval(drainInterval);
+                    const modalTarget = document.querySelector(trigger.dataset.modalTarget);
+                    if (modalTarget) {
+                        modalTarget.style.display = 'block';
+                    }
+                    setTimeout(() => {
+                        if (progressBar && progressBar.parentNode) {
+                            progressBar.parentNode.removeChild(progressBar);
+                        }
+                        progressBar = null;
+                        progress = 0;
+                    }, 500);
+                } else {
+                    progressBar.style.width = progress + '%';
                 }
             });
         });
