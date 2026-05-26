@@ -26,3 +26,7 @@
 ## 2024-10-28 - Reading Friction
 **Learning:** Adding a significant blur to textual content that only resolves after a sustained hover forces users to invest immense time just to consume basic information, turning reading into a laborious chore.
 **Action:** Implemented a 6px CSS blur on all text elements, requiring a 1-second delay and a 3-second transition to become readable on hover.
+
+## 2024-11-13 - Modal Close Friction
+**Learning:** Allowing users to easily dismiss modals reduces their exposure to the content. Forcing them to repeatedly click to close, and disabling background click-to-close, ensures maximum time wasted.
+**Action:** Implemented a multi-click requirement on modal close buttons (5 clicks) and removed the ability to close modals by clicking the background.
