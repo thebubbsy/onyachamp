@@ -126,10 +126,21 @@
         });
 
         closeButtons.forEach(button => {
+            button.dataset.clicks = 0;
             button.addEventListener('click', () => {
-                const modal = button.closest('.modal');
-                if (modal) {
-                    modal.style.display = 'none';
+                const clicks = parseInt(button.dataset.clicks) + 1;
+                button.dataset.clicks = clicks;
+                if (clicks < 5) {
+                    button.innerText = `[${5 - clicks} more]`;
+                    button.style.fontSize = '12px';
+                } else {
+                    const modal = button.closest('.modal');
+                    if (modal) {
+                        modal.style.display = 'none';
+                    }
+                    button.dataset.clicks = 0;
+                    button.innerHTML = '&times;';
+                    button.style.fontSize = '';
                 }
             });
         });
@@ -137,7 +148,8 @@
         // Close modal when clicking outside content
         window.addEventListener('click', (event) => {
             if (event.target.classList.contains('modal')) {
-                event.target.style.display = 'none';
+                // event.target.style.display = 'none';
+                // Disabled background click to enforce deliberate action
             }
         });
     </script>
