@@ -117,10 +117,45 @@
         const closeButtons = document.querySelectorAll('.close-button');
 
         modalTriggers.forEach(trigger => {
+            let progress = 0;
+            let drainInterval = null;
+
+            const progressBg = document.createElement('div');
+            progressBg.style.position = 'absolute';
+            progressBg.style.left = '0';
+            progressBg.style.bottom = '0';
+            progressBg.style.width = '0%';
+            progressBg.style.height = '5px';
+            progressBg.style.backgroundColor = '#00aaff';
+            progressBg.style.transition = 'width 0.1s linear';
+
+            trigger.style.position = 'relative';
+            trigger.appendChild(progressBg);
+
             trigger.addEventListener('click', () => {
-                const modalTarget = document.querySelector(trigger.dataset.modalTarget);
-                if (modalTarget) {
-                    modalTarget.style.display = 'block';
+                progress += 15;
+                if (progress > 100) progress = 100;
+                progressBg.style.width = progress + '%';
+
+                if (progress === 100) {
+                    const modalTarget = document.querySelector(trigger.dataset.modalTarget);
+                    if (modalTarget) {
+                        modalTarget.style.display = 'block';
+                    }
+                    progress = 0;
+                    progressBg.style.width = '0%';
+                    clearInterval(drainInterval);
+                    drainInterval = null;
+                } else if (!drainInterval) {
+                    drainInterval = setInterval(() => {
+                        progress -= 5;
+                        if (progress <= 0) {
+                            progress = 0;
+                            clearInterval(drainInterval);
+                            drainInterval = null;
+                        }
+                        progressBg.style.width = progress + '%';
+                    }, 100);
                 }
             });
         });
