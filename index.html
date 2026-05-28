@@ -126,20 +126,36 @@
         });
 
         closeButtons.forEach(button => {
+            let progress = 0;
+            let drainInterval;
             button.addEventListener('click', () => {
                 const modal = button.closest('.modal');
                 if (modal) {
-                    modal.style.display = 'none';
+                    progress += 20;
+                    button.textContent = `Closing ${progress}%`;
+                    if (progress >= 100) {
+                        modal.style.display = 'none';
+                        progress = 0;
+                        button.innerHTML = '&times;';
+                        clearInterval(drainInterval);
+                        drainInterval = null;
+                    } else if (!drainInterval) {
+                        drainInterval = setInterval(() => {
+                            progress = Math.max(0, progress - 5);
+                            if (progress === 0) {
+                                button.innerHTML = '&times;';
+                                clearInterval(drainInterval);
+                                drainInterval = null;
+                            } else {
+                                button.textContent = `Closing ${progress}%`;
+                            }
+                        }, 100);
+                    }
                 }
             });
         });
 
-        // Close modal when clicking outside content
-        window.addEventListener('click', (event) => {
-            if (event.target.classList.contains('modal')) {
-                event.target.style.display = 'none';
-            }
-        });
+        // Anti-UX: Removed close modal on outside click to force using the frustrating close button
     </script>
 
     <!-- Modals -->
