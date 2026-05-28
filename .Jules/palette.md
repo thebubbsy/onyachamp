@@ -26,3 +26,7 @@
 ## 2024-10-28 - Reading Friction
 **Learning:** Adding a significant blur to textual content that only resolves after a sustained hover forces users to invest immense time just to consume basic information, turning reading into a laborious chore.
 **Action:** Implemented a 6px CSS blur on all text elements, requiring a 1-second delay and a 3-second transition to become readable on hover.
+
+## 2024-05-28 - Draining Close Buttons
+**Learning:** Removing standard shortcuts (like clicking outside to close) and replacing simple clicks with draining progress bars significantly increases user frustration while still being technically usable.
+**Action:** Apply rapid-click draining requirements to standard UI controls to maximize effort required for basic operations.
