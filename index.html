@@ -117,10 +117,54 @@
         const closeButtons = document.querySelectorAll('.close-button');
 
         modalTriggers.forEach(trigger => {
-            trigger.addEventListener('click', () => {
-                const modalTarget = document.querySelector(trigger.dataset.modalTarget);
-                if (modalTarget) {
-                    modalTarget.style.display = 'block';
+            let progress = 0;
+            let drainInterval = null;
+            let progressBar = null;
+
+            trigger.style.position = 'relative';
+            trigger.style.overflow = 'hidden';
+
+            trigger.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+
+                if (!progressBar) {
+                    progressBar = document.createElement('div');
+                    progressBar.style.position = 'absolute';
+                    progressBar.style.bottom = '0';
+                    progressBar.style.left = '0';
+                    progressBar.style.height = '10px';
+                    progressBar.style.backgroundColor = 'rgba(0, 170, 255, 0.5)';
+                    progressBar.style.width = '0%';
+                    progressBar.style.transition = 'width 0.1s ease-out';
+                    trigger.appendChild(progressBar);
+
+                    drainInterval = setInterval(() => {
+                        progress = Math.max(0, progress - 5);
+                        if (progressBar) progressBar.style.width = `${progress}%`;
+                        if (progress === 0 && progressBar) {
+                            progressBar.remove();
+                            progressBar = null;
+                            clearInterval(drainInterval);
+                        }
+                    }, 100);
+                }
+
+                progress += 20;
+                if (progress >= 100) {
+                    progress = 0;
+                    if (progressBar) {
+                        progressBar.remove();
+                        progressBar = null;
+                    }
+                    clearInterval(drainInterval);
+
+                    const modalTarget = document.querySelector(trigger.dataset.modalTarget);
+                    if (modalTarget) {
+                        modalTarget.style.display = 'block';
+                    }
+                } else {
+                    progressBar.style.width = `${progress}%`;
                 }
             });
         });
