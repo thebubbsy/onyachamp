@@ -26,3 +26,6 @@
 ## 2024-10-28 - Reading Friction
 **Learning:** Adding a significant blur to textual content that only resolves after a sustained hover forces users to invest immense time just to consume basic information, turning reading into a laborious chore.
 **Action:** Implemented a 6px CSS blur on all text elements, requiring a 1-second delay and a 3-second transition to become readable on hover.
+## 2023-10-25 - Draining Progress Bar Anti-UX
+**Learning:** Draining progress bars force users to perform rapid, repetitive actions, effectively wasting time while maintaining technical usability.
+**Action:** Apply this pattern to interactive elements where creating artificial friction aligns with anti-UX goals.
