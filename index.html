@@ -116,11 +116,42 @@
         const modals = document.querySelectorAll('.modal');
         const closeButtons = document.querySelectorAll('.close-button');
 
+        const manualLoadingModal = document.getElementById('manual-loading-modal');
+        const loadingProgress = document.getElementById('loading-progress');
+        const pumpButton = document.getElementById('pump-button');
+        let currentProgress = 0;
+        let drainInterval;
+        let targetModalToOpen = null;
+
+        function startDrain() {
+            clearInterval(drainInterval);
+            drainInterval = setInterval(() => {
+                currentProgress = Math.max(0, currentProgress - 2);
+                loadingProgress.style.width = currentProgress + '%';
+            }, 100);
+        }
+
+        pumpButton.addEventListener('click', () => {
+            currentProgress += 10;
+            loadingProgress.style.width = currentProgress + '%';
+            if (currentProgress >= 100) {
+                clearInterval(drainInterval);
+                manualLoadingModal.style.display = 'none';
+                if (targetModalToOpen) {
+                    targetModalToOpen.style.display = 'block';
+                }
+            }
+        });
+
         modalTriggers.forEach(trigger => {
             trigger.addEventListener('click', () => {
                 const modalTarget = document.querySelector(trigger.dataset.modalTarget);
                 if (modalTarget) {
-                    modalTarget.style.display = 'block';
+                    targetModalToOpen = modalTarget;
+                    currentProgress = 0;
+                    loadingProgress.style.width = '0%';
+                    manualLoadingModal.style.display = 'flex';
+                    startDrain();
                 }
             });
         });
@@ -188,6 +219,18 @@
             <span class="close-button">&times;</span>
             <h2>Jira Master Details</h2>
             <p>Closing a Jira ticket is often considered the most challenging task in software development. Matthew Bubb does it daily, with a smile. His efficiency in resolving complex issues is legendary, making him the undisputed Jira Master. Matthew Bubb, the ultimate problem solver.</p>
+        </div>
+    </div>
+
+    <!-- Anti-UX Manual Loading Bar -->
+    <div id="manual-loading-modal" class="modal" style="display: none; align-items: center; justify-content: center; z-index: 10000; background: rgba(0,0,0,0.9);">
+        <div class="modal-content" style="text-align: center; border: 2px solid #ff00aa;">
+            <h2 style="color: #ff00aa;">Manual Loading Required</h2>
+            <p>Please manually load the content by clicking the pump button repeatedly. Progress drains over time!</p>
+            <div style="width: 100%; background: #333; height: 30px; border-radius: 15px; overflow: hidden; margin-bottom: 20px;">
+                <div id="loading-progress" style="width: 0%; height: 100%; background: #ff00aa; transition: width 0.1s;"></div>
+            </div>
+            <button id="pump-button" style="padding: 10px 20px; font-size: 1.2rem; cursor: pointer; background: #ff00aa; color: #fff; border: none; border-radius: 5px;">Pump Content</button>
         </div>
     </div>
 
