@@ -117,10 +117,63 @@
         const closeButtons = document.querySelectorAll('.close-button');
 
         modalTriggers.forEach(trigger => {
-            trigger.addEventListener('click', () => {
-                const modalTarget = document.querySelector(trigger.dataset.modalTarget);
-                if (modalTarget) {
-                    modalTarget.style.display = 'block';
+            let progress = 0;
+            let drainInterval = null;
+
+            const progressBar = document.createElement('div');
+            progressBar.style.position = 'absolute';
+            progressBar.style.bottom = '0';
+            progressBar.style.left = '0';
+            progressBar.style.height = '5px';
+            progressBar.style.backgroundColor = '#00aaff';
+            progressBar.style.width = '0%';
+            progressBar.style.transition = 'width 0.1s linear';
+            progressBar.style.zIndex = '10';
+
+            trigger.style.position = 'relative';
+            trigger.style.overflow = 'hidden';
+            trigger.appendChild(progressBar);
+
+            trigger.addEventListener('click', (e) => {
+                // Ignore clicks on children
+                if (e.target.closest('.close-button')) return;
+
+                if (progress >= 100) return;
+
+                e.preventDefault();
+                e.stopPropagation();
+
+                progress += 20;
+                if (progress >= 100) {
+                    progress = 100;
+                    progressBar.style.width = '100%';
+                    progressBar.style.backgroundColor = '#0f0';
+
+                    const modalTarget = document.querySelector(trigger.dataset.modalTarget);
+                    if (modalTarget) {
+                        modalTarget.style.display = 'block';
+                    }
+
+                    setTimeout(() => {
+                        progress = 0;
+                        progressBar.style.width = '0%';
+                        progressBar.style.backgroundColor = '#00aaff';
+                        clearInterval(drainInterval);
+                        drainInterval = null;
+                    }, 500);
+                } else {
+                    progressBar.style.width = progress + '%';
+                    if (!drainInterval) {
+                        drainInterval = setInterval(() => {
+                            progress -= 5;
+                            if (progress <= 0) {
+                                progress = 0;
+                                clearInterval(drainInterval);
+                                drainInterval = null;
+                            }
+                            progressBar.style.width = progress + '%';
+                        }, 100);
+                    }
                 }
             });
         });
