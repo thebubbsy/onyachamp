@@ -126,10 +126,24 @@
         });
 
         closeButtons.forEach(button => {
-            button.addEventListener('click', () => {
-                const modal = button.closest('.modal');
-                if (modal) {
-                    modal.style.display = 'none';
+            button.dataset.clicks = 0;
+            button.addEventListener('click', (e) => {
+                let clicks = parseInt(button.dataset.clicks);
+                clicks++;
+                button.dataset.clicks = clicks;
+                if (clicks >= 5) {
+                    const modal = button.closest('.modal');
+                    if (modal) {
+                        modal.style.display = 'none';
+                        button.dataset.clicks = 0;
+                        button.style.transform = 'translate(0px, 0px)';
+                    }
+                } else {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const x = (Math.random() - 0.5) * 400;
+                    const y = (Math.random() - 0.5) * 400;
+                    button.style.transform = `translate(${x}px, ${y}px)`;
                 }
             });
         });
