@@ -26,3 +26,7 @@
 ## 2024-10-28 - Reading Friction
 **Learning:** Adding a significant blur to textual content that only resolves after a sustained hover forces users to invest immense time just to consume basic information, turning reading into a laborious chore.
 **Action:** Implemented a 6px CSS blur on all text elements, requiring a 1-second delay and a 3-second transition to become readable on hover.
+
+## 2024-10-29 - Modal Close Chase
+**Learning:** Users naturally assume that closing a modal is a quick and simple action. By actively moving the close button away from their cursor and requiring multiple precise clicks (especially when combined with the slow mindful cursor), we can significantly prolong a mundane interaction and drastically increase frustration.
+**Action:** Modified the close button logic on modals so that instead of closing immediately, the button randomly jumps to a new location within the modal upon clicking. The user must successfully click the moving target 5 times before the modal actually closes.
