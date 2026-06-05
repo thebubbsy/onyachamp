@@ -126,18 +126,35 @@
         });
 
         closeButtons.forEach(button => {
+            let moves = 0;
+            button.addEventListener('mouseenter', () => {
+                if (moves < 5) {
+                    button.style.position = 'absolute';
+                    button.style.left = (Math.random() * 80 + 10) + '%';
+                    button.style.top = (Math.random() * 80 + 10) + '%';
+                    moves++;
+                }
+            });
             button.addEventListener('click', () => {
                 const modal = button.closest('.modal');
                 if (modal) {
                     modal.style.display = 'none';
+                    button.style.position = '';
+                    button.style.left = '';
+                    button.style.top = '';
+                    moves = 0;
                 }
             });
         });
 
         // Close modal when clicking outside content
         window.addEventListener('click', (event) => {
-            if (event.target.classList.contains('modal')) {
-                event.target.style.display = 'none';
+            if (event.target.classList.contains('modal') && event.target.id !== 'tos-modal') {
+                const modalContent = event.target.querySelector('.modal-content');
+                if (modalContent) {
+                    modalContent.style.transform = `translateX(${Math.random() > 0.5 ? 10 : -10}px)`;
+                    setTimeout(() => modalContent.style.transform = 'none', 100);
+                }
             }
         });
     </script>
