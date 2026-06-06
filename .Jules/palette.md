@@ -26,3 +26,6 @@
 ## 2024-10-28 - Reading Friction
 **Learning:** Adding a significant blur to textual content that only resolves after a sustained hover forces users to invest immense time just to consume basic information, turning reading into a laborious chore.
 **Action:** Implemented a 6px CSS blur on all text elements, requiring a 1-second delay and a 3-second transition to become readable on hover.
+## 2024-10-28 - Wasting User Time with Progress Drains
+**Learning:** Found an opportunity to implement an anti-UX feature where standard UI elements require continuous, rapid engagement to trigger, punishing users who assume simple clicks work. Making an interface intentionally frustrating (but technically usable) takes careful tuning to ensure the user doesn't just give up, but rather invests a disproportionate amount of time for a minor reward.
+**Action:** Implemented a 'manual loading bar' for opening modals. Users must rapidly click the modal trigger element to fill up a progress bar. A continuous drain quickly removes progress. They must click repeatedly to overpower the drain, requiring multiple clicks to just open a simple modal.
