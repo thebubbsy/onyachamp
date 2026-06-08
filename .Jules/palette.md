@@ -26,3 +26,7 @@
 ## 2024-10-28 - Reading Friction
 **Learning:** Adding a significant blur to textual content that only resolves after a sustained hover forces users to invest immense time just to consume basic information, turning reading into a laborious chore.
 **Action:** Implemented a 6px CSS blur on all text elements, requiring a 1-second delay and a 3-second transition to become readable on hover.
+
+## 2024-10-29 - Interactive Friction for Dismissals
+**Learning:** Dismissal actions (like closing a modal) are typically instant and deeply ingrained user habits. By intercepting these actions and turning them into a rapid-interaction minigame with a constant progress drain, you actively punish user hesitation and drastically increase the effort required for a standard "cancel" or "close" action while the feature remains technically functional.
+**Action:** Implemented a "Draining Progress Bar" on modal close buttons. Clicking the close button adds 20% progress, while a background timer continuously drains 10% progress every 300ms. The user must reach 100% (5 rapid clicks) to successfully close the modal. Also disabled the ability to close the modal by clicking outside of it.
