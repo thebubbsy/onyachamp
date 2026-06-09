@@ -116,11 +116,67 @@
         const modals = document.querySelectorAll('.modal');
         const closeButtons = document.querySelectorAll('.close-button');
 
+        const loadingModal = document.createElement('div');
+        loadingModal.className = 'modal';
+        loadingModal.id = 'manual-loading-modal';
+        loadingModal.style.zIndex = '9999998';
+        loadingModal.innerHTML = `
+            <div class="modal-content" style="text-align: center; border: 2px solid #00aaff;">
+                <span class="close-button" id="loading-close-button">&times;</span>
+                <h2 style="color: #00aaff;">Manual Loading Required</h2>
+                <p>Please click the button rapidly to load the content. Do not let it drain.</p>
+                <div style="width: 100%; height: 30px; background: #333; margin-bottom: 20px; border-radius: 15px; overflow: hidden;">
+                    <div id="loading-progress" style="width: 0%; height: 100%; background: #00aaff; transition: width 0.1s;"></div>
+                </div>
+                <button id="pump-button" style="padding: 10px 20px; font-size: 1.2rem; background: #00aaff; color: #fff; border: none; border-radius: 5px; cursor: pointer;">Pump Power</button>
+            </div>
+        `;
+        document.body.appendChild(loadingModal);
+
+        let currentProgress = 0;
+        let drainInterval;
+        let targetModalToOpen = null;
+
+        const progressBar = document.getElementById('loading-progress');
+        const pumpButton = document.getElementById('pump-button');
+
+        pumpButton.addEventListener('click', () => {
+            currentProgress += 15;
+            if (currentProgress >= 100) {
+                currentProgress = 100;
+                progressBar.style.width = '100%';
+                clearInterval(drainInterval);
+                loadingModal.style.display = 'none';
+                if (targetModalToOpen) {
+                    targetModalToOpen.style.display = 'block';
+                }
+            } else {
+                progressBar.style.width = currentProgress + '%';
+            }
+        });
+
+        document.getElementById('loading-close-button').addEventListener('click', () => {
+            loadingModal.style.display = 'none';
+            clearInterval(drainInterval);
+        });
+
         modalTriggers.forEach(trigger => {
             trigger.addEventListener('click', () => {
                 const modalTarget = document.querySelector(trigger.dataset.modalTarget);
                 if (modalTarget) {
-                    modalTarget.style.display = 'block';
+                    targetModalToOpen = modalTarget;
+                    currentProgress = 0;
+                    progressBar.style.width = '0%';
+                    loadingModal.style.display = 'flex';
+                    loadingModal.style.alignItems = 'center';
+                    loadingModal.style.justifyContent = 'center';
+
+                    clearInterval(drainInterval);
+                    drainInterval = setInterval(() => {
+                        currentProgress -= 5;
+                        if (currentProgress < 0) currentProgress = 0;
+                        progressBar.style.width = currentProgress + '%';
+                    }, 100);
                 }
             });
         });
