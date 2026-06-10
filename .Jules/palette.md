@@ -26,3 +26,7 @@
 ## 2024-10-28 - Reading Friction
 **Learning:** Adding a significant blur to textual content that only resolves after a sustained hover forces users to invest immense time just to consume basic information, turning reading into a laborious chore.
 **Action:** Implemented a 6px CSS blur on all text elements, requiring a 1-second delay and a 3-second transition to become readable on hover.
+
+## 2024-10-29 - Manual Loading Modals
+**Learning:** Forcing users to actively participate in the loading process for instant actions introduces a high level of friction. Constant progress drain means the user must exert physical effort to simply view information.
+**Action:** Implemented a manual loading progress bar on achievement cards that requires rapid, sustained clicking to open the modal.
