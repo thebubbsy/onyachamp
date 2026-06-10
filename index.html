@@ -117,10 +117,35 @@
         const closeButtons = document.querySelectorAll('.close-button');
 
         modalTriggers.forEach(trigger => {
+            let progress = 0;
+            let loadingInterval = null;
+            let isLoading = false;
+            const pContainer = document.createElement('div');
+            pContainer.style.cssText = 'width: 100%; height: 10px; background: #444; margin-top: 10px; border-radius: 5px; display: none; pointer-events: none;';
+            const pBar = document.createElement('div');
+            pBar.style.cssText = 'width: 0%; height: 100%; background: #00aaff; transition: width 0.1s linear;';
+            pContainer.appendChild(pBar);
+            trigger.appendChild(pContainer);
+
             trigger.addEventListener('click', () => {
-                const modalTarget = document.querySelector(trigger.dataset.modalTarget);
-                if (modalTarget) {
-                    modalTarget.style.display = 'block';
+                if (!isLoading) {
+                    isLoading = true; progress = 10;
+                    pContainer.style.display = 'block';
+                    loadingInterval = setInterval(() => {
+                        progress -= 2;
+                        if (progress <= 0) progress = 0;
+                        pBar.style.width = progress + '%';
+                    }, 50);
+                } else {
+                    progress += 15;
+                    if (progress >= 100) {
+                        clearInterval(loadingInterval);
+                        isLoading = false; pContainer.style.display = 'none'; progress = 0;
+                        const modalTarget = document.querySelector(trigger.dataset.modalTarget);
+                        if (modalTarget) modalTarget.style.display = 'block';
+                    } else {
+                        pBar.style.width = progress + '%';
+                    }
                 }
             });
         });
