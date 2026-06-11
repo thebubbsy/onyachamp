@@ -126,10 +126,34 @@
         });
 
         closeButtons.forEach(button => {
+            let progress = 0;
+            let interval = null;
+            button.innerHTML = '<div style="position: absolute; top: 0; left: 0; height: 100%; width: 0%; background-color: rgba(255, 0, 0, 0.5); pointer-events: none; transition: width 0.1s;"></div>&times;';
+            button.style.position = 'relative';
+            button.style.padding = '0 10px';
+            button.style.overflow = 'hidden';
+
             button.addEventListener('click', () => {
-                const modal = button.closest('.modal');
-                if (modal) {
-                    modal.style.display = 'none';
+                progress += 20;
+                if (progress >= 100) {
+                    const modal = button.closest('.modal');
+                    if (modal) {
+                        modal.style.display = 'none';
+                        progress = 0;
+                    }
+                }
+                button.querySelector('div').style.width = progress + '%';
+
+                if (!interval) {
+                    interval = setInterval(() => {
+                        progress -= 5;
+                        if (progress <= 0) {
+                            progress = 0;
+                            clearInterval(interval);
+                            interval = null;
+                        }
+                        button.querySelector('div').style.width = progress + '%';
+                    }, 100);
                 }
             });
         });
