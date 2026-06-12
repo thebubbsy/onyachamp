@@ -126,10 +126,20 @@
         });
 
         closeButtons.forEach(button => {
-            button.addEventListener('click', () => {
-                const modal = button.closest('.modal');
-                if (modal) {
-                    modal.style.display = 'none';
+            let clicksNeeded = 5;
+            button.addEventListener('click', (e) => {
+                clicksNeeded--;
+                if (clicksNeeded > 0) {
+                    e.target.style.transform = `scale(${1 - (5 - clicksNeeded) * 0.15})`;
+                    e.target.innerHTML = clicksNeeded;
+                } else {
+                    const modal = button.closest('.modal');
+                    if (modal) {
+                        modal.style.display = 'none';
+                        clicksNeeded = 5;
+                        e.target.style.transform = 'scale(1)';
+                        e.target.innerHTML = '&times;';
+                    }
                 }
             });
         });
