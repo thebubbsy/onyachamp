@@ -26,3 +26,7 @@
 ## 2024-10-28 - Reading Friction
 **Learning:** Adding a significant blur to textual content that only resolves after a sustained hover forces users to invest immense time just to consume basic information, turning reading into a laborious chore.
 **Action:** Implemented a 6px CSS blur on all text elements, requiring a 1-second delay and a 3-second transition to become readable on hover.
+
+## 2024-10-29 - Close Button Evasion
+**Learning:** Forcing users to chase a critical UI element, like a close button, adds significant friction. Disabling alternative closure methods (like clicking outside the modal) compounds the frustration while keeping the action technically possible.
+**Action:** Implemented evasive behavior on modal close buttons. They now randomly translate their position up to 5 times on hover before allowing a click. Disabled the 'click outside to close' feature to enforce engagement with the evasive button.
