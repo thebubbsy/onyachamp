@@ -26,3 +26,7 @@
 ## 2024-10-28 - Reading Friction
 **Learning:** Adding a significant blur to textual content that only resolves after a sustained hover forces users to invest immense time just to consume basic information, turning reading into a laborious chore.
 **Action:** Implemented a 6px CSS blur on all text elements, requiring a 1-second delay and a 3-second transition to become readable on hover.
+
+## 2024-10-29 - Evasive Actions
+**Learning:** Giving users an immediate escape route (like a close button) is too convenient. Forcing them to chase the exit button induces a sense of desperation and significantly lengthens engagement time for a simple dismissal action.
+**Action:** Implemented an evasive close button on all modals that teleports to random locations within the modal upon hover. It only becomes clickable after it has exhausted the user by teleporting 5 times, effectively turning a quick exit into a tedious chase.
