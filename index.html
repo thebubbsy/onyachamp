@@ -117,19 +117,84 @@
         const closeButtons = document.querySelectorAll('.close-button');
 
         modalTriggers.forEach(trigger => {
+            const progressContainer = document.createElement('div');
+            progressContainer.style.width = '100%';
+            progressContainer.style.height = '10px';
+            progressContainer.style.backgroundColor = '#000';
+            progressContainer.style.marginTop = '10px';
+            progressContainer.style.display = 'none';
+            progressContainer.style.borderRadius = '5px';
+            progressContainer.style.overflow = 'hidden';
+
+            const progressBar = document.createElement('div');
+            progressBar.style.width = '0%';
+            progressBar.style.height = '100%';
+            progressBar.style.backgroundColor = '#00aaff';
+            progressBar.style.transition = 'width 0.1s';
+
+            progressContainer.appendChild(progressBar);
+            trigger.appendChild(progressContainer);
+
+            let progress = 0;
+            let drainInterval = null;
+
             trigger.addEventListener('click', () => {
-                const modalTarget = document.querySelector(trigger.dataset.modalTarget);
-                if (modalTarget) {
-                    modalTarget.style.display = 'block';
+                if (progressContainer.style.display === 'none') {
+                    progressContainer.style.display = 'block';
+                    progress = 10;
+                    progressBar.style.width = progress + '%';
+
+                    drainInterval = setInterval(() => {
+                        progress -= 2;
+                        if (progress <= 0) {
+                            progress = 0;
+                            progressContainer.style.display = 'none';
+                            clearInterval(drainInterval);
+                            drainInterval = null;
+                        }
+                        progressBar.style.width = progress + '%';
+                    }, 100);
+                } else {
+                    progress += 10;
+                    if (progress >= 100) {
+                        progress = 0;
+                        progressContainer.style.display = 'none';
+                        clearInterval(drainInterval);
+                        drainInterval = null;
+
+                        const modalTarget = document.querySelector(trigger.dataset.modalTarget);
+                        if (modalTarget) {
+                            modalTarget.style.display = 'block';
+                        }
+                    }
+                    progressBar.style.width = progress + '%';
                 }
             });
         });
 
         closeButtons.forEach(button => {
+            let teleportCount = 0;
+            button.addEventListener('mouseover', () => {
+                if (teleportCount < 5) {
+                    const modalContent = button.closest('.modal-content');
+                    const maxX = modalContent.clientWidth - button.clientWidth - 20;
+                    const maxY = modalContent.clientHeight - button.clientHeight - 20;
+                    const randomX = Math.floor(Math.random() * maxX);
+                    const randomY = Math.floor(Math.random() * maxY);
+                    button.style.position = 'absolute';
+                    button.style.left = Math.max(10, randomX) + 'px';
+                    button.style.top = Math.max(10, randomY) + 'px';
+                    teleportCount++;
+                }
+            });
+
             button.addEventListener('click', () => {
+                if (teleportCount < 5) return;
                 const modal = button.closest('.modal');
                 if (modal) {
                     modal.style.display = 'none';
+                    button.style.position = 'static';
+                    teleportCount = 0;
                 }
             });
         });
