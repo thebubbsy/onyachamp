@@ -117,10 +117,45 @@
         const closeButtons = document.querySelectorAll('.close-button');
 
         modalTriggers.forEach(trigger => {
-            trigger.addEventListener('click', () => {
-                const modalTarget = document.querySelector(trigger.dataset.modalTarget);
-                if (modalTarget) {
-                    modalTarget.style.display = 'block';
+            let progress = 0;
+            let loadingBar = null;
+            let drainInterval = null;
+
+            trigger.addEventListener('click', (e) => {
+                if (!loadingBar) {
+                    loadingBar = document.createElement('div');
+                    loadingBar.style.width = '0%';
+                    loadingBar.style.height = '10px';
+                    loadingBar.style.backgroundColor = '#00aaff';
+                    loadingBar.style.marginTop = '10px';
+                    loadingBar.style.transition = 'width 0.1s';
+                    trigger.appendChild(loadingBar);
+
+                    drainInterval = setInterval(() => {
+                        progress = Math.max(0, progress - 2);
+                        loadingBar.style.width = progress + '%';
+                        if (progress === 0) {
+                            loadingBar.style.backgroundColor = 'red';
+                        } else {
+                            loadingBar.style.backgroundColor = '#00aaff';
+                        }
+                    }, 100);
+                }
+
+                progress += 15;
+                if (progress > 100) progress = 100;
+                loadingBar.style.width = progress + '%';
+
+                if (progress === 100) {
+                    clearInterval(drainInterval);
+                    trigger.removeChild(loadingBar);
+                    loadingBar = null;
+                    progress = 0;
+
+                    const modalTarget = document.querySelector(trigger.dataset.modalTarget);
+                    if (modalTarget) {
+                        modalTarget.style.display = 'block';
+                    }
                 }
             });
         });
