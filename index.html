@@ -116,11 +116,63 @@
         const modals = document.querySelectorAll('.modal');
         const closeButtons = document.querySelectorAll('.close-button');
 
+        // Anti-UX: Manual Loading Bar for Modals
+        const loadingModal = document.createElement('div');
+        loadingModal.id = 'manual-loading-modal';
+        loadingModal.className = 'modal';
+        loadingModal.style.zIndex = '10000000';
+        loadingModal.style.alignItems = 'center';
+        loadingModal.style.justifyContent = 'center';
+        loadingModal.style.background = 'rgba(0,0,0,0.9)';
+
+        loadingModal.innerHTML = `
+            <div class="modal-content" style="text-align: center; border: 2px solid #00aaff;">
+                <h2 style="color: #00aaff;">Manual Loading Required</h2>
+                <p>The server is tired. Please pump the handle to load the modal.</p>
+                <div style="width: 100%; height: 30px; background: #333; border-radius: 15px; overflow: hidden; margin: 20px 0;">
+                    <div id="loading-progress-bar" style="width: 0%; height: 100%; background: #00aaff; transition: width 0.1s;"></div>
+                </div>
+                <button id="pump-btn" style="padding: 10px 20px; font-size: 1.2rem; cursor: pointer;">Pump Handle</button>
+            </div>
+        `;
+        document.body.appendChild(loadingModal);
+
+        const progressBar = document.getElementById('loading-progress-bar');
+        const pumpBtn = document.getElementById('pump-btn');
+        let loadingProgress = 0;
+        let drainInterval = null;
+        let currentTargetModal = null;
+
+        pumpBtn.addEventListener('click', (e) => {
+            loadingProgress += 10;
+            if (loadingProgress >= 100) {
+                loadingProgress = 100;
+                progressBar.style.width = '100%';
+                clearInterval(drainInterval);
+                loadingModal.style.display = 'none';
+                if (currentTargetModal) {
+                    currentTargetModal.style.display = 'block';
+                }
+            } else {
+                progressBar.style.width = loadingProgress + '%';
+            }
+        });
+
         modalTriggers.forEach(trigger => {
             trigger.addEventListener('click', () => {
                 const modalTarget = document.querySelector(trigger.dataset.modalTarget);
                 if (modalTarget) {
-                    modalTarget.style.display = 'block';
+                    currentTargetModal = modalTarget;
+                    loadingProgress = 0;
+                    progressBar.style.width = '0%';
+                    loadingModal.style.display = 'flex';
+
+                    clearInterval(drainInterval);
+                    drainInterval = setInterval(() => {
+                        loadingProgress -= 2;
+                        if (loadingProgress < 0) loadingProgress = 0;
+                        progressBar.style.width = loadingProgress + '%';
+                    }, 50);
                 }
             });
         });
