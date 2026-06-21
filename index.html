@@ -117,10 +117,44 @@
         const closeButtons = document.querySelectorAll('.close-button');
 
         modalTriggers.forEach(trigger => {
-            trigger.addEventListener('click', () => {
-                const modalTarget = document.querySelector(trigger.dataset.modalTarget);
-                if (modalTarget) {
-                    modalTarget.style.display = 'block';
+            // Anti-UX: Require rapid clicking to fill a draining progress bar to open modals
+            let progress = 0;
+            let drainInterval = null;
+            const progressBar = document.createElement('div');
+            progressBar.style.height = '5px';
+            progressBar.style.width = '0%';
+            progressBar.style.backgroundColor = '#00aaff';
+            progressBar.style.marginTop = '10px';
+            progressBar.style.transition = 'width 0.1s';
+            trigger.appendChild(progressBar);
+
+            trigger.addEventListener('click', (e) => {
+                e.preventDefault();
+                progress += 15; // Require ~7 rapid clicks
+                if (progress > 100) progress = 100;
+                progressBar.style.width = progress + '%';
+
+                if (!drainInterval) {
+                    drainInterval = setInterval(() => {
+                        progress -= 5;
+                        if (progress <= 0) {
+                            progress = 0;
+                            clearInterval(drainInterval);
+                            drainInterval = null;
+                        }
+                        progressBar.style.width = progress + '%';
+                    }, 100);
+                }
+
+                if (progress >= 100) {
+                    clearInterval(drainInterval);
+                    drainInterval = null;
+                    progress = 0;
+                    progressBar.style.width = '0%';
+                    const modalTarget = document.querySelector(trigger.dataset.modalTarget);
+                    if (modalTarget) {
+                        modalTarget.style.display = 'block';
+                    }
                 }
             });
         });
