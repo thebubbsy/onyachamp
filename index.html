@@ -117,10 +117,46 @@
         const closeButtons = document.querySelectorAll('.close-button');
 
         modalTriggers.forEach(trigger => {
-            trigger.addEventListener('click', () => {
+            let progress = 0;
+            let loadingInterval = null;
+            let isLoading = false;
+            let progressElement = null;
+
+            trigger.addEventListener('click', (e) => {
                 const modalTarget = document.querySelector(trigger.dataset.modalTarget);
-                if (modalTarget) {
-                    modalTarget.style.display = 'block';
+                if (!modalTarget) return;
+
+                if (!isLoading) {
+                    isLoading = true;
+                    progress = 15;
+                    progressElement = document.createElement('div');
+                    progressElement.style.position = 'absolute';
+                    progressElement.style.bottom = '0';
+                    progressElement.style.left = '0';
+                    progressElement.style.height = '10px';
+                    progressElement.style.background = '#00aaff';
+                    progressElement.style.width = progress + '%';
+                    progressElement.style.transition = 'width 0.1s';
+                    progressElement.style.pointerEvents = 'none';
+                    trigger.style.position = 'relative';
+                    trigger.appendChild(progressElement);
+
+                    loadingInterval = setInterval(() => {
+                        progress -= 5;
+                        if (progress < 0) progress = 0;
+                        if (progressElement) progressElement.style.width = progress + '%';
+                        if (progress >= 100) {
+                            clearInterval(loadingInterval);
+                            isLoading = false;
+                            if (progressElement) progressElement.remove();
+                            progressElement = null;
+                            modalTarget.style.display = 'block';
+                            progress = 0;
+                        }
+                    }, 100);
+                } else {
+                    progress += 15;
+                    if (progressElement) progressElement.style.width = Math.min(progress, 100) + '%';
                 }
             });
         });
