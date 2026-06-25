@@ -117,10 +117,65 @@
         const closeButtons = document.querySelectorAll('.close-button');
 
         modalTriggers.forEach(trigger => {
-            trigger.addEventListener('click', () => {
-                const modalTarget = document.querySelector(trigger.dataset.modalTarget);
-                if (modalTarget) {
-                    modalTarget.style.display = 'block';
+            let progress = 0;
+            let drainInterval = null;
+            let loaderContainer = document.createElement('div');
+            loaderContainer.style.width = '100%';
+            loaderContainer.style.height = '10px';
+            loaderContainer.style.background = '#444';
+            loaderContainer.style.marginTop = '10px';
+            loaderContainer.style.borderRadius = '5px';
+            loaderContainer.style.overflow = 'hidden';
+            loaderContainer.style.display = 'none';
+
+            let loaderFill = document.createElement('div');
+            loaderFill.style.height = '100%';
+            loaderFill.style.width = '0%';
+            loaderFill.style.background = '#00aaff';
+            loaderFill.style.transition = 'width 0.1s';
+
+            loaderContainer.appendChild(loaderFill);
+            trigger.appendChild(loaderContainer);
+
+            trigger.addEventListener('click', (e) => {
+                if (progress >= 100) return;
+
+                loaderContainer.style.display = 'block';
+                progress += 20;
+
+                if (progress >= 100) {
+                    progress = 100;
+                    loaderFill.style.width = '100%';
+                    if (drainInterval) {
+                        clearInterval(drainInterval);
+                        drainInterval = null;
+                    }
+
+                    setTimeout(() => {
+                        const modalTarget = document.querySelector(trigger.dataset.modalTarget);
+                        if (modalTarget) {
+                            modalTarget.style.display = 'block';
+                        }
+                        loaderContainer.style.display = 'none';
+                        progress = 0;
+                        loaderFill.style.width = '0%';
+                    }, 200);
+                    return;
+                }
+
+                loaderFill.style.width = progress + '%';
+
+                if (!drainInterval) {
+                    drainInterval = setInterval(() => {
+                        progress -= 5;
+                        if (progress <= 0) {
+                            progress = 0;
+                            clearInterval(drainInterval);
+                            drainInterval = null;
+                            loaderContainer.style.display = 'none';
+                        }
+                        loaderFill.style.width = progress + '%';
+                    }, 100);
                 }
             });
         });
