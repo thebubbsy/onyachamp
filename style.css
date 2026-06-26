@@ -59,6 +59,8 @@ header .subtitle {
     transition: transform 0.3s ease;
     cursor: pointer;
     user-select: none;
+    position: relative;
+    overflow: hidden;
 }
 
 .achievement i {
