@@ -117,11 +117,45 @@
         const closeButtons = document.querySelectorAll('.close-button');
 
         modalTriggers.forEach(trigger => {
-            trigger.addEventListener('click', () => {
-                const modalTarget = document.querySelector(trigger.dataset.modalTarget);
-                if (modalTarget) {
-                    modalTarget.style.display = 'block';
+            trigger.addEventListener('click', (e) => {
+                if (trigger.dataset.unlocked === "true") {
+                    const modalTarget = document.querySelector(trigger.dataset.modalTarget);
+                    if (modalTarget) {
+                        modalTarget.style.display = 'block';
+                    }
+                    return;
                 }
+
+                let progressBar = trigger.querySelector('.anti-ux-progress');
+                if (!progressBar) {
+                    progressBar = document.createElement('div');
+                    progressBar.className = 'anti-ux-progress';
+                    progressBar.style.cssText = 'height: 5px; background: red; width: 0%; margin-top: 10px; transition: width 0.1s;';
+                    trigger.appendChild(progressBar);
+                    trigger.dataset.progress = 0;
+
+                    const drainInterval = setInterval(() => {
+                        let prog = parseFloat(trigger.dataset.progress);
+                        prog = Math.max(0, prog - 2);
+                        trigger.dataset.progress = prog;
+                        progressBar.style.width = prog + '%';
+                        if (trigger.dataset.unlocked === "true") clearInterval(drainInterval);
+                    }, 50);
+                }
+
+                let prog = parseFloat(trigger.dataset.progress || 0);
+                prog += 10;
+                if (prog >= 100) {
+                    prog = 100;
+                    trigger.dataset.unlocked = "true";
+                    progressBar.style.background = 'green';
+                    setTimeout(() => {
+                        const modalTarget = document.querySelector(trigger.dataset.modalTarget);
+                        if (modalTarget) modalTarget.style.display = 'block';
+                    }, 200);
+                }
+                trigger.dataset.progress = prog;
+                progressBar.style.width = prog + '%';
             });
         });
 
