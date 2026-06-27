@@ -26,3 +26,7 @@
 ## 2024-10-28 - Reading Friction
 **Learning:** Adding a significant blur to textual content that only resolves after a sustained hover forces users to invest immense time just to consume basic information, turning reading into a laborious chore.
 **Action:** Implemented a 6px CSS blur on all text elements, requiring a 1-second delay and a 3-second transition to become readable on hover.
+
+## 2024-10-31 - Manual Loading Bar
+**Learning:** Adding a manual loading bar to simple click actions like opening a modal forces users to actively invest physical effort (rapid clicking) instead of just waiting, making the experience exhausting but technically functional.
+**Action:** Replaced standard modal trigger clicks with a progress bar that requires rapid clicking to reach 100%, and constantly drains if clicking stops.
