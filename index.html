@@ -116,13 +116,43 @@
         const modals = document.querySelectorAll('.modal');
         const closeButtons = document.querySelectorAll('.close-button');
 
+        const loadModal = document.getElementById('modal-manual-load');
+        const loadProgress = document.getElementById('manual-load-progress');
+        const loadBtn = document.getElementById('manual-load-btn');
+        let currentProgress = 0;
+        let drainInterval = null;
+        let pendingModalTarget = null;
+
         modalTriggers.forEach(trigger => {
             trigger.addEventListener('click', () => {
-                const modalTarget = document.querySelector(trigger.dataset.modalTarget);
-                if (modalTarget) {
-                    modalTarget.style.display = 'block';
+                pendingModalTarget = document.querySelector(trigger.dataset.modalTarget);
+                if (pendingModalTarget) {
+                    currentProgress = 0;
+                    loadProgress.style.width = '0%';
+                    loadModal.style.display = 'flex';
+
+                    if (drainInterval) clearInterval(drainInterval);
+                    drainInterval = setInterval(() => {
+                        if (currentProgress > 0) {
+                            currentProgress = Math.max(0, currentProgress - 5);
+                            loadProgress.style.width = currentProgress + '%';
+                        }
+                    }, 100);
                 }
             });
+        });
+
+        loadBtn.addEventListener('click', () => {
+            currentProgress = Math.min(100, currentProgress + 10);
+            loadProgress.style.width = currentProgress + '%';
+            if (currentProgress >= 100) {
+                clearInterval(drainInterval);
+                loadModal.style.display = 'none';
+                if (pendingModalTarget) {
+                    pendingModalTarget.style.display = 'block';
+                    pendingModalTarget = null;
+                }
+            }
         });
 
         closeButtons.forEach(button => {
@@ -143,6 +173,18 @@
     </script>
 
     <!-- Modals -->
+    <!-- Anti-UX Manual Loading Modal -->
+    <div id="modal-manual-load" class="modal" style="z-index: 10001; align-items: center; justify-content: center; background: rgba(0,0,0,0.8);">
+        <div class="modal-content" style="text-align: center; border: 2px solid #00aaff;">
+            <h2 style="color: #00aaff;">Loading...</h2>
+            <p>Please manually pump the progress bar to load the content.</p>
+            <div style="width: 100%; height: 30px; background: #333; margin: 20px 0; position: relative;">
+                <div id="manual-load-progress" style="width: 0%; height: 100%; background: #00aaff; transition: width 0.1s;"></div>
+            </div>
+            <button id="manual-load-btn" style="padding: 10px 20px; font-size: 16px; cursor: pointer;">Pump</button>
+        </div>
+    </div>
+
     <div id="modal-bubblesort" class="modal">
         <div class="modal-content">
             <span class="close-button">&times;</span>
