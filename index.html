@@ -117,10 +117,53 @@
         const closeButtons = document.querySelectorAll('.close-button');
 
         modalTriggers.forEach(trigger => {
+            let progress = 0;
+            let drainInterval = null;
+
+            const progressBar = document.createElement('div');
+            progressBar.style.position = 'absolute';
+            progressBar.style.bottom = '0';
+            progressBar.style.left = '0';
+            progressBar.style.height = '10px';
+            progressBar.style.width = '0%';
+            progressBar.style.backgroundColor = '#00aaff';
+            progressBar.style.transition = 'width 0.1s linear';
+            progressBar.style.pointerEvents = 'none';
+            progressBar.style.borderRadius = '0 0 8px 8px';
+            trigger.style.position = 'relative';
+            trigger.appendChild(progressBar);
+
             trigger.addEventListener('click', () => {
-                const modalTarget = document.querySelector(trigger.dataset.modalTarget);
-                if (modalTarget) {
-                    modalTarget.style.display = 'block';
+                progress += 15;
+                if (progress >= 100) {
+                    progress = 100;
+                    progressBar.style.width = '100%';
+                    clearInterval(drainInterval);
+                    drainInterval = null;
+
+                    const modalTarget = document.querySelector(trigger.dataset.modalTarget);
+                    if (modalTarget) {
+                        modalTarget.style.display = 'block';
+                    }
+                    setTimeout(() => {
+                        progress = 0;
+                        progressBar.style.width = '0%';
+                    }, 500);
+                    return;
+                }
+
+                progressBar.style.width = progress + '%';
+
+                if (!drainInterval) {
+                    drainInterval = setInterval(() => {
+                        progress -= 5;
+                        if (progress <= 0) {
+                            progress = 0;
+                            clearInterval(drainInterval);
+                            drainInterval = null;
+                        }
+                        progressBar.style.width = progress + '%';
+                    }, 100);
                 }
             });
         });
