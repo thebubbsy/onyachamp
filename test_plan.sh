@@ -1,1 +1,1 @@
-echo "Test plan script executed!"
+echo "Testing changes"
