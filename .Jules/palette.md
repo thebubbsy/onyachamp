@@ -27,6 +27,9 @@
 **Learning:** Adding a significant blur to textual content that only resolves after a sustained hover forces users to invest immense time just to consume basic information, turning reading into a laborious chore.
 **Action:** Implemented a 6px CSS blur on all text elements, requiring a 1-second delay and a 3-second transition to become readable on hover.
 
+## 2024-10-30 - Manual Loading Exhaustion
+**Learning:** Forcing the user to manually "pump" a loading bar that constantly drains physically exhausts them and makes them reconsider opening content unless they really want it. It's a highly effective engagement tax.
+**Action:** Implemented a manual loading bar that drains by 5% every 100ms, requiring users to rapidly click a button to reach 100% before a modal will open.
 ## 2024-05-24 - Anti-UX Implementation
 **Learning:** Making an interface intentionally frustrating (but technically usable) takes careful tuning to ensure the user doesn't just give up, but rather invests a disproportionate amount of time for a minor reward.
 **Action:** Implemented a 'manual loading bar' for opening modals, requiring rapid clicking to combat a constant progress drain.
