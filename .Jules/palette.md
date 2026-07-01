@@ -27,6 +27,9 @@
 **Learning:** Adding a significant blur to textual content that only resolves after a sustained hover forces users to invest immense time just to consume basic information, turning reading into a laborious chore.
 **Action:** Implemented a 6px CSS blur on all text elements, requiring a 1-second delay and a 3-second transition to become readable on hover.
 
+## 2024-06-05 - Anti-UX Modal Close Button
+**Learning:** Making the user chase the close button creates significant friction, aligning with the goal of wasting time while remaining technically usable.
+**Action:** Implement evasive logic on elements the user needs to interact with to proceed or exit a state.
 ## 2024-05-24 - Anti-UX Implementation
 **Learning:** Making an interface intentionally frustrating (but technically usable) takes careful tuning to ensure the user doesn't just give up, but rather invests a disproportionate amount of time for a minor reward.
 **Action:** Implemented a 'manual loading bar' for opening modals, requiring rapid clicking to combat a constant progress drain.
