@@ -120,6 +120,54 @@
             let progress = 0;
             let drainInterval = null;
             let progressBar = null;
+
+            trigger.addEventListener('click', (e) => {
+                if (e.defaultPrevented) return;
+
+                if (!progressBar) {
+                    progressBar = document.createElement('div');
+                    progressBar.style.position = 'absolute';
+                    progressBar.style.bottom = '0';
+                    progressBar.style.left = '0';
+                    progressBar.style.height = '5px';
+                    progressBar.style.backgroundColor = '#00aaff';
+                    progressBar.style.width = '0%';
+                    trigger.style.position = 'relative';
+                    trigger.appendChild(progressBar);
+                }
+
+                progress += 20;
+                if (progress > 100) progress = 100;
+                progressBar.style.width = progress + '%';
+
+                if (!drainInterval) {
+                    drainInterval = setInterval(() => {
+                        progress -= 2;
+                        if (progress <= 0) {
+                            progress = 0;
+                            clearInterval(drainInterval);
+                            drainInterval = null;
+                            if (progressBar && progressBar.parentNode === trigger) {
+                                trigger.removeChild(progressBar);
+                                progressBar = null;
+                            }
+                        } else if (progressBar) {
+                            progressBar.style.width = progress + '%';
+                        }
+                    }, 50);
+                }
+
+                if (progress >= 100) {
+                    progress = 0;
+                    clearInterval(drainInterval);
+                    drainInterval = null;
+                    if (progressBar && progressBar.parentNode === trigger) {
+                        trigger.removeChild(progressBar);
+                        progressBar = null;
+                    }
+                    const modalTarget = document.querySelector(trigger.dataset.modalTarget);
+                    if (modalTarget) {
+                        modalTarget.style.display = 'block';
             let clickCountText = null;
 
             trigger.addEventListener('click', () => {
