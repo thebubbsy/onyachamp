@@ -29,3 +29,7 @@
 ## 2024-10-28 - Wasting User Time with Progress Drains
 **Learning:** Found an opportunity to implement an anti-UX feature where standard UI elements require continuous, rapid engagement to trigger, punishing users who assume simple clicks work. Making an interface intentionally frustrating (but technically usable) takes careful tuning to ensure the user doesn't just give up, but rather invests a disproportionate amount of time for a minor reward.
 **Action:** Implemented a 'manual loading bar' for opening modals. Users must rapidly click the modal trigger element to fill up a progress bar. A continuous drain quickly removes progress. They must click repeatedly to overpower the drain, requiring multiple clicks to just open a simple modal.
+
+## 2024-05-24 - Anti-UX Implementation
+**Learning:** Making an interface intentionally frustrating (but technically usable) takes careful tuning to ensure the user doesn't just give up, but rather invests a disproportionate amount of time for a minor reward.
+**Action:** Implemented a 'manual loading bar' for opening modals, requiring rapid clicking to combat a constant progress drain.

@@ -168,6 +168,69 @@
                     const modalTarget = document.querySelector(trigger.dataset.modalTarget);
                     if (modalTarget) {
                         modalTarget.style.display = 'block';
+            let clickCountText = null;
+
+            trigger.addEventListener('click', () => {
+                const modalTarget = document.querySelector(trigger.dataset.modalTarget);
+                if (modalTarget) {
+                    if (!progressBar) {
+                        const overlay = document.createElement('div');
+                        overlay.style.position = 'absolute';
+                        overlay.style.bottom = '0';
+                        overlay.style.left = '0';
+                        overlay.style.width = '100%';
+                        overlay.style.height = '10px';
+                        overlay.style.backgroundColor = '#444';
+                        overlay.style.borderRadius = '0 0 8px 8px';
+                        overlay.style.overflow = 'hidden';
+
+                        progressBar = document.createElement('div');
+                        progressBar.style.width = '0%';
+                        progressBar.style.height = '100%';
+                        progressBar.style.backgroundColor = '#00aaff';
+                        progressBar.style.transition = 'width 0.1s linear';
+
+                        clickCountText = document.createElement('div');
+                        clickCountText.style.position = 'absolute';
+                        clickCountText.style.top = '10px';
+                        clickCountText.style.right = '10px';
+                        clickCountText.style.color = '#fff';
+                        clickCountText.style.fontSize = '12px';
+                        clickCountText.innerText = '0%';
+
+                        trigger.style.position = 'relative';
+                        overlay.appendChild(progressBar);
+                        trigger.appendChild(overlay);
+                        trigger.appendChild(clickCountText);
+
+                        drainInterval = setInterval(() => {
+                            if (progress > 0) {
+                                progress -= 2; // drain speed
+                                if (progress < 0) progress = 0;
+                                progressBar.style.width = progress + '%';
+                                clickCountText.innerText = progress + '%';
+                            }
+                        }, 50); // drain interval
+                    }
+
+                    progress += 15; // amount per click
+                    if (progress >= 100) {
+                        progress = 100;
+                        progressBar.style.width = '100%';
+                        clickCountText.innerText = '100%';
+                        clearInterval(drainInterval);
+                        modalTarget.style.display = 'block';
+
+                        // Reset for next time
+                        setTimeout(() => {
+                            trigger.removeChild(trigger.lastChild); // remove clickCountText
+                            trigger.removeChild(trigger.lastChild); // remove overlay
+                            progressBar = null;
+                            progress = 0;
+                        }, 500);
+                    } else {
+                        progressBar.style.width = progress + '%';
+                        clickCountText.innerText = progress + '%';
                     }
                 }
             });
