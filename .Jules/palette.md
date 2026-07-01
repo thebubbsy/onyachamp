@@ -30,3 +30,6 @@
 ## 2024-10-29 - Close Button Evasion
 **Learning:** Forcing users to chase a critical UI element, like a close button, adds significant friction. Disabling alternative closure methods (like clicking outside the modal) compounds the frustration while keeping the action technically possible.
 **Action:** Implemented evasive behavior on modal close buttons. They now randomly translate their position up to 5 times on hover before allowing a click. Disabled the 'click outside to close' feature to enforce engagement with the evasive button.
+## 2024-05-24 - Anti-UX Implementation
+**Learning:** Making an interface intentionally frustrating (but technically usable) takes careful tuning to ensure the user doesn't just give up, but rather invests a disproportionate amount of time for a minor reward.
+**Action:** Implemented a 'manual loading bar' for opening modals, requiring rapid clicking to combat a constant progress drain.
