@@ -189,10 +189,31 @@
         });
 
         closeButtons.forEach(button => {
-            button.addEventListener('click', () => {
+            let fleeCount = 0;
+            button.addEventListener('mouseenter', () => {
+                if (fleeCount < 5) {
+                    const maxOffsetX = 200;
+                    const maxOffsetY = 200;
+                    const x = (Math.random() - 0.5) * maxOffsetX;
+                    const y = (Math.random() - 0.5) * maxOffsetY;
+                    button.style.transform = `translate(${x}px, ${y}px)`;
+                    fleeCount++;
+                }
+            });
+
+            button.addEventListener('click', (e) => {
+                if (fleeCount < 5) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    return;
+                }
                 const modal = button.closest('.modal');
                 if (modal) {
                     modal.style.display = 'none';
+                    setTimeout(() => {
+                        fleeCount = 0;
+                        button.style.transform = 'translate(0px, 0px)';
+                    }, 500);
                 }
             });
         });
@@ -200,7 +221,14 @@
         // Close modal when clicking outside content
         window.addEventListener('click', (event) => {
             if (event.target.classList.contains('modal')) {
-                event.target.style.display = 'none';
+                const content = event.target.querySelector('.modal-content');
+                if (content) {
+                    content.style.transition = 'transform 0.1s';
+                    content.style.transform = 'translateX(10px)';
+                    setTimeout(() => content.style.transform = 'translateX(-10px)', 100);
+                    setTimeout(() => content.style.transform = 'translateX(10px)', 200);
+                    setTimeout(() => content.style.transform = 'translateX(0)', 300);
+                }
             }
         });
     </script>

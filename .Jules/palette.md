@@ -30,3 +30,7 @@
 ## 2024-05-24 - Anti-UX Implementation
 **Learning:** Making an interface intentionally frustrating (but technically usable) takes careful tuning to ensure the user doesn't just give up, but rather invests a disproportionate amount of time for a minor reward.
 **Action:** Implemented a 'manual loading bar' for opening modals, requiring rapid clicking to combat a constant progress drain.
+
+## 2024-11-28 - Fleeing UI Elements
+**Learning:** Forcing users to chase an interactive element across the screen artificially inflates the time required to complete a basic action. Disabling alternative exit routes (like clicking outside the modal) traps the user in a micro-frustration loop.
+**Action:** Implemented a 'fleeing close button' that teleports away from the cursor 5 times before it can be clicked, and replaced the click-outside-to-close behavior with a dismissive shake animation.
