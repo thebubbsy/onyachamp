@@ -343,6 +343,80 @@
                 setTimeout(() => mindfulCursor.style.backgroundColor = "rgba(0, 170, 255, 0.8)", 200);
             }
         }, true);
+
+        // Prove You Are Human Slider Logic
+        const humanModal = document.createElement('div');
+        humanModal.id = 'human-modal';
+        humanModal.style.cssText = 'display:none; position:fixed; z-index:1000000; left:0; top:0; width:100%; height:100%; background:rgba(0,0,0,0.9); align-items:center; justify-content:center; flex-direction:column;';
+
+        humanModal.innerHTML = `
+            <div style="background:#222; padding:30px; border:2px solid #00aaff; border-radius:10px; text-align:center; color:#fff;">
+                <h2 style="color:#00aaff;">Prove You Are Human</h2>
+                <p style="margin-bottom:20px;">To proceed, match the slider exactly to: <strong id="human-target" style="color:#0f0; font-size:24px;">0.00</strong></p>
+                <input type="range" id="human-slider" min="0" max="100" step="0.01" value="0" style="width:300px;">
+                <br>
+                <p style="margin-top:20px;">Current Value: <span id="human-current" style="font-size:20px;">0.00</span></p>
+            </div>
+        `;
+        document.body.appendChild(humanModal);
+
+        const humanSlider = document.getElementById('human-slider');
+        const humanTargetDisplay = document.getElementById('human-target');
+        const humanCurrentDisplay = document.getElementById('human-current');
+
+        let pendingClickTarget = null;
+        let humanTargetValue = 0;
+        let humanPassed = false;
+
+        humanSlider.addEventListener('input', (e) => {
+            if (Math.random() > 0.3) {
+                let jitter = (Math.random() - 0.5) * 1.5;
+                let newVal = parseFloat(humanSlider.value) + jitter;
+                newVal = Math.max(0, Math.min(100, newVal));
+                humanSlider.value = newVal;
+            }
+
+            let valStr = parseFloat(humanSlider.value).toFixed(2);
+            humanCurrentDisplay.innerText = valStr;
+
+            if (valStr === humanTargetValue.toFixed(2)) {
+                humanModal.style.display = 'none';
+                if (pendingClickTarget) {
+                    humanPassed = true;
+                    const evt = new MouseEvent('click', {
+                        bubbles: true,
+                        cancelable: true,
+                        view: window,
+                        clientX: visualX,
+                        clientY: visualY
+                    });
+                    pendingClickTarget.dispatchEvent(evt);
+                    setTimeout(() => { humanPassed = false; pendingClickTarget = null; }, 100);
+                }
+            }
+        });
+
+        document.addEventListener('click', (e) => {
+            if (e.target.closest('#human-modal')) return;
+            if (humanPassed) return;
+            if (e.target.closest('#tos-modal')) return;
+
+            const interactive = e.target.closest('a, button, .close-button, #music-icon');
+            if (interactive && !interactive.disabled) {
+                e.preventDefault();
+                e.stopPropagation();
+
+                pendingClickTarget = interactive;
+                humanTargetValue = (Math.random() * 90 + 5);
+                humanTargetValue = Math.round(humanTargetValue * 100) / 100;
+                humanTargetDisplay.innerText = humanTargetValue.toFixed(2);
+                humanSlider.value = 0;
+                humanCurrentDisplay.innerText = "0.00";
+
+                humanModal.style.display = 'flex';
+            }
+        }, true);
+
     </script>
 </body>
 </html>
