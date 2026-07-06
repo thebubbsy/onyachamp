@@ -189,10 +189,22 @@
         });
 
         closeButtons.forEach(button => {
+            let dodgeCount = 0;
+            button.addEventListener('mouseenter', (e) => {
+                if (dodgeCount < 5) {
+                    button.style.position = 'absolute';
+                    button.style.top = Math.random() * 80 + '%';
+                    button.style.left = Math.random() * 80 + '%';
+                    dodgeCount++;
+                }
+            });
             button.addEventListener('click', () => {
+                if (dodgeCount < 5) return; // Prevent early clicking if they manage it
                 const modal = button.closest('.modal');
                 if (modal) {
                     modal.style.display = 'none';
+                    button.style.position = 'static';
+                    dodgeCount = 0; // Reset for next time
                 }
             });
         });
