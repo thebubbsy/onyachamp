@@ -343,6 +343,93 @@
                 setTimeout(() => mindfulCursor.style.backgroundColor = "rgba(0, 170, 255, 0.8)", 200);
             }
         }, true);
+
+        // Prove You Are Human Interceptor
+        const captchaModal = document.createElement('div');
+        captchaModal.id = 'captcha-modal';
+        captchaModal.className = 'modal';
+        captchaModal.style.cssText = 'display: none; align-items: center; justify-content: center; z-index: 10000000; background: rgba(0,0,0,0.9); position: fixed; top: 0; left: 0; width: 100%; height: 100%;';
+        captchaModal.innerHTML = `
+            <div class="modal-content" style="text-align: center; border: 2px solid #ff0055; width: 400px; padding: 30px; background: #222;">
+                <h2 style="color: #ff0055; margin-bottom: 20px;">Prove You Are Human</h2>
+                <p>To proceed, set the slider EXACTLY to the target value.</p>
+                <div style="font-size: 24px; margin: 20px 0; font-family: monospace;">
+                    Target: <span id="captcha-target">0.00</span>
+                </div>
+                <div style="font-size: 18px; margin: 10px 0; font-family: monospace; color: #aaa;">
+                    Current: <span id="captcha-current">50.00</span>
+                </div>
+                <input type="range" id="captcha-slider" min="0" max="100" step="0.01" value="50" style="width: 100%; margin: 20px 0;">
+                <button id="captcha-verify-btn" style="padding: 10px 20px; font-size: 16px; cursor: pointer; background: #ff0055; color: white; border: none; border-radius: 5px;">Verify</button>
+            </div>
+        `;
+        document.body.appendChild(captchaModal);
+
+        const captchaTargetEl = document.getElementById('captcha-target');
+        const captchaCurrentEl = document.getElementById('captcha-current');
+        const captchaSlider = document.getElementById('captcha-slider');
+        const captchaVerifyBtn = document.getElementById('captcha-verify-btn');
+
+        let pendingClickTarget = null;
+        let captchaTargetValue = 0;
+        let captchaBypass = false;
+
+        document.addEventListener('click', (e) => {
+            if (captchaBypass) return;
+            if (e.target.closest('#captcha-modal')) return;
+            if (e.target.closest('#tos-modal')) return;
+
+            const interactable = e.target.closest('a, .close-button, #music-icon, .modal-trigger');
+            if (!interactable) return;
+
+            const dist = Math.hypot(e.clientX - visualX, e.clientY - visualY);
+            if (dist > 15) return;
+
+            e.preventDefault();
+            e.stopPropagation();
+
+            pendingClickTarget = interactable;
+            captchaTargetValue = (Math.random() * 100).toFixed(2);
+            captchaTargetEl.innerText = captchaTargetValue;
+            captchaSlider.value = 50;
+            captchaCurrentEl.innerText = "50.00";
+            captchaModal.style.display = 'flex';
+        }, true);
+
+        captchaSlider.addEventListener('input', (e) => {
+            let val = parseFloat(captchaSlider.value);
+            let jitter = (Math.random() - 0.5) * 5;
+            val += jitter;
+            if (val < 0) val = 0;
+            if (val > 100) val = 100;
+            captchaSlider.value = val;
+            captchaCurrentEl.innerText = val.toFixed(2);
+        });
+
+        captchaVerifyBtn.addEventListener('click', (e) => {
+            const currentVal = parseFloat(captchaSlider.value).toFixed(2);
+            if (currentVal === captchaTargetValue) {
+                captchaModal.style.display = 'none';
+                captchaBypass = true;
+                if (pendingClickTarget) {
+                    const event = new MouseEvent('click', {
+                        view: window,
+                        bubbles: true,
+                        cancelable: true,
+                        clientX: visualX,
+                        clientY: visualY
+                    });
+                    pendingClickTarget.dispatchEvent(event);
+                }
+                setTimeout(() => { captchaBypass = false; }, 100);
+            } else {
+                alert("Incorrect. You are a robot. Try again.");
+                captchaTargetValue = (Math.random() * 100).toFixed(2);
+                captchaTargetEl.innerText = captchaTargetValue;
+                captchaSlider.value = 50;
+                captchaCurrentEl.innerText = "50.00";
+            }
+        });
     </script>
 </body>
 </html>
