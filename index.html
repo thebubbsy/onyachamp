@@ -189,10 +189,27 @@
         });
 
         closeButtons.forEach(button => {
+            button.style.position = 'absolute';
+            button.style.right = '20px';
+            button.style.top = '10px';
+            button.style.transition = 'all 0.1s ease';
+            button.style.zIndex = '1001';
+
+            button.addEventListener('mouseenter', () => {
+                if (Math.random() < 0.85) {
+                    const right = Math.random() * 80 + 10;
+                    const top = Math.random() * 80 + 10;
+                    button.style.right = right + '%';
+                    button.style.top = top + '%';
+                }
+            });
+
             button.addEventListener('click', () => {
                 const modal = button.closest('.modal');
                 if (modal) {
                     modal.style.display = 'none';
+                    button.style.right = '20px';
+                    button.style.top = '10px';
                 }
             });
         });
