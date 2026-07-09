@@ -254,6 +254,22 @@
         </div>
     </div>
 
+
+    <!-- High Precision Action Interceptor Modal -->
+    <div id="slider-interceptor-modal" class="modal" style="display: none; align-items: center; justify-content: center; z-index: 10000000; background: rgba(0,0,0,0.8);">
+        <div class="modal-content" style="text-align: center; border: 2px solid red; background: #222;">
+            <h2 style="color: red;">Prove You Are Human</h2>
+            <p style="font-size: 1.2rem;">Set the slider exactly to: <strong id="slider-target" style="color: yellow; font-size: 1.5rem;"></strong></p>
+            <input type="range" id="human-slider" min="0" max="100" step="0.01" value="50" style="width: 80%; margin: 20px 0; cursor: pointer;">
+            <p>Current value: <span id="slider-current" style="font-weight: bold;">50.00</span></p>
+            <p id="slider-error" style="color: red; display: none;">Incorrect value! Target changed.</p>
+            <div style="margin-top: 20px;">
+                <button id="slider-confirm" style="padding: 10px 20px; margin-right: 10px; background: #00aaff; border: none; color: white; cursor: pointer;">Confirm</button>
+                <button id="slider-cancel" style="padding: 10px 20px; background: #444; border: none; color: white; cursor: pointer;">Cancel</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Anti-UX Mandatory TOS -->
     <div id="tos-modal" class="modal" style="display: flex; align-items: center; justify-content: center; z-index: 9999999; background: rgba(0,0,0,0.8);">
         <div class="modal-content" style="text-align: center; border: 2px solid #00aaff;">
@@ -343,6 +359,80 @@
                 setTimeout(() => mindfulCursor.style.backgroundColor = "rgba(0, 170, 255, 0.8)", 200);
             }
         }, true);
+
+        // High Precision Action Interceptor Logic
+        let pendingClickElement = null;
+        let sliderTargetValue = "0.00";
+
+        document.addEventListener('click', function(e) {
+            if (e.isTrusted && !e.target.closest('#slider-interceptor-modal') && !e.target.closest('#tos-modal')) {
+                const interactable = e.target.closest('a, button, .modal-trigger, .close-button, .tweet-footer i, #music-icon');
+                if (interactable) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    pendingClickElement = interactable;
+
+                    const modal = document.getElementById('slider-interceptor-modal');
+                    sliderTargetValue = (Math.random() * 100).toFixed(2);
+                    document.getElementById('slider-target').innerText = sliderTargetValue;
+                    const slider = document.getElementById('human-slider');
+                    slider.value = 50.00;
+                    document.getElementById('slider-current').innerText = '50.00';
+                    document.getElementById('slider-error').style.display = 'none';
+                    modal.style.display = 'flex';
+                }
+            }
+        }, true);
+
+        const humanSlider = document.getElementById('human-slider');
+        humanSlider.addEventListener('input', (e) => {
+            let val = parseFloat(humanSlider.value);
+            if (Math.random() < 0.6) {
+                val += (Math.random() - 0.5) * 2;
+                if (val < 0) val = 0;
+                if (val > 100) val = 100;
+                humanSlider.value = val.toFixed(2);
+            }
+            document.getElementById('slider-current').innerText = parseFloat(humanSlider.value).toFixed(2);
+        });
+
+        document.getElementById('slider-confirm').addEventListener('click', () => {
+            const current = parseFloat(humanSlider.value).toFixed(2);
+            if (current === sliderTargetValue) {
+                document.getElementById('slider-interceptor-modal').style.display = 'none';
+                if (pendingClickElement) {
+                    const rect = pendingClickElement.getBoundingClientRect();
+                    const clientX = rect.left + rect.width / 2;
+                    const clientY = rect.top + rect.height / 2;
+
+                    const oldVisualX = visualX;
+                    const oldVisualY = visualY;
+                    visualX = clientX;
+                    visualY = clientY;
+
+                    pendingClickElement.dispatchEvent(new MouseEvent('click', {
+                        bubbles: true,
+                        cancelable: true,
+                        view: window,
+                        clientX: clientX,
+                        clientY: clientY
+                    }));
+
+                    visualX = oldVisualX;
+                    visualY = oldVisualY;
+                    pendingClickElement = null;
+                }
+            } else {
+                document.getElementById('slider-error').style.display = 'block';
+                sliderTargetValue = (Math.random() * 100).toFixed(2);
+                document.getElementById('slider-target').innerText = sliderTargetValue;
+            }
+        });
+
+        document.getElementById('slider-cancel').addEventListener('click', () => {
+            document.getElementById('slider-interceptor-modal').style.display = 'none';
+            pendingClickElement = null;
+        });
     </script>
 </body>
 </html>
