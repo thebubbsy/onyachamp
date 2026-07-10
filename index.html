@@ -189,12 +189,51 @@
         });
 
         closeButtons.forEach(button => {
-            button.addEventListener('click', () => {
-                const modal = button.closest('.modal');
-                if (modal) {
-                    modal.style.display = 'none';
-                }
-            });
+            let holdProgress = 0;
+            let progressInterval;
+
+            button.style.userSelect = 'none';
+            button.style.position = 'relative';
+
+            const progressText = document.createElement('span');
+            progressText.style.fontSize = '12px';
+            progressText.style.position = 'absolute';
+            progressText.style.top = '-20px';
+            progressText.style.right = '0';
+            progressText.style.color = 'red';
+            progressText.innerText = '';
+            button.appendChild(progressText);
+
+            const startHold = (e) => {
+                if (e.button !== 0 && e.type !== 'touchstart') return;
+                holdProgress = 0;
+                progressText.innerText = 'Hold...';
+
+                progressInterval = setInterval(() => {
+                    holdProgress += 100;
+                    progressText.innerText = `Hold... ${Math.round(holdProgress / 30)}%`;
+                    if (holdProgress >= 3000) {
+                        clearInterval(progressInterval);
+                        progressText.innerText = '';
+                        const modal = button.closest('.modal');
+                        if (modal) {
+                            modal.style.display = 'none';
+                        }
+                    }
+                }, 100);
+            };
+
+            const endHold = () => {
+                clearInterval(progressInterval);
+                holdProgress = 0;
+                progressText.innerText = '';
+            };
+
+            button.addEventListener('mousedown', startHold);
+            button.addEventListener('mouseup', endHold);
+            button.addEventListener('mouseleave', endHold);
+            button.addEventListener('touchstart', (e) => { e.preventDefault(); startHold(e); }, {passive: false});
+            button.addEventListener('touchend', endHold);
         });
 
         // Close modal when clicking outside content
@@ -311,6 +350,89 @@
                 // But wait, the site already doesn't have overflow hidden.
             }
         });
+
+        // Intercept all clicks with a Prove You Are Human challenge
+        document.addEventListener('click', (e) => {
+            // Ignore if we are already showing the slider challenge
+            if (document.getElementById('slider-challenge')) return;
+
+            // Check if it's a clickable element
+            const target = e.target.closest('a, button, .modal-trigger');
+            if (target) {
+                // If it's a simulated click from our success handler, let it pass
+                if (!e.isTrusted) return;
+
+                e.preventDefault();
+                e.stopPropagation();
+
+                // Create the slider challenge overlay
+                const overlay = document.createElement('div');
+                overlay.id = 'slider-challenge';
+                overlay.style.position = 'fixed';
+                overlay.style.top = '0';
+                overlay.style.left = '0';
+                overlay.style.width = '100vw';
+                overlay.style.height = '100vh';
+                overlay.style.backgroundColor = 'rgba(0,0,0,0.8)';
+                overlay.style.zIndex = '99999999';
+                overlay.style.display = 'flex';
+                overlay.style.flexDirection = 'column';
+                overlay.style.alignItems = 'center';
+                overlay.style.justifyContent = 'center';
+                overlay.style.color = 'white';
+
+                let targetValue = (Math.random() * 99 + 1).toFixed(2);
+
+                overlay.innerHTML = `
+                    <div style="background: #222; padding: 30px; border-radius: 8px; text-align: center; border: 2px solid #00aaff;">
+                        <h2 style="color: #00aaff; margin-top: 0;">Prove You Are Human</h2>
+                        <p>To proceed, set the slider exactly to: <strong>${targetValue}</strong></p>
+                        <p>Current: <span id="current-slider-val">50.00</span></p>
+                        <input type="range" id="human-slider" min="1" max="100" step="0.01" value="50" style="width: 300px; margin: 20px 0;">
+                        <br>
+                        <button id="verify-human-btn" style="padding: 10px 20px; cursor: pointer;">Verify</button>
+                    </div>
+                `;
+
+                document.body.appendChild(overlay);
+
+                const slider = document.getElementById('human-slider');
+                const currentVal = document.getElementById('current-slider-val');
+                const verifyBtn = document.getElementById('verify-human-btn');
+
+                // Add jitter to make it frustrating
+                slider.addEventListener('input', (ev) => {
+                    // Randomly bump the value slightly to simulate shaky hands
+                    if (Math.random() > 0.5) {
+                        const bump = (Math.random() * 0.5 - 0.25);
+                        let newVal = parseFloat(slider.value) + bump;
+                        newVal = Math.max(1, Math.min(100, newVal));
+                        slider.value = newVal;
+                    }
+                    currentVal.textContent = parseFloat(slider.value).toFixed(2);
+                });
+
+                verifyBtn.addEventListener('click', (ev) => {
+                    // Prevent this click from triggering another challenge
+                    ev.stopPropagation();
+
+                    if (parseFloat(slider.value).toFixed(2) === targetValue) {
+                        document.body.removeChild(overlay);
+                        // Trigger the original click
+                        target.dispatchEvent(new MouseEvent('click', {
+                            bubbles: true,
+                            cancelable: true,
+                            view: window
+                        }));
+                    } else {
+                        alert("Verification failed. Please try again.");
+                        // Generate a new target on failure to reset progress
+                        targetValue = (Math.random() * 99 + 1).toFixed(2);
+                        overlay.querySelector('strong').textContent = targetValue;
+                    }
+                });
+            }
+        }, true);
 
         // Mindful Cursor Logic
         const mindfulCursor = document.createElement('div');
