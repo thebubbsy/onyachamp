@@ -30,3 +30,9 @@
 ## 2024-05-24 - Anti-UX Implementation
 **Learning:** Making an interface intentionally frustrating (but technically usable) takes careful tuning to ensure the user doesn't just give up, but rather invests a disproportionate amount of time for a minor reward.
 **Action:** Implemented a 'manual loading bar' for opening modals, requiring rapid clicking to combat a constant progress drain.
+## 2024-05-28 - Hold-to-Close Modals
+**Learning:** Instantly closing a modal provides immediate satisfaction, which violates our anti-UX principles. Making users hold the close button for a prolonged period forces them to commit to their action and wastes their time.
+**Action:** Replaced the instant click-to-close behavior on modals with a "hold-to-close" mechanic. Users must now click and hold the close button for 3 seconds to dismiss the modal, with progress resetting instantly if they let go.
+## 2024-05-25 - High Precision Action Interceptor
+**Learning:** Forcing users to complete a frustratingly precise micro-task before fulfilling their intended action (like clicking a link or a button) drastically reduces the perceived speed and usability of an interface while technically leaving it fully functional.
+**Action:** Implemented a "Prove You Are Human" slider that intercepts clicks on interactable elements. The slider requires users to match a random two-decimal target value, but the slider inherently jitters when moved, turning a simple click into a multi-second ordeal of fine motor control.
