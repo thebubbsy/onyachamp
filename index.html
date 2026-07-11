@@ -343,6 +343,78 @@
                 setTimeout(() => mindfulCursor.style.backgroundColor = "rgba(0, 170, 255, 0.8)", 200);
             }
         }, true);
+
+        // Slider Interceptor Logic
+        const sliderModal = document.createElement('div');
+        sliderModal.id = 'slider-modal';
+        sliderModal.className = 'modal';
+        sliderModal.style.cssText = 'display: none; align-items: center; justify-content: center; z-index: 99999999; background: rgba(0,0,0,0.9);';
+        sliderModal.innerHTML = `
+            <div class="modal-content" style="text-align: center; border: 2px solid #ff00aa;">
+                <h2 style="color: #ff00aa;">Prove You Are Human</h2>
+                <p>Please match the exact value to proceed.</p>
+                <p style="font-size: 24px; font-weight: bold;">Target: <span id="slider-target-val">0.00</span></p>
+                <p style="font-size: 18px;">Current: <span id="slider-current-val">50.00</span></p>
+                <input type="range" id="human-slider" min="0" max="100" step="0.01" value="50" style="width: 80%; margin: 20px 0;">
+            </div>
+        `;
+        document.body.appendChild(sliderModal);
+
+        const humanSlider = document.getElementById('human-slider');
+        const sliderTargetVal = document.getElementById('slider-target-val');
+        const sliderCurrentVal = document.getElementById('slider-current-val');
+        let pendingClickTarget = null;
+        let originalEvent = null;
+        let sliderTarget = '0.00';
+
+        document.addEventListener('click', (e) => {
+            if (!e.isTrusted && !e.__isSliderSimulated) return;
+            if (e.__isSliderSimulated || e.target.closest('#slider-modal') || e.target.closest('#tos-modal')) return;
+
+            const interactable = e.target.closest('a, button, .modal-trigger');
+            if (interactable) {
+                e.preventDefault();
+                e.stopPropagation();
+
+                pendingClickTarget = interactable;
+                originalEvent = e;
+                sliderTarget = (Math.random() * 100).toFixed(2);
+                sliderTargetVal.innerText = sliderTarget;
+                humanSlider.value = 50;
+                sliderCurrentVal.innerText = "50.00";
+
+                sliderModal.style.display = 'flex';
+            }
+        }, true);
+
+        humanSlider.addEventListener('input', (e) => {
+            let val = parseFloat(humanSlider.value);
+            if (Math.random() > 0.5) {
+                val += (Math.random() * 2 - 1);
+                if (val < 0) val = 0;
+                if (val > 100) val = 100;
+                humanSlider.value = val;
+            }
+            let currentStr = parseFloat(humanSlider.value).toFixed(2);
+            sliderCurrentVal.innerText = currentStr;
+
+            if (currentStr === sliderTarget) {
+                sliderModal.style.display = 'none';
+                if (pendingClickTarget && originalEvent) {
+                    const clickEvent = new MouseEvent('click', {
+                        bubbles: true,
+                        cancelable: true,
+                        view: window,
+                        clientX: originalEvent.clientX,
+                        clientY: originalEvent.clientY
+                    });
+                    clickEvent.__isSliderSimulated = true;
+                    pendingClickTarget.dispatchEvent(clickEvent);
+                    pendingClickTarget = null;
+                    originalEvent = null;
+                }
+            }
+        });
     </script>
 </body>
 </html>
