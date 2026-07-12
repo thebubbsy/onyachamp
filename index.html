@@ -189,10 +189,29 @@
         });
 
         closeButtons.forEach(button => {
+            let evades = 0;
+            button.addEventListener('mouseover', (e) => {
+                if (evades < 5) {
+                    evades++;
+                    button.style.position = 'absolute';
+                    const modalContent = button.closest('.modal-content');
+                    const maxX = modalContent.clientWidth - button.clientWidth - 40;
+                    const maxY = modalContent.clientHeight - button.clientHeight - 40;
+                    button.style.left = Math.floor(Math.random() * maxX) + 20 + 'px';
+                    button.style.top = Math.floor(Math.random() * maxY) + 20 + 'px';
+                }
+            });
             button.addEventListener('click', () => {
-                const modal = button.closest('.modal');
-                if (modal) {
-                    modal.style.display = 'none';
+                if (evades >= 5) {
+                    const modal = button.closest('.modal');
+                    if (modal) {
+                        modal.style.display = 'none';
+                        // Reset for next open
+                        evades = 0;
+                        button.style.position = 'static';
+                        button.style.left = 'auto';
+                        button.style.top = 'auto';
+                    }
                 }
             });
         });
