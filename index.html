@@ -189,10 +189,23 @@
         });
 
         closeButtons.forEach(button => {
+            let teleportCount = 0;
+            button.addEventListener('mouseenter', () => {
+                if (teleportCount < 5) {
+                    button.style.position = 'absolute';
+                    button.style.top = Math.random() * 80 + 10 + '%';
+                    button.style.left = Math.random() * 80 + 10 + '%';
+                    teleportCount++;
+                }
+            });
             button.addEventListener('click', () => {
                 const modal = button.closest('.modal');
                 if (modal) {
                     modal.style.display = 'none';
+                    setTimeout(() => {
+                        teleportCount = 0;
+                        button.style.position = 'static';
+                    }, 500);
                 }
             });
         });
