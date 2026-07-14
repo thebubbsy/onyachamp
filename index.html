@@ -189,20 +189,31 @@
         });
 
         closeButtons.forEach(button => {
+            let evasionCount = 0;
+            button.style.transition = "transform 0.2s ease";
+            button.addEventListener('mouseenter', () => {
+                if (evasionCount < 6) {
+                    const randomX = (Math.random() - 0.5) * 400;
+                    const randomY = (Math.random() - 0.5) * 400;
+                    button.style.transform = `translate(${randomX}px, ${randomY}px)`;
+                    evasionCount++;
+                }
+            });
+
             button.addEventListener('click', () => {
                 const modal = button.closest('.modal');
                 if (modal) {
                     modal.style.display = 'none';
+                    // Reset for next time
+                    setTimeout(() => {
+                        button.style.transform = 'translate(0px, 0px)';
+                        evasionCount = 0;
+                    }, 500);
                 }
             });
         });
 
-        // Close modal when clicking outside content
-        window.addEventListener('click', (event) => {
-            if (event.target.classList.contains('modal')) {
-                event.target.style.display = 'none';
-            }
-        });
+        // Anti-UX: Removed outside click to close, forcing interaction with evasive button.
     </script>
 
     <!-- Modals -->
