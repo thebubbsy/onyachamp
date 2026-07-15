@@ -344,5 +344,113 @@
             }
         }, true);
     </script>
+
+    <!-- Prove You Are Human Slider -->
+    <div id="human-modal" class="modal" style="display: none; align-items: center; justify-content: center; z-index: 99999999; background: rgba(0,0,0,0.8);">
+        <div class="modal-content" style="text-align: center; border: 2px solid #00aaff; user-select: none;">
+            <h2 style="color: #00aaff;">Prove You Are Human</h2>
+            <p>Match the target value to proceed.</p>
+            <div style="font-size: 2rem; margin: 20px 0;">Target: <span id="target-value"></span></div>
+            <div style="font-size: 1.5rem; margin-bottom: 20px;">Current: <span id="current-value">0.00</span></div>
+            <input type="range" id="human-slider" min="0" max="100" step="0.01" value="0" style="width: 80%; cursor: pointer;">
+            <button id="verify-human-btn" disabled style="margin-top: 20px; opacity: 0.5; display: block; margin-left: auto; margin-right: auto;">Verify</button>
+        </div>
+    </div>
+    <script>
+        const humanModal = document.getElementById('human-modal');
+        const targetValueSpan = document.getElementById('target-value');
+        const currentValueSpan = document.getElementById('current-value');
+        const humanSlider = document.getElementById('human-slider');
+        const verifyBtn = document.getElementById('verify-human-btn');
+        let targetValue = 0;
+        let pendingEvent = null;
+        let pendingTarget = null;
+        let isHumanVerified = false;
+
+        function resetHumanChallenge() {
+            targetValue = (Math.random() * 100).toFixed(2);
+            targetValueSpan.innerText = targetValue;
+            humanSlider.value = 0;
+            currentValueSpan.innerText = "0.00";
+            verifyBtn.disabled = true;
+            verifyBtn.style.opacity = '0.5';
+            verifyBtn.style.cursor = 'none';
+            isHumanVerified = false;
+        }
+
+        document.addEventListener('click', (e) => {
+            // Ignore clicks within the modal itself
+            if (e.target.closest('#human-modal') || e.target.closest('#tos-modal')) return;
+
+            // Only intercept if we aren't already verified for this specific action
+            if (isHumanVerified) {
+                isHumanVerified = false; // Reset for next click
+                return;
+            }
+
+            // Check if it's a substantive interaction we want to block (links, buttons, interactive elements)
+            // But let's just intercept all clicks that aren't on the body or html itself to be safe/annoying
+            if (e.target.tagName !== 'HTML' && e.target.tagName !== 'BODY') {
+                e.preventDefault();
+                e.stopPropagation();
+
+                pendingEvent = new MouseEvent(e.type, e);
+                pendingTarget = e.target;
+
+                resetHumanChallenge();
+                humanModal.style.display = 'flex';
+            }
+        }, true);
+
+        humanSlider.addEventListener('input', (e) => {
+            if (!e.isTrusted) return; // Prevent bot scripts from easily moving the slider
+
+            // Jitter the value slightly to make it hard to control
+            let val = parseFloat(humanSlider.value);
+            let jitter = (Math.random() - 0.5) * 2; // +/- 1
+            val = Math.max(0, Math.min(100, val + jitter));
+            humanSlider.value = val;
+
+            currentValueSpan.innerText = val.toFixed(2);
+
+            if (val.toFixed(2) === targetValue) {
+                verifyBtn.disabled = false;
+                verifyBtn.style.opacity = '1';
+                verifyBtn.style.cursor = 'pointer';
+            } else {
+                verifyBtn.disabled = true;
+                verifyBtn.style.opacity = '0.5';
+                verifyBtn.style.cursor = 'none';
+            }
+        });
+
+        verifyBtn.addEventListener('click', (e) => {
+             if (e.isTrusted && !verifyBtn.disabled && humanSlider.value == targetValue) {
+                humanModal.style.display = 'none';
+                isHumanVerified = true;
+
+                if (pendingTarget) {
+                    // We can't perfectly resume the original event, but we can simulate a click on the target
+                    // This might break some complex event handlers, but it works for basic clicks.
+
+                    // Actually, simulating a click might just get caught by our interceptor again if we aren't careful.
+                    // The isHumanVerified flag handles this.
+
+                    const simulatedClick = new MouseEvent('click', {
+                        bubbles: true,
+                        cancelable: true,
+                        view: window
+                    });
+
+                    // We temporarily remove the listener or rely on the flag
+                    pendingTarget.dispatchEvent(simulatedClick);
+
+                    pendingTarget = null;
+                    pendingEvent = null;
+                }
+             }
+        });
+    </script>
 </body>
+
 </html>
