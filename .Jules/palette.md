@@ -30,3 +30,7 @@
 ## 2024-05-24 - Anti-UX Implementation
 **Learning:** Making an interface intentionally frustrating (but technically usable) takes careful tuning to ensure the user doesn't just give up, but rather invests a disproportionate amount of time for a minor reward.
 **Action:** Implemented a 'manual loading bar' for opening modals, requiring rapid clicking to combat a constant progress drain.
+
+## 2024-10-29 - Jittery Slider CAPTCHA Implementation
+**Learning:** Forcing a highly precise task before a click registers turns basic navigation into an agonizing chore, perfectly matching the anti-UX goal.
+**Action:** Implemented the slider interceptor with intentional jitter on every input.
