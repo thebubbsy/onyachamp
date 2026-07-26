@@ -197,12 +197,7 @@
             });
         });
 
-        // Close modal when clicking outside content
-        window.addEventListener('click', (event) => {
-            if (event.target.classList.contains('modal')) {
-                event.target.style.display = 'none';
-            }
-        });
+
     </script>
 
     <!-- Modals -->
@@ -251,6 +246,19 @@
             <span class="close-button">&times;</span>
             <h2>Jira Master Details</h2>
             <p>Closing a Jira ticket is often considered the most challenging task in software development. Matthew Bubb does it daily, with a smile. His efficiency in resolving complex issues is legendary, making him the undisputed Jira Master. Matthew Bubb, the ultimate problem solver.</p>
+        </div>
+    </div>
+
+    <!-- Captcha Interceptor Modal -->
+    <div id="captcha-modal" class="modal" style="display: none; align-items: center; justify-content: center; z-index: 10000000; background: rgba(0,0,0,0.8);">
+        <div class="modal-content" style="text-align: center; border: 2px solid #00aaff;">
+            <h2 style="color: #00aaff;">Prove You Are Human</h2>
+            <p>Match the target value to proceed with your click.</p>
+            <p>Target: <span id="captcha-target"></span></p>
+            <input type="range" id="captcha-slider" min="0" max="100" step="0.01" value="0" style="width: 80%; margin: 20px 0;">
+            <p>Current: <span id="captcha-current">0.00</span></p>
+            <button id="captcha-verify-btn" disabled style="margin-top: 20px; opacity: 0.5;">Verify</button>
+            <button id="captcha-cancel-btn" style="margin-top: 20px; margin-left: 10px;">Cancel</button>
         </div>
     </div>
 
@@ -310,6 +318,79 @@
                 // Remove the body overflow hidden if you want them to scroll the page.
                 // But wait, the site already doesn't have overflow hidden.
             }
+        });
+
+        // Slider Interceptor Logic
+        const captchaModal = document.getElementById('captcha-modal');
+        const captchaTargetEl = document.getElementById('captcha-target');
+        const captchaSlider = document.getElementById('captcha-slider');
+        const captchaCurrentEl = document.getElementById('captcha-current');
+        const captchaVerifyBtn = document.getElementById('captcha-verify-btn');
+        const captchaCancelBtn = document.getElementById('captcha-cancel-btn');
+
+        let pendingClickEventTarget = null;
+        let captchaTargetValue = 0;
+
+        document.addEventListener('click', (e) => {
+            if (!e.isTrusted) return;
+            if (captchaModal.style.display === 'flex') return;
+            if (e.target.closest('#captcha-modal') || e.target.closest('#tos-modal')) return;
+
+            if (e.target.closest('button') || e.target.closest('a') || e.target.closest('.modal-trigger') || e.target.closest('.close-button') || e.target.closest('.achievement')) {
+                e.preventDefault();
+                e.stopPropagation();
+
+                pendingClickEventTarget = e.target.closest('button') || e.target.closest('a') || e.target.closest('.modal-trigger') || e.target.closest('.close-button') || e.target.closest('.achievement');
+                captchaTargetValue = (Math.random() * 100).toFixed(2);
+                captchaTargetEl.innerText = captchaTargetValue;
+                captchaSlider.value = 0;
+                captchaCurrentEl.innerText = "0.00";
+                captchaVerifyBtn.disabled = true;
+                captchaVerifyBtn.style.opacity = '0.5';
+                captchaVerifyBtn.style.cursor = 'none';
+                captchaModal.style.display = 'flex';
+            }
+        }, true);
+
+        captchaSlider.addEventListener('input', (e) => {
+            if (Math.random() > 0.5) {
+                const jitter = (Math.random() - 0.5) * 5;
+                let val = parseFloat(captchaSlider.value) + jitter;
+                if (val < 0) val = 0;
+                if (val > 100) val = 100;
+                captchaSlider.value = val.toFixed(2);
+            }
+            captchaCurrentEl.innerText = parseFloat(captchaSlider.value).toFixed(2);
+
+            if (captchaCurrentEl.innerText === captchaTargetValue) {
+                captchaVerifyBtn.disabled = false;
+                captchaVerifyBtn.style.opacity = '1';
+                captchaVerifyBtn.style.cursor = 'pointer';
+            } else {
+                captchaVerifyBtn.disabled = true;
+                captchaVerifyBtn.style.opacity = '0.5';
+                captchaVerifyBtn.style.cursor = 'none';
+            }
+        });
+
+        captchaVerifyBtn.addEventListener('click', (e) => {
+            if (!captchaVerifyBtn.disabled) {
+                captchaModal.style.display = 'none';
+                if (pendingClickEventTarget) {
+                    const evt = new MouseEvent('click', {
+                        bubbles: true,
+                        cancelable: true,
+                        view: window
+                    });
+                    pendingClickEventTarget.dispatchEvent(evt);
+                    pendingClickEventTarget = null;
+                }
+            }
+        });
+
+        captchaCancelBtn.addEventListener('click', () => {
+            captchaModal.style.display = 'none';
+            pendingClickEventTarget = null;
         });
 
         // Mindful Cursor Logic
