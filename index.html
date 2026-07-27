@@ -189,20 +189,35 @@
         });
 
         closeButtons.forEach(button => {
+            let evadeCount = 0;
+            button.style.transition = 'all 0.2s';
+            button.addEventListener('mouseenter', () => {
+                if (evadeCount < 5) {
+                    button.style.position = 'absolute';
+                    button.style.top = (Math.random() * 80 + 10) + '%';
+                    button.style.left = (Math.random() * 80 + 10) + '%';
+                    evadeCount++;
+                }
+            });
             button.addEventListener('click', () => {
                 const modal = button.closest('.modal');
                 if (modal) {
                     modal.style.display = 'none';
+                    evadeCount = 0;
+                    button.style.position = 'absolute';
+                    button.style.top = '10px';
+                    button.style.right = '20px';
+                    button.style.left = 'auto';
                 }
             });
         });
 
-        // Close modal when clicking outside content
-        window.addEventListener('click', (event) => {
-            if (event.target.classList.contains('modal')) {
-                event.target.style.display = 'none';
-            }
-        });
+        // Disabled closing modal when clicking outside content for maximum frustration
+        // window.addEventListener('click', (event) => {
+        //     if (event.target.classList.contains('modal')) {
+        //         event.target.style.display = 'none';
+        //     }
+        // });
     </script>
 
     <!-- Modals -->

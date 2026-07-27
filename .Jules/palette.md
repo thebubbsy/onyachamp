@@ -30,3 +30,7 @@
 ## 2024-05-24 - Anti-UX Implementation
 **Learning:** Making an interface intentionally frustrating (but technically usable) takes careful tuning to ensure the user doesn't just give up, but rather invests a disproportionate amount of time for a minor reward.
 **Action:** Implemented a 'manual loading bar' for opening modals, requiring rapid clicking to combat a constant progress drain.
+
+## 2024-11-20 - Evasive Modal Close Buttons
+**Learning:** Forcing users to chase the close button on a modal before they can dismiss it adds a layer of micro-frustration. It makes a simple, normally instinctual action require precise hand-eye coordination.
+**Action:** Implemented a close button that evades the mouse cursor 5 times before settling down and allowing the user to click it. Also disabled the ability to close the modal by clicking outside of it.
