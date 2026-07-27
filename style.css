@@ -189,11 +189,14 @@ footer {
 
 .close-button {
     color: #aaa;
-    float: right;
+    position: absolute;
+    top: 10px;
+    right: 20px;
     font-size: 28px;
     font-weight: bold;
     display: inline-block;
-    transition: transform 0.2s ease;
+    transition: all 0.2s ease;
+    z-index: 10;
 }
 
 .close-button:hover,
