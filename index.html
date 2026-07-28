@@ -188,11 +188,21 @@
             });
         });
 
+        function requireCaptchaToClose(modal) {
+            const phrase = "I acknowledge that I have finished reading this incredibly important content";
+            const input = prompt(`To prevent accidental closures, please type the following exactly:\n\n${phrase}`);
+            if (input === phrase) {
+                modal.style.display = 'none';
+            } else {
+                alert("Confirmation failed. The modal will remain open for your continued reading pleasure.");
+            }
+        }
+
         closeButtons.forEach(button => {
             button.addEventListener('click', () => {
                 const modal = button.closest('.modal');
                 if (modal) {
-                    modal.style.display = 'none';
+                    requireCaptchaToClose(modal);
                 }
             });
         });
@@ -200,7 +210,8 @@
         // Close modal when clicking outside content
         window.addEventListener('click', (event) => {
             if (event.target.classList.contains('modal')) {
-                event.target.style.display = 'none';
+                if (event.target.id === 'tos-modal') return;
+                requireCaptchaToClose(event.target);
             }
         });
     </script>
