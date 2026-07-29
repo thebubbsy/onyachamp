@@ -254,6 +254,17 @@
         </div>
     </div>
 
+    <!-- Slider Interceptor Modal -->
+    <div id="slider-interceptor-modal" class="modal" style="display: none; align-items: center; justify-content: center; z-index: 9999998; background: rgba(0,0,0,0.8);">
+        <div class="modal-content" style="text-align: center; border: 2px solid #00aaff;">
+            <h2 style="color: #00aaff;">Prove You Are Human</h2>
+            <p>To proceed, please set the slider exactly to: <strong id="slider-target-value">0.00</strong></p>
+            <input type="range" id="human-slider" min="0" max="100" step="0.01" value="0" style="width: 80%; margin: 20px 0;">
+            <p>Current Value: <span id="slider-current-value">0.00</span></p>
+            <button id="slider-verify-btn" disabled style="margin-top: 20px; opacity: 0.5;">Verify</button>
+        </div>
+    </div>
+
     <!-- Anti-UX Mandatory TOS -->
     <div id="tos-modal" class="modal" style="display: flex; align-items: center; justify-content: center; z-index: 9999999; background: rgba(0,0,0,0.8);">
         <div class="modal-content" style="text-align: center; border: 2px solid #00aaff;">
@@ -309,6 +320,75 @@
                 tosModal.style.display = 'none';
                 // Remove the body overflow hidden if you want them to scroll the page.
                 // But wait, the site already doesn't have overflow hidden.
+            }
+        });
+
+        // Slider Interceptor Logic
+        const sliderModal = document.getElementById('slider-interceptor-modal');
+        const humanSlider = document.getElementById('human-slider');
+        const sliderTargetDisplay = document.getElementById('slider-target-value');
+        const sliderCurrentDisplay = document.getElementById('slider-current-value');
+        const sliderVerifyBtn = document.getElementById('slider-verify-btn');
+        let pendingClickTarget = null;
+        let sliderTarget = 0;
+
+        document.addEventListener('click', (e) => {
+            if (!e.isTrusted || e.target.closest('#slider-interceptor-modal') || e.target.closest('#tos-modal')) return;
+
+            const isInteractable = e.target.closest('a, button, input, select, textarea, .modal-trigger, #music-icon');
+
+            if (isInteractable && sliderModal.style.display !== 'flex') {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+
+                pendingClickTarget = isInteractable;
+
+                sliderTarget = (Math.random() * 100).toFixed(2);
+                sliderTargetDisplay.innerText = sliderTarget;
+                humanSlider.value = 0;
+                sliderCurrentDisplay.innerText = '0.00';
+                sliderVerifyBtn.disabled = true;
+                sliderVerifyBtn.style.opacity = '0.5';
+                sliderVerifyBtn.style.cursor = 'none';
+
+                sliderModal.style.display = 'flex';
+            }
+        }, true);
+
+        humanSlider.addEventListener('input', (e) => {
+            if (Math.random() > 0.5) {
+                let jitter = (Math.random() - 0.5) * 2;
+                let val = parseFloat(humanSlider.value) + jitter;
+                humanSlider.value = Math.max(0, Math.min(100, val)).toFixed(2);
+            }
+
+            let currentVal = parseFloat(humanSlider.value).toFixed(2);
+            sliderCurrentDisplay.innerText = currentVal;
+
+            if (currentVal === sliderTarget) {
+                sliderVerifyBtn.disabled = false;
+                sliderVerifyBtn.style.opacity = '1';
+                sliderVerifyBtn.style.cursor = 'pointer';
+            } else {
+                sliderVerifyBtn.disabled = true;
+                sliderVerifyBtn.style.opacity = '0.5';
+                sliderVerifyBtn.style.cursor = 'none';
+            }
+        });
+
+        sliderVerifyBtn.addEventListener('click', (e) => {
+            if (!sliderVerifyBtn.disabled && pendingClickTarget) {
+                sliderModal.style.display = 'none';
+
+                const target = pendingClickTarget;
+                pendingClickTarget = null;
+
+                if (typeof target.click === 'function') {
+                    target.click();
+                } else {
+                    const clickEvent = new MouseEvent('click', { bubbles: true, cancelable: true });
+                    target.dispatchEvent(clickEvent);
+                }
             }
         });
 
