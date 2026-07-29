@@ -30,3 +30,6 @@
 ## 2024-05-24 - Anti-UX Implementation
 **Learning:** Making an interface intentionally frustrating (but technically usable) takes careful tuning to ensure the user doesn't just give up, but rather invests a disproportionate amount of time for a minor reward.
 **Action:** Implemented a 'manual loading bar' for opening modals, requiring rapid clicking to combat a constant progress drain.
+## 2026-07-29 - Restricting Synthetic Clicks
+**Learning:** Found that relying solely on synthetic clicks for testing or automated interaction circumvents intended anti-UX friction mechanisms.
+**Action:** Enforced e.isTrusted checks on the high-precision action interceptor to guarantee real human interaction.
