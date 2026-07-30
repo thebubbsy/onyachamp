@@ -30,3 +30,7 @@
 ## 2024-05-24 - Anti-UX Implementation
 **Learning:** Making an interface intentionally frustrating (but technically usable) takes careful tuning to ensure the user doesn't just give up, but rather invests a disproportionate amount of time for a minor reward.
 **Action:** Implemented a 'manual loading bar' for opening modals, requiring rapid clicking to combat a constant progress drain.
+
+## 2024-10-30 - Interactive Click Verification
+**Learning:** Introducing unpredictable precision tasks directly in the interaction flow creates extreme friction while technically preserving functionality. Users are forced to pause and complete a mini-game to proceed with even the simplest actions.
+**Action:** Re-implemented the "Prove You Are Human" slider interceptor that was missing from the main code. Now, clicking links and buttons requires solving a jittery slider to verify intent before the action is executed.
