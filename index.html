@@ -344,5 +344,81 @@
             }
         }, true);
     </script>
+
+    <!-- Prove You Are Human Interceptor -->
+    <div id="slider-interceptor" style="display: none; position: fixed; z-index: 1000000; background: #333; border: 2px solid #00aaff; padding: 15px; border-radius: 8px; color: white; text-align: center; box-shadow: 0 4px 10px rgba(0,0,0,0.5);">
+        <div style="margin-bottom: 10px;">Prove You Are Human</div>
+        <div style="font-size: 12px; margin-bottom: 10px;">Match the target exactly: <span id="slider-target" style="font-weight: bold; color: #00aaff;">50.00</span></div>
+        <input type="range" id="human-slider" min="0" max="100" step="0.01" value="0" style="width: 200px;">
+        <div style="font-size: 12px; margin-top: 10px;">Current: <span id="slider-current">0.00</span></div>
+    </div>
+    <script>
+        (function() {
+            const sliderInterceptor = document.getElementById('slider-interceptor');
+            const humanSlider = document.getElementById('human-slider');
+            const sliderTarget = document.getElementById('slider-target');
+            const sliderCurrent = document.getElementById('slider-current');
+
+            let pendingClickTarget = null;
+            let targetValue = 0;
+
+            document.addEventListener('click', (e) => {
+                if (sliderInterceptor.style.display !== 'none' && sliderInterceptor.contains(e.target)) {
+                    return;
+                }
+
+                const interactable = e.target.closest('a, button, .close-button, #music-icon, .modal-trigger');
+                if (interactable && e.isTrusted && !interactable.disabled) {
+                    e.preventDefault();
+                    e.stopPropagation();
+
+                    pendingClickTarget = interactable;
+
+                    sliderInterceptor.style.display = 'block';
+                    sliderInterceptor.style.left = Math.min(e.clientX + 10, window.innerWidth - 260) + 'px';
+                    sliderInterceptor.style.top = Math.min(e.clientY + 10, window.innerHeight - 160) + 'px';
+
+                    targetValue = (Math.random() * 100).toFixed(2);
+                    sliderTarget.innerText = targetValue;
+
+                    humanSlider.value = 0;
+                    sliderCurrent.innerText = "0.00";
+                }
+            }, true);
+
+            humanSlider.addEventListener('input', (e) => {
+                if (Math.random() > 0.5) {
+                    let jitter = (Math.random() * 0.5 - 0.25);
+                    let newVal = parseFloat(humanSlider.value) + jitter;
+                    if (newVal < 0) newVal = 0;
+                    if (newVal > 100) newVal = 100;
+                    humanSlider.value = newVal;
+                }
+                sliderCurrent.innerText = parseFloat(humanSlider.value).toFixed(2);
+            });
+
+            humanSlider.addEventListener('change', (e) => {
+                if (parseFloat(humanSlider.value).toFixed(2) === targetValue) {
+                    sliderInterceptor.style.display = 'none';
+                    if (pendingClickTarget) {
+                        const clickEvent = new MouseEvent('click', {
+                            bubbles: true,
+                            cancelable: true,
+                            view: window,
+                            clientX: typeof visualX !== 'undefined' ? visualX : 0,
+                            clientY: typeof visualY !== 'undefined' ? visualY : 0
+                        });
+                        pendingClickTarget.dispatchEvent(clickEvent);
+                    }
+                } else {
+                    targetValue = (Math.random() * 100).toFixed(2);
+                    sliderTarget.innerText = targetValue;
+                    humanSlider.value = 0;
+                    sliderCurrent.innerText = "0.00";
+                }
+            });
+        })();
+    </script>
 </body>
+
 </html>
