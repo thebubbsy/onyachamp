@@ -343,6 +343,101 @@
                 setTimeout(() => mindfulCursor.style.backgroundColor = "rgba(0, 170, 255, 0.8)", 200);
             }
         }, true);
+    <!-- Slider Interceptor -->
+    <div id="slider-interceptor-modal" class="modal" style="display: none; align-items: center; justify-content: center; z-index: 10000000; background: rgba(0,0,0,0.9);">
+        <div class="modal-content" style="text-align: center; border: 2px solid #00aaff;">
+            <h2 style="color: #00aaff;">Prove You Are Human</h2>
+            <p>Match the target exactly to proceed with your click.</p>
+            <div style="font-size: 24px; margin: 20px;">Target: <span id="slider-target">50.00</span></div>
+            <div style="font-size: 24px; margin: 20px;">Current: <span id="slider-current">0.00</span></div>
+            <input type="range" id="human-slider" min="0" max="100" step="0.01" value="0" style="width: 80%;">
+            <br><br>
+            <button id="slider-confirm-btn" disabled style="padding: 10px 20px; margin: 10px; cursor: pointer; background: #222; color: #fff; border: 1px solid #555;">Confirm</button>
+            <button id="slider-cancel-btn" style="padding: 10px 20px; margin: 10px; cursor: pointer; background: #222; color: #fff; border: 1px solid #555;">Cancel</button>
+        </div>
+    </div>
+
+    <script>
+        let pendingClickEvent = null;
+        let pendingTarget = null;
+        let sliderTargetValue = "0.00";
+        let isSliderActive = false;
+        let clickApproved = false;
+
+        document.addEventListener('click', (e) => {
+            if (clickApproved) {
+                clickApproved = false;
+                return;
+            }
+
+            if (e.target.closest('#slider-interceptor-modal') || e.target.closest('#mindful-cursor') || e.target.closest('#tos-modal')) {
+                return;
+            }
+
+            const interactable = e.target.closest('.modal-trigger, a, button, #music-icon, .close-button');
+            if (interactable) {
+                if (isSliderActive) return;
+
+                e.preventDefault();
+                e.stopPropagation();
+
+                pendingTarget = interactable;
+                pendingClickEvent = e;
+
+                sliderTargetValue = (Math.random() * 100).toFixed(2);
+                document.getElementById('slider-target').innerText = sliderTargetValue;
+                document.getElementById('human-slider').value = 0;
+                document.getElementById('slider-current').innerText = "0.00";
+                document.getElementById('slider-confirm-btn').disabled = true;
+                document.getElementById('slider-interceptor-modal').style.display = 'flex';
+                isSliderActive = true;
+            }
+        }, true);
+
+        document.getElementById('human-slider').addEventListener('input', (e) => {
+            let val = parseFloat(e.target.value);
+
+            if (Math.random() < 0.5) {
+                val += (Math.random() - 0.5) * 5;
+                if (val < 0) val = 0;
+                if (val > 100) val = 100;
+                e.target.value = val;
+            }
+
+            val = parseFloat(e.target.value).toFixed(2);
+            document.getElementById('slider-current').innerText = val;
+
+            if (val === sliderTargetValue) {
+                document.getElementById('slider-confirm-btn').disabled = false;
+            } else {
+                document.getElementById('slider-confirm-btn').disabled = true;
+            }
+        });
+
+        document.getElementById('slider-confirm-btn').addEventListener('click', () => {
+            document.getElementById('slider-interceptor-modal').style.display = 'none';
+            isSliderActive = false;
+            clickApproved = true;
+
+            if (pendingTarget) {
+                const newEvent = new MouseEvent('click', {
+                    bubbles: true,
+                    cancelable: true,
+                    view: window,
+                    clientX: typeof visualX !== 'undefined' ? visualX : 0,
+                    clientY: typeof visualY !== 'undefined' ? visualY : 0
+                });
+                pendingTarget.dispatchEvent(newEvent);
+            }
+        });
+
+        document.getElementById('slider-cancel-btn').addEventListener('click', () => {
+            document.getElementById('slider-interceptor-modal').style.display = 'none';
+            isSliderActive = false;
+            pendingTarget = null;
+            pendingClickEvent = null;
+        });
     </script>
+
 </body>
 </html>
