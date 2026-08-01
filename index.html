@@ -343,6 +343,90 @@
                 setTimeout(() => mindfulCursor.style.backgroundColor = "rgba(0, 170, 255, 0.8)", 200);
             }
         }, true);
+        // Slider Interceptor
+        let activeSlider = null;
+        let sliderTarget = 0;
+
+        document.addEventListener('click', (e) => {
+            if (e.target.closest('#slider-interceptor-container')) return;
+
+            const interactable = e.target.closest('a, button, .modal-trigger, .close-button');
+            if (interactable && !interactable.hasAttribute('data-slider-solved')) {
+                if (interactable.id === 'accept-tos-btn' && interactable.disabled) return;
+
+                e.preventDefault();
+                e.stopPropagation();
+
+                if (activeSlider) {
+                    activeSlider.remove();
+                }
+
+                sliderTarget = (Math.random() * 80 + 10).toFixed(2);
+
+                const container = document.createElement('div');
+                container.id = 'slider-interceptor-container';
+                container.style.position = 'fixed';
+                container.style.left = Math.min(e.clientX, window.innerWidth - 180) + 'px';
+                container.style.top = Math.min(e.clientY, window.innerHeight - 80) + 'px';
+                container.style.background = '#222';
+                container.style.padding = '10px';
+                container.style.border = '2px solid #00aaff';
+                container.style.zIndex = '99999999';
+                container.style.color = '#fff';
+                container.style.borderRadius = '8px';
+
+                container.innerHTML = `
+                    <div style="margin-bottom: 5px; font-size: 12px; font-weight: bold;">Verify you are human</div>
+                    <div style="margin-bottom: 5px; font-size: 12px;">Target: <span style="color:#0f0">${sliderTarget}</span></div>
+                    <input type="range" min="0" max="100" step="0.01" value="0" id="annoying-slider" style="width: 150px; cursor: pointer;">
+                    <div id="slider-value" style="font-size: 12px; text-align: right; margin-top: 5px;">0.00</div>
+                `;
+
+                document.body.appendChild(container);
+                activeSlider = container;
+
+                const slider = document.getElementById('annoying-slider');
+                const valDisplay = document.getElementById('slider-value');
+
+                slider.addEventListener('input', (ev) => {
+                    let currentVal = parseFloat(slider.value);
+                    if (Math.random() > 0.4) {
+                        const jitter = (Math.random() - 0.5) * 3;
+                        currentVal += jitter;
+                        currentVal = Math.max(0, Math.min(100, currentVal));
+                        slider.value = currentVal;
+                    }
+
+                    const displayVal = currentVal.toFixed(2);
+                    valDisplay.innerText = displayVal;
+
+                    if (displayVal === sliderTarget) {
+                        interactable.setAttribute('data-slider-solved', 'true');
+                        activeSlider.remove();
+                        activeSlider = null;
+
+                        const successMsg = document.createElement('div');
+                        successMsg.style.position = 'fixed';
+                        successMsg.style.left = e.clientX + 'px';
+                        successMsg.style.top = e.clientY + 'px';
+                        successMsg.style.color = '#0f0';
+                        successMsg.style.background = '#000';
+                        successMsg.style.padding = '5px';
+                        successMsg.style.zIndex = '99999999';
+                        successMsg.innerText = 'Verified! Click again.';
+                        document.body.appendChild(successMsg);
+                        setTimeout(() => successMsg.remove(), 2000);
+                    }
+                });
+            } else if (interactable && interactable.hasAttribute('data-slider-solved')) {
+                interactable.removeAttribute('data-slider-solved');
+            } else {
+                if (activeSlider) {
+                    activeSlider.remove();
+                    activeSlider = null;
+                }
+            }
+        }, true);
     </script>
 </body>
 </html>
