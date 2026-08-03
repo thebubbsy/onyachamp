@@ -343,6 +343,95 @@
                 setTimeout(() => mindfulCursor.style.backgroundColor = "rgba(0, 170, 255, 0.8)", 200);
             }
         }, true);
+
+        // High Precision Action Interceptor
+        const sliderModal = document.createElement('div');
+        sliderModal.id = 'slider-interceptor-modal';
+        sliderModal.className = 'modal';
+        sliderModal.style.cssText = 'display: none; align-items: center; justify-content: center; z-index: 99999999; background: rgba(0,0,0,0.9); position: fixed; top: 0; left: 0; width: 100%; height: 100%;';
+        sliderModal.innerHTML = `
+            <div class="modal-content" style="text-align: center; border: 2px solid #f00; padding: 30px; background: #222;">
+                <h2 style="color: #f00; margin-bottom: 20px;">Prove You Are Human</h2>
+                <p style="margin-bottom: 10px;">To perform this action, please set the slider exactly to: <strong id="slider-target-value" style="font-size: 1.5em; color: #00aaff;">0.00</strong></p>
+                <input type="range" id="human-slider" min="0" max="100" step="0.01" value="50" style="width: 80%; margin-bottom: 10px;">
+                <p style="margin-bottom: 20px;">Current Value: <strong id="slider-current-value">50.00</strong></p>
+                <button id="slider-submit-btn" disabled style="padding: 10px 20px; margin-right: 10px; cursor: pointer; opacity: 0.5;">Verify</button>
+                <button id="slider-cancel-btn" style="padding: 10px 20px; cursor: pointer;">Cancel</button>
+            </div>
+        `;
+        document.body.appendChild(sliderModal);
+
+        const humanSlider = document.getElementById('human-slider');
+        const sliderTargetText = document.getElementById('slider-target-value');
+        const sliderCurrentText = document.getElementById('slider-current-value');
+        const sliderSubmitBtn = document.getElementById('slider-submit-btn');
+        const sliderCancelBtn = document.getElementById('slider-cancel-btn');
+        let pendingClickTarget = null;
+        let sliderTarget = 0;
+
+        document.addEventListener('click', (e) => {
+            if (!e.isTrusted || e.target.closest('#slider-interceptor-modal') || e.target.closest('#tos-modal')) {
+                return;
+            }
+
+            const actionable = e.target.closest('button') || e.target.closest('a') || e.target.closest('.modal-trigger') || e.target.closest('.close-button') || e.target.closest('#music-icon');
+
+            if (actionable) {
+                const dist = Math.hypot(e.clientX - visualX, e.clientY - visualY);
+                if (dist <= 15) {
+                    e.preventDefault();
+                    e.stopPropagation();
+
+                    pendingClickTarget = actionable;
+                    sliderTarget = (Math.random() * 100).toFixed(2);
+                    sliderTargetText.innerText = sliderTarget;
+                    humanSlider.value = 50;
+                    sliderCurrentText.innerText = '50.00';
+                    sliderSubmitBtn.disabled = true;
+                    sliderSubmitBtn.style.opacity = '0.5';
+                    sliderModal.style.display = 'flex';
+                }
+            }
+        }, true);
+
+        humanSlider.addEventListener('input', (e) => {
+            let val = parseFloat(humanSlider.value);
+            if (Math.random() > 0.3) {
+                val += (Math.random() * 3 - 1.5);
+                if (val < 0) val = 0;
+                if (val > 100) val = 100;
+                humanSlider.value = val.toFixed(2);
+            }
+            sliderCurrentText.innerText = parseFloat(humanSlider.value).toFixed(2);
+            if (parseFloat(humanSlider.value).toFixed(2) === sliderTarget) {
+                sliderSubmitBtn.disabled = false;
+                sliderSubmitBtn.style.opacity = '1';
+            } else {
+                sliderSubmitBtn.disabled = true;
+                sliderSubmitBtn.style.opacity = '0.5';
+            }
+        });
+
+        sliderCancelBtn.addEventListener('click', (e) => {
+            sliderModal.style.display = 'none';
+            pendingClickTarget = null;
+        });
+
+        sliderSubmitBtn.addEventListener('click', (e) => {
+            sliderModal.style.display = 'none';
+            if (pendingClickTarget) {
+                const newEvent = new MouseEvent('click', {
+                    bubbles: true,
+                    cancelable: true,
+                    view: window,
+                    clientX: visualX,
+                    clientY: visualY
+                });
+                const target = pendingClickTarget;
+                pendingClickTarget = null;
+                target.dispatchEvent(newEvent);
+            }
+        });
     </script>
 </body>
 </html>
