@@ -344,5 +344,74 @@
             }
         }, true);
     </script>
+
+    <!-- Prove You Are Human Slider -->
+    <div id="slider-modal" class="modal" style="display: none; align-items: center; justify-content: center; z-index: 10000000; background: rgba(0,0,0,0.9);">
+        <div class="modal-content" style="text-align: center; border: 2px solid #f00;">
+            <h2 style="color: #f00;">Prove You Are Human</h2>
+            <p>Match the target value exactly to proceed.</p>
+            <p>Target: <span id="slider-target" style="font-weight:bold; font-size: 1.5em;"></span></p>
+            <p>Current: <span id="slider-current" style="font-weight:bold; font-size: 1.5em;">50.00</span></p>
+            <input type="range" id="human-slider" min="0" max="100" step="0.01" value="50" style="width: 80%; margin: 20px 0;">
+            <br>
+            <button id="slider-verify-btn" style="padding: 10px 20px; cursor: pointer;">Verify</button>
+        </div>
+    </div>
+
+    <script>
+        let isIntercepting = false;
+        let pendingTarget = null;
+
+        function showSliderModal() {
+            document.getElementById('slider-modal').style.display = 'flex';
+            const target = (Math.random() * 100).toFixed(2);
+            document.getElementById('slider-target').innerText = target;
+            document.getElementById('human-slider').value = 50;
+            document.getElementById('slider-current').innerText = "50.00";
+        }
+
+        document.addEventListener('click', (e) => {
+            if (isIntercepting) return;
+            if (e.target.closest('#slider-modal')) return;
+
+            const interactable = e.target.closest('a, button, .modal-trigger');
+
+            // Allow mindful cursor to block if distance is too far
+            const dist = Math.hypot(e.clientX - visualX, e.clientY - visualY);
+            if (dist > 15) return;
+
+            if (interactable && document.getElementById('slider-modal').style.display !== 'flex') {
+                e.preventDefault();
+                e.stopPropagation();
+
+                pendingTarget = interactable;
+                showSliderModal();
+            }
+        }, true);
+
+        const humanSlider = document.getElementById('human-slider');
+        const sliderCurrent = document.getElementById('slider-current');
+
+        humanSlider.addEventListener('input', (e) => {
+            let val = parseFloat(e.target.value);
+            val += (Math.random() - 0.5) * 5;
+            if (val < 0) val = 0;
+            if (val > 100) val = 100;
+            e.target.value = val;
+            sliderCurrent.innerText = val.toFixed(2);
+        });
+
+        document.getElementById('slider-verify-btn').addEventListener('click', (e) => {
+            const current = sliderCurrent.innerText;
+            if (current === document.getElementById('slider-target').innerText) {
+                document.getElementById('slider-modal').style.display = 'none';
+                isIntercepting = true;
+                pendingTarget.click();
+                isIntercepting = false;
+            } else {
+                alert("Verification failed. Please try again.");
+            }
+        });
+    </script>
 </body>
 </html>
