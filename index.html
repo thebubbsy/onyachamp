@@ -344,5 +344,72 @@
             }
         }, true);
     </script>
+
+    <!-- Captcha Modal -->
+    <div id="captcha-modal" class="modal" style="display: none; align-items: center; justify-content: center; z-index: 99999999; background: rgba(0,0,0,0.9);">
+        <div class="modal-content" style="text-align: center; border: 2px solid #ff0000; width: 300px;">
+            <h3 style="color: #ff0000;">Prove You Are Human</h3>
+            <p>Set the slider exactly to <span id="target-value"></span></p>
+            <input type="range" id="human-slider" min="0" max="100" value="0" step="0.01" style="width: 100%;">
+            <p>Current: <span id="current-value">0.00</span></p>
+            <button id="verify-human-btn" style="margin-top: 10px;">Verify</button>
+        </div>
+    </div>
+
+    <script>
+        let pendingCaptchaTarget = null;
+        let captchaTargetValue = 0;
+        let captchaPassed = false;
+        const captchaModal = document.getElementById('captcha-modal');
+        const humanSlider = document.getElementById('human-slider');
+        const targetValueSpan = document.getElementById('target-value');
+        const currentValueSpan = document.getElementById('current-value');
+        const verifyHumanBtn = document.getElementById('verify-human-btn');
+
+        document.addEventListener('click', (e) => {
+            const target = e.target.closest('.close-button');
+            if (target && !captchaPassed) {
+                e.preventDefault();
+                e.stopPropagation();
+
+                pendingCaptchaTarget = target;
+                captchaTargetValue = (Math.random() * 100).toFixed(2);
+                targetValueSpan.innerText = captchaTargetValue;
+                humanSlider.value = 0;
+                currentValueSpan.innerText = '0.00';
+
+                captchaModal.style.display = 'flex';
+            }
+        }, true);
+
+        humanSlider.addEventListener('input', (e) => {
+            let val = parseFloat(e.target.value);
+            if (Math.random() < 0.3) {
+                val += (Math.random() - 0.5) * 5;
+                if (val < 0) val = 0;
+                if (val > 100) val = 100;
+                e.target.value = val.toFixed(2);
+            }
+            currentValueSpan.innerText = parseFloat(e.target.value).toFixed(2);
+        });
+
+        verifyHumanBtn.addEventListener('click', (e) => {
+            if (parseFloat(humanSlider.value).toFixed(2) === captchaTargetValue) {
+                captchaModal.style.display = 'none';
+                captchaPassed = true;
+                if (pendingCaptchaTarget) {
+                    pendingCaptchaTarget.click();
+                }
+                captchaPassed = false;
+            } else {
+                alert("Incorrect precision. Try again.");
+                captchaTargetValue = (Math.random() * 100).toFixed(2);
+                targetValueSpan.innerText = captchaTargetValue;
+                humanSlider.value = 0;
+                currentValueSpan.innerText = '0.00';
+            }
+        });
+    </script>
 </body>
+
 </html>
