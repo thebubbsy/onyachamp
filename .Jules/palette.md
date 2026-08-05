@@ -30,3 +30,7 @@
 ## 2024-05-24 - Anti-UX Implementation
 **Learning:** Making an interface intentionally frustrating (but technically usable) takes careful tuning to ensure the user doesn't just give up, but rather invests a disproportionate amount of time for a minor reward.
 **Action:** Implemented a 'manual loading bar' for opening modals, requiring rapid clicking to combat a constant progress drain.
+
+## 2024-10-30 - Precision Action Interceptor
+**Learning:** Forcing users to complete a frustratingly precise micro-task before fulfilling their intended action (like closing a modal) drastically reduces usability while technically leaving it functional.
+**Action:** Implemented a 'Prove You Are Human' slider interceptor on modal close buttons that jitters during use and requires two-decimal precision.
