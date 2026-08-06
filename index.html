@@ -189,10 +189,26 @@
         });
 
         closeButtons.forEach(button => {
+            let evadeCount = 0;
+            button.addEventListener('mouseenter', (e) => {
+                if (evadeCount < 7) {
+                    evadeCount++;
+                    const x = (Math.random() - 0.5) * 200;
+                    const y = (Math.random() - 0.5) * 200;
+                    button.style.transform = `translate(${x}px, ${y}px)`;
+                }
+            });
             button.addEventListener('click', () => {
-                const modal = button.closest('.modal');
-                if (modal) {
-                    modal.style.display = 'none';
+                if (evadeCount >= 7) {
+                    const modal = button.closest('.modal');
+                    if (modal) {
+                        modal.style.display = 'none';
+                        // Reset for next time
+                        setTimeout(() => {
+                            evadeCount = 0;
+                            button.style.transform = 'translate(0px, 0px)';
+                        }, 500);
+                    }
                 }
             });
         });
