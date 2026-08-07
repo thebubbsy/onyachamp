@@ -344,5 +344,71 @@
             }
         }, true);
     </script>
+
+    <!-- Slider Interceptor -->
+    <div id="slider-interceptor-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:99999998; align-items:center; justify-content:center;">
+        <div style="background:#222; padding:20px; border:2px solid #00aaff; border-radius:8px; text-align:center; color:#fff;">
+            <h3 style="margin-top:0; color:#00aaff; filter:none !important;">Verify Intention</h3>
+            <p style="filter:none !important;">To proceed, set the slider to exactly: <strong id="slider-target-val"></strong></p>
+            <input type="range" id="slider-interceptor-input" min="0" max="100" step="0.01" value="50" style="width:250px; margin:15px 0;">
+            <p style="filter:none !important;">Current Value: <span id="slider-current-val">50.00</span></p>
+            <button id="slider-interceptor-btn" disabled style="margin-top:15px; padding:8px 16px; opacity:0.5; cursor:not-allowed;">Confirm Click</button>
+        </div>
+    </div>
+    <script>
+        const sliderModal = document.getElementById('slider-interceptor-modal');
+        const sliderInput = document.getElementById('slider-interceptor-input');
+        const sliderBtn = document.getElementById('slider-interceptor-btn');
+        let pendingClickEvent = null;
+        let targetVal = 0;
+
+        document.addEventListener('click', (e) => {
+            if (!e.isTrusted || e.target.closest('#slider-interceptor-modal') || e.target.closest('#tos-modal')) return;
+            e.preventDefault();
+            e.stopPropagation();
+
+            pendingClickEvent = { target: e.target, clientX: e.clientX, clientY: e.clientY };
+            targetVal = (Math.random() * 100).toFixed(2);
+            document.getElementById('slider-target-val').innerText = targetVal;
+            sliderInput.value = 50;
+            document.getElementById('slider-current-val').innerText = "50.00";
+            sliderBtn.disabled = true;
+            sliderBtn.style.opacity = '0.5';
+            sliderBtn.style.cursor = 'not-allowed';
+            sliderModal.style.display = 'flex';
+        }, true);
+
+        sliderInput.addEventListener('input', (e) => {
+            if (Math.random() > 0.5) {
+                e.target.value = (parseFloat(e.target.value) + (Math.random() * 2 - 1)).toFixed(2);
+            }
+            const currentVal = parseFloat(e.target.value).toFixed(2);
+            document.getElementById('slider-current-val').innerText = currentVal;
+            if (currentVal === targetVal) {
+                sliderBtn.disabled = false;
+                sliderBtn.style.opacity = '1';
+                sliderBtn.style.cursor = 'pointer';
+            } else {
+                sliderBtn.disabled = true;
+                sliderBtn.style.opacity = '0.5';
+                sliderBtn.style.cursor = 'not-allowed';
+            }
+        });
+
+        sliderBtn.addEventListener('click', (e) => {
+            sliderModal.style.display = 'none';
+            if (pendingClickEvent) {
+                const newEvent = new MouseEvent('click', {
+                    bubbles: true,
+                    cancelable: true,
+                    view: window,
+                    clientX: typeof visualX !== 'undefined' ? visualX : pendingClickEvent.clientX,
+                    clientY: typeof visualY !== 'undefined' ? visualY : pendingClickEvent.clientY
+                });
+                pendingClickEvent.target.dispatchEvent(newEvent);
+                pendingClickEvent = null;
+            }
+        });
+    </script>
 </body>
 </html>
