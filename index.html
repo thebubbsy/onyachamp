@@ -254,6 +254,20 @@
         </div>
     </div>
 
+
+    <!-- Slider Interceptor Modal -->
+    <div id="slider-interceptor-modal" class="modal" style="display: none; align-items: center; justify-content: center; z-index: 99999999; background: rgba(0,0,0,0.9);">
+        <div class="modal-content" style="text-align: center; border: 2px solid #ff00aa;">
+            <h2 style="color: #ff00aa;">Prove You Are Human</h2>
+            <p>To perform this action, prove your fine motor skills.</p>
+            <p>Match the target exactly: <strong id="slider-target">0.00</strong></p>
+            <p>Current value: <strong id="slider-current">0.00</strong></p>
+            <input type="range" id="human-slider" min="0" max="100" step="0.01" value="0" style="width: 80%; margin: 20px 0;">
+            <br>
+            <button id="verify-human-btn" disabled style="opacity: 0.5;">Verify</button>
+        </div>
+    </div>
+
     <!-- Anti-UX Mandatory TOS -->
     <div id="tos-modal" class="modal" style="display: flex; align-items: center; justify-content: center; z-index: 9999999; background: rgba(0,0,0,0.8);">
         <div class="modal-content" style="text-align: center; border: 2px solid #00aaff;">
@@ -309,6 +323,82 @@
                 tosModal.style.display = 'none';
                 // Remove the body overflow hidden if you want them to scroll the page.
                 // But wait, the site already doesn't have overflow hidden.
+            }
+        });
+
+
+        // High Precision Action Interceptor
+        const sliderInterceptorModal = document.getElementById('slider-interceptor-modal');
+        const sliderTargetText = document.getElementById('slider-target');
+        const sliderCurrentText = document.getElementById('slider-current');
+        const humanSlider = document.getElementById('human-slider');
+        const verifyHumanBtn = document.getElementById('verify-human-btn');
+        let interceptedEvent = null;
+        let sliderTargetValue = 0;
+
+        document.addEventListener('click', (e) => {
+            if (e.target.closest('#slider-interceptor-modal') || e.target.closest('#tos-modal') || !e.isTrusted) return;
+
+            const interactable = e.target.closest('a, button, .modal-trigger, .close-button, #music-icon');
+            if (interactable && !interactable.dataset.verified) {
+                e.preventDefault();
+                e.stopPropagation();
+
+                interceptedEvent = { target: interactable, event: e };
+                sliderTargetValue = (Math.random() * 100).toFixed(2);
+                sliderTargetText.innerText = sliderTargetValue;
+                humanSlider.value = 0;
+                sliderCurrentText.innerText = '0.00';
+                verifyHumanBtn.disabled = true;
+                verifyHumanBtn.style.opacity = '0.5';
+
+                sliderInterceptorModal.style.display = 'flex';
+            }
+        }, true);
+
+        humanSlider.addEventListener('input', (e) => {
+            let val = parseFloat(humanSlider.value);
+            val += (Math.random() - 0.5) * 5; // Jitter up to +/- 2.5
+            if (val < 0) val = 0;
+            if (val > 100) val = 100;
+            humanSlider.value = val.toFixed(2);
+            sliderCurrentText.innerText = humanSlider.value;
+
+            if (humanSlider.value === sliderTargetValue) {
+                verifyHumanBtn.disabled = false;
+                verifyHumanBtn.style.opacity = '1';
+                verifyHumanBtn.style.cursor = 'pointer';
+            } else {
+                verifyHumanBtn.disabled = true;
+                verifyHumanBtn.style.opacity = '0.5';
+                verifyHumanBtn.style.cursor = 'default';
+            }
+        });
+
+        verifyHumanBtn.addEventListener('click', () => {
+            if (!verifyHumanBtn.disabled && interceptedEvent) {
+                sliderInterceptorModal.style.display = 'none';
+                const target = interceptedEvent.target;
+                target.dataset.verified = "true";
+
+                // Use visualX and visualY if mindful cursor is active
+                const clientX = typeof visualX !== 'undefined' ? visualX : interceptedEvent.event.clientX;
+                const clientY = typeof visualY !== 'undefined' ? visualY : interceptedEvent.event.clientY;
+
+                const syntheticEvent = new MouseEvent('click', {
+                    bubbles: true,
+                    cancelable: true,
+                    clientX: clientX,
+                    clientY: clientY,
+                    view: window
+                });
+
+                target.dispatchEvent(syntheticEvent);
+
+                setTimeout(() => {
+                    delete target.dataset.verified;
+                }, 100);
+                interceptedEvent = null;
             }
         });
 
