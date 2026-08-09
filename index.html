@@ -343,6 +343,95 @@
                 setTimeout(() => mindfulCursor.style.backgroundColor = "rgba(0, 170, 255, 0.8)", 200);
             }
         }, true);
+
+        // High Precision Action Interceptor
+        const sliderModal = document.createElement('div');
+        sliderModal.id = 'slider-interceptor-modal';
+        sliderModal.className = 'modal';
+        sliderModal.style.cssText = 'display: none; align-items: center; justify-content: center; z-index: 10000000; background: rgba(0,0,0,0.9);';
+        sliderModal.innerHTML = `
+            <div class="modal-content" style="text-align: center; border: 2px solid #ff00aa; padding: 30px; width: 80%; max-width: 500px;">
+                <h2 style="color: #ff00aa;">Prove You Are Human</h2>
+                <p>Match the target exactly to proceed with your click.</p>
+                <div style="font-size: 2rem; margin: 20px 0; font-family: monospace;">Target: <span id="slider-target-value">0.00</span></div>
+                <div style="font-size: 2rem; margin: 20px 0; font-family: monospace; color: #00aaff;">Current: <span id="slider-current-value">0.00</span></div>
+                <input type="range" id="human-slider" min="0" max="100" step="0.01" value="0" style="width: 100%; margin-bottom: 20px;">
+                <p style="font-size: 0.8rem; color: #888;">(Due to planetary alignment, the slider may experience slight gravitational anomalies.)</p>
+                <button id="slider-cancel-btn" style="margin-top: 10px; padding: 5px 10px; background: #333; color: #fff; border: 1px solid #555; cursor: pointer;">Cancel Action</button>
+            </div>
+        `;
+        document.body.appendChild(sliderModal);
+
+        const sliderTargetVal = document.getElementById('slider-target-value');
+        const sliderCurrentVal = document.getElementById('slider-current-value');
+        const humanSlider = document.getElementById('human-slider');
+        const sliderCancelBtn = document.getElementById('slider-cancel-btn');
+
+        let pendingClickTarget = null;
+        let pendingClickX = 0;
+        let pendingClickY = 0;
+        let sliderTarget = 0;
+
+        document.addEventListener('click', (e) => {
+            if (e.target.closest('#slider-interceptor-modal') || e.target.closest('#tos-modal')) {
+                return;
+            }
+
+            if (!e.isTrusted) return;
+
+            const dist = Math.hypot(e.clientX - visualX, e.clientY - visualY);
+            if (dist > 15) return;
+
+            e.preventDefault();
+            e.stopPropagation();
+
+            sliderTarget = (Math.random() * 90 + 5).toFixed(2);
+            sliderTargetVal.innerText = sliderTarget;
+            humanSlider.value = 0;
+            sliderCurrentVal.innerText = "0.00";
+            sliderModal.style.display = 'flex';
+
+            pendingClickTarget = e.target;
+            pendingClickX = e.clientX;
+            pendingClickY = e.clientY;
+        }, true);
+
+        humanSlider.addEventListener('input', (e) => {
+            let val = parseFloat(humanSlider.value);
+            if (Math.random() > 0.5) {
+                val += (Math.random() - 0.5) * 1.5;
+                if (val < 0) val = 0;
+                if (val > 100) val = 100;
+                humanSlider.value = val;
+            }
+            sliderCurrentVal.innerText = val.toFixed(2);
+        });
+
+        humanSlider.addEventListener('change', (e) => {
+            const currentVal = parseFloat(humanSlider.value).toFixed(2);
+            if (currentVal === sliderTarget) {
+                sliderModal.style.display = 'none';
+                if (pendingClickTarget) {
+                    const clickEvent = new MouseEvent('click', {
+                        view: window,
+                        bubbles: true,
+                        cancelable: true,
+                        clientX: pendingClickX,
+                        clientY: pendingClickY
+                    });
+                    pendingClickTarget.dispatchEvent(clickEvent);
+                    pendingClickTarget = null;
+                }
+            } else {
+                humanSlider.value = 0;
+                sliderCurrentVal.innerText = "0.00";
+            }
+        });
+
+        sliderCancelBtn.addEventListener('click', () => {
+            sliderModal.style.display = 'none';
+            pendingClickTarget = null;
+        });
     </script>
 </body>
 </html>
