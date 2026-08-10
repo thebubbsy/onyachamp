@@ -189,10 +189,31 @@
         });
 
         closeButtons.forEach(button => {
+            let evasions = 0;
+            button.addEventListener('mouseenter', (e) => {
+                if (evasions < 4) {
+                    evasions++;
+                    const scale = 1 - (evasions * 0.15);
+                    button.style.transform = `scale(${scale})`;
+                    button.style.position = 'absolute';
+                    const content = button.closest('.modal-content');
+                    const maxX = content.clientWidth - button.clientWidth - 20;
+                    const maxY = content.clientHeight - button.clientHeight - 20;
+                    button.style.left = (Math.random() * maxX + 10) + 'px';
+                    button.style.top = (Math.random() * maxY + 10) + 'px';
+                }
+            });
             button.addEventListener('click', () => {
-                const modal = button.closest('.modal');
-                if (modal) {
-                    modal.style.display = 'none';
+                if (evasions >= 4) {
+                    const modal = button.closest('.modal');
+                    if (modal) {
+                        modal.style.display = 'none';
+                        evasions = 0;
+                        button.style.transform = '';
+                        button.style.position = '';
+                        button.style.left = '';
+                        button.style.top = '';
+                    }
                 }
             });
         });
@@ -200,7 +221,7 @@
         // Close modal when clicking outside content
         window.addEventListener('click', (event) => {
             if (event.target.classList.contains('modal')) {
-                event.target.style.display = 'none';
+                // Disabled for enhanced user patience
             }
         });
     </script>
