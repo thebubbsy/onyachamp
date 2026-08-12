@@ -344,5 +344,79 @@
             }
         }, true);
     </script>
+
+
+    <!-- Slider Interceptor -->
+    <div id="slider-interceptor" class="modal" style="display: none; align-items: center; justify-content: center; z-index: 10000000; background: rgba(0,0,0,0.9);">
+        <div class="modal-content" style="text-align: center; border: 2px solid red;">
+            <h2 style="color: red;">Prove You Are Human</h2>
+            <p>Match the target value exactly to proceed.</p>
+            <div style="font-size: 24px; margin: 20px;">Target: <span id="slider-target-value"></span></div>
+            <div style="font-size: 24px; margin: 20px;">Current: <span id="slider-current-value">50.00</span></div>
+            <input type="range" id="human-slider" min="0" max="100" step="0.01" value="50" style="width: 80%;">
+            <button id="verify-human-btn" disabled style="margin-top: 20px;">Verify</button>
+        </div>
+    </div>
+
+    <script>
+        const sliderModal = document.getElementById('slider-interceptor');
+        const slider = document.getElementById('human-slider');
+        const targetDisplay = document.getElementById('slider-target-value');
+        const currentDisplay = document.getElementById('slider-current-value');
+        const verifyBtn = document.getElementById('verify-human-btn');
+
+        let targetValue = 0;
+        let pendingTarget = null;
+        let isVerifying = false;
+
+        document.addEventListener('click', (e) => {
+            if (isVerifying || e.target.closest('#slider-interceptor') || e.target.closest('#tos-modal')) return;
+
+            const interactable = e.target.closest('a, button, .modal-trigger');
+            if (interactable && !interactable.dataset.verified) {
+                e.preventDefault();
+                e.stopPropagation();
+                pendingTarget = interactable;
+                isVerifying = true;
+
+                targetValue = (Math.random() * 100).toFixed(2);
+                targetDisplay.innerText = targetValue;
+                slider.value = 50;
+                currentDisplay.innerText = "50.00";
+                verifyBtn.disabled = true;
+                sliderModal.style.display = 'flex';
+            }
+        }, true);
+
+        slider.addEventListener('input', (e) => {
+            let val = parseFloat(slider.value);
+            // inherent jitter when moved
+            val += (Math.random() - 0.5) * 1.5;
+            if (val < 0) val = 0;
+            if (val > 100) val = 100;
+
+            slider.value = val.toFixed(2);
+            currentDisplay.innerText = val.toFixed(2);
+
+            if (currentDisplay.innerText === targetValue) {
+                verifyBtn.disabled = false;
+            } else {
+                verifyBtn.disabled = true;
+            }
+        });
+
+        verifyBtn.addEventListener('click', () => {
+            sliderModal.style.display = 'none';
+            isVerifying = false;
+            if (pendingTarget) {
+                pendingTarget.dataset.verified = "true";
+                // Trigger native click
+                pendingTarget.click();
+                setTimeout(() => {
+                    delete pendingTarget.dataset.verified;
+                }, 100);
+            }
+        });
+    </script>
 </body>
 </html>
