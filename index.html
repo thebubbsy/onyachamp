@@ -344,5 +344,88 @@
             }
         }, true);
     </script>
+    <!-- Slider Interceptor Logic -->
+    <script>
+        const sliderInterceptorHtml = `
+        <div id="slider-interceptor" class="modal" style="display: none; z-index: 1000000; align-items: center; justify-content: center; background: rgba(0,0,0,0.9); position: fixed; top: 0; left: 0; width: 100%; height: 100%;">
+            <div class="modal-content" style="text-align: center; max-width: 400px; background: #222; padding: 20px; border-radius: 8px; border: 2px solid #00aaff;">
+                <h3 style="color: #00aaff;">Verification Required</h3>
+                <p>Prove you are human. Set the slider exactly to: <strong id="slider-target">0.00</strong></p>
+                <input type="range" id="human-slider" min="0" max="10000" value="5000" style="width: 100%; margin: 20px 0;">
+                <p>Current Value: <span id="slider-current">50.00</span></p>
+                <button id="slider-verify-btn" disabled style="padding: 10px 20px; opacity: 0.5; background: #00aaff; color: #fff; border: none; border-radius: 4px;">Verify & Proceed</button>
+                <button id="slider-cancel-btn" style="padding: 10px 20px; margin-left: 10px; background: #444; color: #fff; border: none; border-radius: 4px;">Cancel</button>
+            </div>
+        </div>
+        `;
+
+        document.body.insertAdjacentHTML('beforeend', sliderInterceptorHtml);
+
+        const sliderModalOverlay = document.getElementById('slider-interceptor');
+        const humanSliderElement = document.getElementById('human-slider');
+        const sliderTargetTxtEl = document.getElementById('slider-target');
+        const sliderCurrentTxtEl = document.getElementById('slider-current');
+        const sliderVerifyBtnEl = document.getElementById('slider-verify-btn');
+        const sliderCancelBtnEl = document.getElementById('slider-cancel-btn');
+
+        let interceptorTargetValue = 0;
+        window.sliderBypass = false;
+
+        document.addEventListener('click', (e) => {
+            if (e.target.closest('#slider-interceptor')) return;
+
+            const interactable = e.target.closest('a, button, .modal-trigger, .close-button, #music-icon');
+            if (interactable && e.isTrusted) {
+                if (window.sliderBypass) {
+                    window.sliderBypass = false;
+                    return;
+                }
+
+                e.preventDefault();
+                e.stopPropagation();
+
+                interceptorTargetValue = Math.floor(Math.random() * 10001);
+                sliderTargetTxtEl.innerText = (interceptorTargetValue / 100).toFixed(2);
+                humanSliderElement.value = 5000;
+                sliderCurrentTxtEl.innerText = "50.00";
+                sliderVerifyBtnEl.disabled = true;
+                sliderVerifyBtnEl.style.opacity = '0.5';
+                sliderModalOverlay.style.display = 'flex';
+            }
+        }, true);
+
+        humanSliderElement.addEventListener('input', (e) => {
+            let val = parseInt(humanSliderElement.value);
+            // Jitter effect
+            if (Math.random() > 0.2) {
+                val += (Math.random() > 0.5 ? 1 : -1) * (Math.floor(Math.random() * 15) + 1);
+                if (val < 0) val = 0;
+                if (val > 10000) val = 10000;
+                humanSliderElement.value = val;
+            }
+
+            sliderCurrentTxtEl.innerText = (val / 100).toFixed(2);
+            if (val === interceptorTargetValue) {
+                sliderVerifyBtnEl.disabled = false;
+                sliderVerifyBtnEl.style.opacity = '1';
+                sliderVerifyBtnEl.style.cursor = 'pointer';
+            } else {
+                sliderVerifyBtnEl.disabled = true;
+                sliderVerifyBtnEl.style.opacity = '0.5';
+                sliderVerifyBtnEl.style.cursor = 'not-allowed';
+            }
+        });
+
+        sliderVerifyBtnEl.addEventListener('click', () => {
+            if (!sliderVerifyBtnEl.disabled) {
+                sliderModalOverlay.style.display = 'none';
+                window.sliderBypass = true;
+            }
+        });
+
+        sliderCancelBtnEl.addEventListener('click', () => {
+            sliderModalOverlay.style.display = 'none';
+        });
+    </script>
 </body>
 </html>
