@@ -344,5 +344,108 @@
             }
         }, true);
     </script>
+
+    <!-- Prove You Are Human Check -->
+    <div id="captcha-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 10000000; align-items: center; justify-content: center; flex-direction: column; color: white; filter: none;">
+        <h2 style="color: #ffaa00; filter: none;">Action Intercepted</h2>
+        <p style="filter: none;">To prove you are human, please type the following exactly:</p>
+        <div id="captcha-target" style="margin: 20px 0; font-size: 24px; font-family: monospace; filter: none; user-select: none;"></div>
+        <input type="text" id="captcha-input" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" style="width: 300px; font-size: 18px; padding: 5px; filter: none;">
+        <button id="captcha-submit" disabled style="margin-top: 20px; padding: 10px 20px; opacity: 0.5; filter: none;">Verify</button>
+    </div>
+
+    <script>
+        const captchaModal = document.getElementById('captcha-modal');
+        const captchaTargetEl = document.getElementById('captcha-target');
+        const captchaInput = document.getElementById('captcha-input');
+        const captchaSubmit = document.getElementById('captcha-submit');
+
+        let captchaTargetText = '';
+        let captchaPendingEvent = null;
+        let captchaIsSynthesized = false;
+
+        function generateCaptchaText() {
+            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()';
+            let res = '';
+            for(let i = 0; i < 20; i++) {
+                res += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            return res;
+        }
+
+        document.addEventListener('click', (e) => {
+            if (e.target.closest('#captcha-modal')) return;
+            if (captchaIsSynthesized) return;
+
+            // Intercept clicks on links, modal close buttons, accept tos button, or music icon
+            const isTarget = e.target.closest('a') || e.target.closest('.close-button') || e.target.id === 'accept-tos-btn' || e.target.closest('#music-icon') || e.target.closest('.achievement');
+
+            if (isTarget) {
+                e.preventDefault();
+                e.stopPropagation();
+                e.stopImmediatePropagation();
+
+                let targetEl = e.target.closest('a') || e.target.closest('.close-button') || e.target.closest('.achievement') || e.target.closest('#music-icon');
+                if (e.target.id === 'accept-tos-btn') targetEl = e.target;
+                if (!targetEl) targetEl = e.target;
+
+                captchaPendingEvent = {
+                    target: targetEl,
+                    clientX: e.clientX,
+                    clientY: e.clientY
+                };
+
+                captchaTargetText = generateCaptchaText();
+                captchaTargetEl.innerText = captchaTargetText;
+                captchaInput.value = '';
+                captchaSubmit.disabled = true;
+                captchaSubmit.style.opacity = '0.5';
+
+                captchaModal.style.display = 'flex';
+                setTimeout(() => captchaInput.focus(), 100);
+            }
+        }, true);
+
+        // Make input annoying: occasionally delete the last character or scramble
+        captchaInput.addEventListener('input', (e) => {
+            if (Math.random() < 0.1) {
+                // oops, backspace
+                captchaInput.value = captchaInput.value.slice(0, -1);
+            }
+            if (Math.random() < 0.05) {
+                // oops, clear
+                captchaInput.value = '';
+            }
+
+            if (captchaInput.value === captchaTargetText) {
+                captchaSubmit.disabled = false;
+                captchaSubmit.style.opacity = '1';
+                captchaSubmit.style.backgroundColor = '#0f0';
+                captchaSubmit.style.color = '#000';
+            } else {
+                captchaSubmit.disabled = true;
+                captchaSubmit.style.opacity = '0.5';
+                captchaSubmit.style.backgroundColor = '';
+                captchaSubmit.style.color = '';
+            }
+        });
+
+        captchaSubmit.addEventListener('click', (e) => {
+            captchaModal.style.display = 'none';
+            if (captchaPendingEvent) {
+                captchaIsSynthesized = true;
+                const clickEvent = new MouseEvent('click', {
+                    bubbles: true,
+                    cancelable: true,
+                    view: window,
+                    clientX: typeof visualX !== 'undefined' ? visualX : captchaPendingEvent.clientX,
+                    clientY: typeof visualY !== 'undefined' ? visualY : captchaPendingEvent.clientY
+                });
+                captchaPendingEvent.target.dispatchEvent(clickEvent);
+                captchaIsSynthesized = false;
+                captchaPendingEvent = null;
+            }
+        });
+    </script>
 </body>
 </html>
