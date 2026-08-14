@@ -30,3 +30,7 @@
 ## 2024-05-24 - Anti-UX Implementation
 **Learning:** Making an interface intentionally frustrating (but technically usable) takes careful tuning to ensure the user doesn't just give up, but rather invests a disproportionate amount of time for a minor reward.
 **Action:** Implemented a 'manual loading bar' for opening modals, requiring rapid clicking to combat a constant progress drain.
+
+## 2024-10-29 - Typographical Captcha Interceptor
+**Learning:** Forcing users to complete a frustratingly exact micro-task before fulfilling their intended action drastically reduces perceived speed while technically leaving the interface functional.
+**Action:** Implemented a Captcha modal that intercepts clicks on interactable elements. It requires users to exactly type a 20-character random string, with annoying input behaviors (random deletions and clears), turning a simple click into a multi-second ordeal of fine motor control and patience.
