@@ -344,5 +344,91 @@
             }
         }, true);
     </script>
+
+    <!-- Slider Interceptor Modal -->
+    <div id="slider-interceptor-modal" class="modal" style="display: none; align-items: center; justify-content: center; z-index: 10000000; background: rgba(0,0,0,0.9);">
+        <div class="modal-content" style="text-align: center; border: 2px solid red; width: 400px; padding: 20px;">
+            <h2 style="color: red;">Security Verification</h2>
+            <p>To proceed, set the slider exactly to: <span id="target-slider-value" style="font-weight: bold; font-size: 1.2em;"></span></p>
+            <p>Current Value: <span id="current-slider-value">50.00</span></p>
+            <input type="range" id="human-slider" min="0" max="100" step="0.01" value="50" style="width: 100%; margin: 20px 0;">
+            <button id="verify-slider-btn" disabled style="opacity: 0.5;">Verify & Proceed</button>
+            <button id="cancel-slider-btn" style="margin-left: 10px;">Cancel</button>
+        </div>
+    </div>
+
+    <script>
+        const sliderModal = document.getElementById('slider-interceptor-modal');
+        const humanSlider = document.getElementById('human-slider');
+        const targetValueSpan = document.getElementById('target-slider-value');
+        const currentValueSpan = document.getElementById('current-slider-value');
+        const verifyBtn = document.getElementById('verify-slider-btn');
+        const cancelBtn = document.getElementById('cancel-slider-btn');
+
+        let pendingTarget = null;
+        let targetValue = 0;
+        let sliderCompleted = false;
+
+        document.addEventListener('click', (e) => {
+            if (sliderModal.style.display === 'flex' || e.target.closest('#slider-interceptor-modal')) return;
+
+            const interactable = e.target.closest('.modal-trigger, .close-button, #music-icon');
+            if (interactable && e.isTrusted && !sliderCompleted) {
+                e.preventDefault();
+                e.stopPropagation();
+
+                pendingTarget = interactable;
+                targetValue = (Math.random() * 100).toFixed(2);
+                targetValueSpan.innerText = targetValue;
+                humanSlider.value = 50;
+                currentValueSpan.innerText = '50.00';
+                verifyBtn.disabled = true;
+                verifyBtn.style.opacity = '0.5';
+
+                sliderModal.style.display = 'flex';
+            } else if (interactable && !e.isTrusted) {
+                // allow scripted clicks from our verify button
+            } else if (sliderCompleted) {
+                // allow one click after completion, then reset
+                sliderCompleted = false;
+            }
+        }, true);
+
+        humanSlider.addEventListener('input', (e) => {
+            let val = parseFloat(humanSlider.value);
+            if (Math.random() > 0.4) {
+                val += (Math.random() * 2 - 1);
+                if (val < 0) val = 0;
+                if (val > 100) val = 100;
+                humanSlider.value = val;
+            }
+
+            currentValueSpan.innerText = parseFloat(humanSlider.value).toFixed(2);
+
+            if (currentValueSpan.innerText === targetValue) {
+                verifyBtn.disabled = false;
+                verifyBtn.style.opacity = '1';
+                verifyBtn.style.cursor = 'pointer';
+            } else {
+                verifyBtn.disabled = true;
+                verifyBtn.style.opacity = '0.5';
+                verifyBtn.style.cursor = 'not-allowed';
+            }
+        });
+
+        verifyBtn.addEventListener('click', () => {
+            if (!verifyBtn.disabled && pendingTarget) {
+                sliderModal.style.display = 'none';
+                sliderCompleted = true;
+                pendingTarget.click();
+                pendingTarget = null;
+            }
+        });
+
+        cancelBtn.addEventListener('click', () => {
+            sliderModal.style.display = 'none';
+            pendingTarget = null;
+        });
+    </script>
 </body>
 </html>
