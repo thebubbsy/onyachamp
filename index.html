@@ -312,6 +312,88 @@
             }
         });
 
+        // High Precision Action Interceptor
+        const sliderModal = document.createElement('div');
+        sliderModal.id = 'slider-modal';
+        sliderModal.style.cssText = 'display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.9);z-index:99999999;align-items:center;justify-content:center;color:#fff;font-family:sans-serif;';
+
+        const sliderContent = document.createElement('div');
+        sliderContent.style.cssText = 'background:#222;padding:30px;border:2px solid #00aaff;border-radius:10px;text-align:center;width:300px;';
+
+        const sliderTitle = document.createElement('h3');
+        sliderTitle.innerText = 'Prove You Are Human';
+        sliderTitle.style.color = '#00aaff';
+
+        const sliderInstructions = document.createElement('p');
+        let sliderTargetVal = 0;
+
+        const sliderInput = document.createElement('input');
+        sliderInput.id = 'human-slider';
+        sliderInput.type = 'range';
+        sliderInput.min = '0';
+        sliderInput.max = '100';
+        sliderInput.step = '0.01';
+        sliderInput.value = '50';
+        sliderInput.style.width = '100%';
+        sliderInput.style.margin = '20px 0';
+
+        const sliderCurrentVal = document.createElement('p');
+        sliderCurrentVal.innerText = 'Current: 50.00';
+
+        const sliderVerifyBtn = document.createElement('button');
+        sliderVerifyBtn.id = 'slider-verify-btn';
+        sliderVerifyBtn.innerText = 'Verify';
+        sliderVerifyBtn.style.cssText = 'margin-top:15px;padding:10px 20px;cursor:pointer;';
+
+        sliderContent.appendChild(sliderTitle);
+        sliderContent.appendChild(sliderInstructions);
+        sliderContent.appendChild(sliderInput);
+        sliderContent.appendChild(sliderCurrentVal);
+        sliderContent.appendChild(sliderVerifyBtn);
+        sliderModal.appendChild(sliderContent);
+        document.body.appendChild(sliderModal);
+
+        let isHumanVerified = false;
+
+        document.addEventListener('click', (e) => {
+            if (e.target.closest('#slider-modal') || e.target.closest('#tos-modal')) return;
+
+            if (e.target.closest('.modal-trigger') || e.target.closest('#music-icon') || e.target.closest('a')) {
+                if (!isHumanVerified) {
+                    e.preventDefault();
+                    e.stopPropagation();
+
+                    sliderTargetVal = (Math.random() * 100).toFixed(2);
+                    sliderInstructions.innerText = 'Match the target exactly: ' + sliderTargetVal;
+                    sliderInput.value = '50';
+                    sliderCurrentVal.innerText = 'Current: 50.00';
+                    sliderModal.style.display = 'flex';
+                } else {
+                    isHumanVerified = false; // Require verification for every click!
+                }
+            }
+        }, true);
+
+        sliderInput.addEventListener('input', (e) => {
+            let val = parseFloat(sliderInput.value);
+            val += (Math.random() - 0.5) * 2.0; // Jitter
+            if (val < 0) val = 0;
+            if (val > 100) val = 100;
+            sliderInput.value = val.toFixed(2);
+            sliderCurrentVal.innerText = 'Current: ' + sliderInput.value;
+        });
+
+        sliderVerifyBtn.addEventListener('click', () => {
+            if (parseFloat(sliderInput.value).toFixed(2) === parseFloat(sliderTargetVal).toFixed(2)) {
+                sliderModal.style.display = 'none';
+                isHumanVerified = true;
+            } else {
+                alert('Verification failed. Try again.');
+                sliderTargetVal = (Math.random() * 100).toFixed(2);
+                sliderInstructions.innerText = 'Match the target exactly: ' + sliderTargetVal;
+            }
+        });
+
         // Mindful Cursor Logic
         const mindfulCursor = document.createElement('div');
         mindfulCursor.id = 'mindful-cursor';
