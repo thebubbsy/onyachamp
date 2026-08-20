@@ -334,7 +334,90 @@
         }
         animateCursor();
 
+        const interceptorEl = document.createElement('div');
+        interceptorEl.id = 'slider-interceptor';
+        interceptorEl.style.cssText = 'display:none; position:fixed; z-index: 10000000; background: #222; border: 2px solid #00aaff; padding: 15px; border-radius: 8px; color: white;';
+        interceptorEl.innerHTML = `
+            <p style="margin:0 0 10px 0; font-size: 14px; filter:none !important;">Prove you are human. Match: <span id="slider-target" style="font-weight:bold; color:#00aaff; filter:none !important;"></span></p>
+            <input type="range" id="human-slider" min="0" max="100" step="0.01" value="0" style="width: 250px; filter:none !important;">
+            <div style="margin-top: 10px; font-size: 12px; filter:none !important;">Current: <span id="slider-current" style="filter:none !important;">0.00</span></div>
+            <button id="slider-confirm" disabled style="margin-top:10px; opacity:0.5; filter:none !important; cursor:pointer;">Confirm</button>
+        `;
+        document.body.appendChild(interceptorEl);
+
+        let interceptedEvent = null;
+        let sliderTargetVal = 0;
+        const humanSlider = document.getElementById('human-slider');
+        const sliderTargetDisplay = document.getElementById('slider-target');
+        const sliderCurrentDisplay = document.getElementById('slider-current');
+        const sliderConfirmBtn = document.getElementById('slider-confirm');
+
         document.addEventListener('click', (e) => {
+            if (e.detail === 999) return;
+            if (e.target.closest('#slider-interceptor')) return;
+
+            const target = e.target.closest('.modal-trigger, .close-button, #music-icon, a, button');
+            if (target && !target.dataset.humanVerified) {
+                const dist = Math.hypot(e.clientX - visualX, e.clientY - visualY);
+                if (dist > 15) return;
+
+                e.preventDefault();
+                e.stopPropagation();
+
+                interceptedEvent = { target: target, clientX: e.clientX, clientY: e.clientY };
+
+                sliderTargetVal = (Math.random() * 100).toFixed(2);
+                sliderTargetDisplay.innerText = sliderTargetVal;
+                humanSlider.value = 0;
+                sliderCurrentDisplay.innerText = '0.00';
+                sliderConfirmBtn.disabled = true;
+                sliderConfirmBtn.style.opacity = '0.5';
+
+                interceptorEl.style.left = Math.min(e.clientX + 20, window.innerWidth - 300) + 'px';
+                interceptorEl.style.top = Math.min(e.clientY + 20, window.innerHeight - 200) + 'px';
+                interceptorEl.style.display = 'block';
+            }
+        }, true);
+
+        humanSlider.addEventListener('input', (e) => {
+            let val = parseFloat(humanSlider.value);
+            if (Math.random() > 0.6) {
+                val += (Math.random() - 0.5) * 5;
+                val = Math.max(0, Math.min(100, val));
+                humanSlider.value = val.toFixed(2);
+            }
+
+            let displayVal = parseFloat(humanSlider.value).toFixed(2);
+            sliderCurrentDisplay.innerText = displayVal;
+
+            if (displayVal === sliderTargetVal) {
+                sliderConfirmBtn.disabled = false;
+                sliderConfirmBtn.style.opacity = '1';
+            } else {
+                sliderConfirmBtn.disabled = true;
+                sliderConfirmBtn.style.opacity = '0.5';
+            }
+        });
+
+        sliderConfirmBtn.addEventListener('click', (e) => {
+            interceptorEl.style.display = 'none';
+            if (interceptedEvent) {
+                interceptedEvent.target.dataset.humanVerified = 'true';
+                const evt = new MouseEvent('click', {
+                    bubbles: true,
+                    cancelable: true,
+                    view: window,
+                    clientX: interceptedEvent.clientX,
+                    clientY: interceptedEvent.clientY,
+                    detail: 999
+                });
+                interceptedEvent.target.dispatchEvent(evt);
+                interceptedEvent = null;
+            }
+        });
+
+        document.addEventListener('click', (e) => {
+            if (e.detail === 999) return;
             const dist = Math.hypot(e.clientX - visualX, e.clientY - visualY);
             if (dist > 15) {
                 e.preventDefault();
