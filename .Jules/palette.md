@@ -30,3 +30,7 @@
 ## 2024-05-24 - Anti-UX Implementation
 **Learning:** Making an interface intentionally frustrating (but technically usable) takes careful tuning to ensure the user doesn't just give up, but rather invests a disproportionate amount of time for a minor reward.
 **Action:** Implemented a 'manual loading bar' for opening modals, requiring rapid clicking to combat a constant progress drain.
+
+## 2026-08-21 - Prove You Are Human Interceptor
+**Learning:** Forcing users to complete a frustratingly precise micro-task before fulfilling their intended action (like clicking a link or a button) drastically reduces the perceived speed and usability of an interface while technically leaving it fully functional.
+**Action:** Implemented a "Prove You Are Human" slider that intercepts clicks on interactable elements. The slider requires users to match a random two-decimal target value, but the slider inherently jitters when moved, turning a simple click into a multi-second ordeal of fine motor control.
