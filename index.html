@@ -343,6 +343,125 @@
                 setTimeout(() => mindfulCursor.style.backgroundColor = "rgba(0, 170, 255, 0.8)", 200);
             }
         }, true);
+
+        // High Precision Action Interceptor
+        const interceptorOverlay = document.createElement('div');
+        interceptorOverlay.id = 'interceptor-overlay';
+        interceptorOverlay.style.cssText = 'display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.9); z-index: 10000000; align-items: center; justify-content: center; flex-direction: column; color: white;';
+        document.body.appendChild(interceptorOverlay);
+
+        const interceptorContent = document.createElement('div');
+        interceptorContent.style.cssText = 'background: #222; padding: 20px; border: 2px solid #00aaff; border-radius: 8px; text-align: center;';
+
+        const interceptorTitle = document.createElement('h3');
+        interceptorTitle.innerText = 'Prove You Are Human';
+        interceptorContent.appendChild(interceptorTitle);
+
+        const interceptorInstructions = document.createElement('p');
+        interceptorContent.appendChild(interceptorInstructions);
+
+        const interceptorSlider = document.createElement('input');
+        interceptorSlider.type = 'range';
+        interceptorSlider.id = 'human-slider';
+        interceptorSlider.min = '0';
+        interceptorSlider.max = '100';
+        interceptorSlider.step = '0.01';
+        interceptorSlider.style.width = '300px';
+        interceptorContent.appendChild(interceptorSlider);
+
+        const interceptorValueDisplay = document.createElement('div');
+        interceptorValueDisplay.style.marginTop = '10px';
+        interceptorValueDisplay.style.fontFamily = 'monospace';
+        interceptorValueDisplay.innerText = 'Current: 50.00';
+        interceptorContent.appendChild(interceptorValueDisplay);
+
+        const interceptorConfirm = document.createElement('button');
+        interceptorConfirm.innerText = 'Confirm Action';
+        interceptorConfirm.style.marginTop = '15px';
+        interceptorConfirm.disabled = true;
+        interceptorContent.appendChild(interceptorConfirm);
+
+        const interceptorCancel = document.createElement('button');
+        interceptorCancel.innerText = 'Cancel';
+        interceptorCancel.style.marginTop = '15px';
+        interceptorCancel.style.marginLeft = '10px';
+        interceptorContent.appendChild(interceptorCancel);
+
+        interceptorOverlay.appendChild(interceptorContent);
+
+        let pendingEvent = null;
+        let targetValue = 0;
+
+        document.addEventListener('click', (e) => {
+            // Ignore clicks inside the overlay
+            if (e.target.closest('#interceptor-overlay')) return;
+
+            // Ignore if mindful cursor hasn't reached the target
+            const dist = Math.hypot(e.clientX - visualX, e.clientY - visualY);
+            if (dist > 15) return;
+
+            // Check if it's an interactable element (button, a, .modal-trigger, close-button)
+            const interactable = e.target.closest('button, a, .modal-trigger, .close-button, i');
+            if (!interactable || (e.isTrusted === false && e.detail === 999)) return;
+
+            e.preventDefault();
+            e.stopPropagation();
+
+            pendingEvent = {
+                target: interactable,
+                type: e.type,
+                clientX: e.clientX,
+                clientY: e.clientY
+            };
+
+            targetValue = (Math.random() * 100).toFixed(2);
+            interceptorInstructions.innerHTML = `Match the exact value: <span style="color:#00aaff; font-weight:bold;">${targetValue}</span>`;
+            interceptorSlider.value = 50;
+            interceptorValueDisplay.innerText = `Current: 50.00`;
+            interceptorConfirm.disabled = true;
+            interceptorOverlay.style.display = 'flex';
+
+        }, true);
+
+        interceptorSlider.addEventListener('input', (e) => {
+            // Add jitter
+            if (Math.random() > 0.4) {
+                let jitter = (Math.random() - 0.5) * 3; // -1.5 to 1.5
+                interceptorSlider.value = Math.max(0, Math.min(100, parseFloat(interceptorSlider.value) + jitter)).toFixed(2);
+            }
+
+            const val = parseFloat(interceptorSlider.value).toFixed(2);
+            interceptorValueDisplay.innerText = `Current: ${val}`;
+
+            if (val === targetValue) {
+                interceptorConfirm.disabled = false;
+            } else {
+                interceptorConfirm.disabled = true;
+            }
+        });
+
+        interceptorCancel.addEventListener('click', () => {
+            interceptorOverlay.style.display = 'none';
+            pendingEvent = null;
+        });
+
+        interceptorConfirm.addEventListener('click', () => {
+            if (parseFloat(interceptorSlider.value).toFixed(2) === targetValue && pendingEvent) {
+                interceptorOverlay.style.display = 'none';
+
+                const newEvent = new MouseEvent(pendingEvent.type, {
+                    view: window,
+                    bubbles: true,
+                    cancelable: true,
+                    clientX: pendingEvent.clientX,
+                    clientY: pendingEvent.clientY,
+                    detail: 999 // synthesize event to bypass
+                });
+                pendingEvent.target.dispatchEvent(newEvent);
+                pendingEvent = null;
+            }
+        });
+
     </script>
 </body>
 </html>
