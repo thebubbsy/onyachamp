@@ -269,6 +269,70 @@
         </div>
     </div>
 
+    <!-- Prove You Are Human Slider -->
+    <div id="captcha-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 10000000; background: rgba(0,0,0,0.8); align-items: center; justify-content: center; color: white;">
+        <div style="background: #222; padding: 30px; border: 2px solid #00aaff; text-align: center; border-radius: 8px;">
+            <h3 style="filter: none !important; color: #00aaff;">Prove You Are Human</h3>
+            <p style="filter: none !important; color: white;">Set the slider exactly to: <span id="captcha-target" style="font-weight: bold; color: yellow; filter: none !important;"></span></p>
+            <p style="filter: none !important; color: white;">Current value: <span id="captcha-current" style="filter: none !important;">0.00</span></p>
+            <input type="range" id="captcha-slider" min="0" max="100" step="0.01" style="width: 300px; margin-top: 20px;">
+        </div>
+    </div>
+    <script>
+        let pendingClickTarget = null;
+        const captchaModal = document.getElementById('captcha-modal');
+        const captchaTargetSpan = document.getElementById('captcha-target');
+        const captchaCurrentSpan = document.getElementById('captcha-current');
+        const captchaSlider = document.getElementById('captcha-slider');
+        let captchaTargetValue = '0.00';
+
+        document.addEventListener('click', (e) => {
+            if (window.bypassingCaptcha) return;
+            if (e.target.closest('#captcha-modal')) return;
+
+            const interesting = e.target.closest('.modal-trigger') || e.target.closest('.close-button') || (e.target.closest('a') && !e.target.closest('.tweet-header'));
+            if (interesting && !e.target.closest('#tos-modal')) {
+                e.preventDefault();
+                e.stopPropagation();
+
+                pendingClickTarget = interesting;
+                captchaTargetValue = (Math.random() * 100).toFixed(2);
+                captchaTargetSpan.innerText = captchaTargetValue;
+                captchaSlider.value = 0;
+                captchaCurrentSpan.innerText = '0.00';
+                captchaModal.style.display = 'flex';
+            }
+        }, true);
+
+        captchaSlider.addEventListener('input', (e) => {
+            let val = parseFloat(captchaSlider.value);
+            if (Math.random() < 0.6) {
+                val += (Math.random() - 0.5) * 5;
+                if (val < 0) val = 0;
+                if (val > 100) val = 100;
+                captchaSlider.value = val;
+            }
+            const displayVal = parseFloat(captchaSlider.value).toFixed(2);
+            captchaCurrentSpan.innerText = displayVal;
+
+            if (displayVal === captchaTargetValue) {
+                captchaModal.style.display = 'none';
+                const target = pendingClickTarget;
+                pendingClickTarget = null;
+
+                window.bypassingCaptcha = true;
+                const ev = new MouseEvent('click', {
+                    view: window,
+                    bubbles: true,
+                    cancelable: true,
+                    clientX: window.visualX || e.clientX,
+                    clientY: window.visualY || e.clientY
+                });
+                target.dispatchEvent(ev);
+                window.bypassingCaptcha = false;
+            }
+        });
+    </script>
     <script>
         document.addEventListener('wheel', (e) => {
             e.preventDefault();
