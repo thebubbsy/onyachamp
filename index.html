@@ -99,8 +99,7 @@
                 audioPlayer.play();
                 musicIcon.classList.add('playing');
             } else {
-                audioPlayer.pause();
-                musicIcon.classList.remove('playing');
+                alert("You cannot pause Matthew Bubb's symphony!");
             }
         });
 
@@ -109,7 +108,12 @@
                 audioPlayer.play();
                 musicIcon.classList.add('playing');
             }
-        }, {once: true});
+        });
+
+        audioPlayer.addEventListener('pause', () => {
+            audioPlayer.play();
+            musicIcon.classList.add('playing');
+        });
 
         // Modal functionality
         const modalTriggers = document.querySelectorAll('.modal-trigger');
@@ -192,7 +196,13 @@
             button.addEventListener('click', () => {
                 const modal = button.closest('.modal');
                 if (modal) {
-                    modal.style.display = 'none';
+                    const confirmText = "I acknowledge Matthew Bubb's genius";
+                    const userText = prompt(`To close, please type exactly: "${confirmText}"`);
+                    if (userText === confirmText) {
+                        modal.style.display = 'none';
+                    } else if (userText !== null) {
+                        alert("Incorrect. Please try again to close.");
+                    }
                 }
             });
         });
