@@ -190,9 +190,16 @@
 
         closeButtons.forEach(button => {
             button.addEventListener('click', () => {
-                const modal = button.closest('.modal');
-                if (modal) {
-                    modal.style.display = 'none';
+                const a = Math.floor(Math.random() * 10) + 1;
+                const b = Math.floor(Math.random() * 10) + 1;
+                const answer = prompt(`Please verify you are human to close: ${a} * ${b} = ?`);
+                if (parseInt(answer) === a * b) {
+                    const modal = button.closest('.modal');
+                    if (modal) {
+                        modal.style.display = 'none';
+                    }
+                } else {
+                    alert("Math is hard. Try again.");
                 }
             });
         });
@@ -200,7 +207,12 @@
         // Close modal when clicking outside content
         window.addEventListener('click', (event) => {
             if (event.target.classList.contains('modal')) {
-                event.target.style.display = 'none';
+                const confirmClose = confirm("Are you absolutely sure you want to close this informative modal? It will take 3 seconds.");
+                if (confirmClose) {
+                    setTimeout(() => {
+                        event.target.style.display = 'none';
+                    }, 3000);
+                }
             }
         });
     </script>
