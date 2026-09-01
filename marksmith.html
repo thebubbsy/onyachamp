@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MarkSmith — The Markdown-to-Office Compiler That Never Corrupts</title>
     <meta name="description" content="MarkSmith is an enterprise offline compiler that translates Markdown ASTs into native ECMA-376 OpenXML (Word/PowerPoint) with zero Microsoft Word or COM dependency.">
-    <meta name="keywords" content="MarkSmith, Markdown to Word, OpenXML, ECMA-376, ShapeForge, DrawingML, OMML, SmartArt, Pandoc alternative, C#">
+    <meta name="keywords" content="MarkSmith, Markdown to Word, OpenXML, ECMA-376, ShapeForge, DrawingML, OMML, SmartArt, Pandoc alternative, WinUI 3, C#">
     <meta name="author" content="Matthew Bubb">
 
     <!-- Open Graph / Social Meta -->
@@ -47,7 +47,7 @@
             <nav>
                 <ul class="nav-links">
                     <li><a href="index.html"><i class="fas fa-arrow-left"></i> Portfolio Home</a></li>
-                    <li><a href="#demo">Live Demo</a></li>
+                    <li><a href="#app-showcase">Desktop App Showcase</a></li>
                     <li><a href="#features">Architecture</a></li>
                     <li><a href="#comparison">Benchmark</a></li>
                     <li><a href="#licensing">Editions &amp; Pricing</a></li>
@@ -73,7 +73,7 @@
     <section class="hero">
         <div class="container">
             <div class="hero-pill">
-                <i class="fas fa-bolt"></i> Next-Gen ECMA-376 Document Compiler Engine
+                <i class="fas fa-bolt"></i> Native WinUI 3 Desktop Studio • Pure ECMA-376 Engine
             </div>
             
             <h1>
@@ -89,8 +89,8 @@
                 <a href="#licensing" class="btn btn-pro btn-lg">
                     <i class="fas fa-key"></i> Get MarkSmith Pro
                 </a>
-                <a href="#demo" class="btn btn-primary btn-lg">
-                    <i class="fas fa-play"></i> View Interactive Demo
+                <a href="#app-showcase" class="btn btn-primary btn-lg">
+                    <i class="fas fa-display"></i> Explore WinUI 3 Studio
                 </a>
                 <a href="https://github.com/thebubbsy/marksmith" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-lg">
                     <i class="fab fa-github"></i> Star on GitHub
@@ -118,99 +118,265 @@
         </div>
     </section>
 
-    <!-- Interactive Code Demonstration -->
-    <section id="demo" class="section-flagship" style="padding-top: 2rem;">
+    <!-- WinUI 3 Desktop App Simulator & Interactive Video Showcase -->
+    <section id="app-showcase" class="section-flagship" style="padding-top: 1rem;">
         <div class="container">
             <div class="section-header">
-                <span class="badge badge-cyan"><i class="fas fa-code"></i> INTERACTIVE COMPILATION PREVIEW</span>
-                <h2>From Markdown AST to Native Vector Shapes in Milliseconds</h2>
-                <p>Explore how MarkSmith converts raw Markdown text, Mermaid charts, and LaTeX math into pure, compliant OpenXML elements without pixelation or rasterization.</p>
+                <span class="badge badge-cyan"><i class="fas fa-desktop"></i> LIVE DESKTOP APP SHOWCASE</span>
+                <h2>Experience MarkSmith in Action</h2>
+                <p>An interactive, high-fidelity simulation of the <strong>MarkSmith WinUI 3 Desktop Application</strong> running in real time. Watch live Markdown compilation, AI quirk normalization, and native vector diagram generation.</p>
             </div>
 
-            <div class="demo-window" style="max-width: 960px; margin: 0 auto;">
-                <div class="demo-titlebar">
-                    <div class="window-dots">
-                        <span class="dot dot-red"></span>
-                        <span class="dot dot-yellow"></span>
-                        <span class="dot dot-green"></span>
+            <!-- The WinUI 3 Desktop Window -->
+            <div class="winui-studio">
+                <!-- Windows 11 Titlebar -->
+                <div class="winui-titlebar">
+                    <div class="winui-title">
+                        <div class="winui-app-icon">
+                            <i class="fas fa-feather"></i>
+                        </div>
+                        <span>MarkSmith • AI chats &rarr; polished documents (WinUI 3 Studio)</span>
                     </div>
-                    <div class="demo-tabs">
-                        <button class="demo-tab-btn active" data-tab="tab-markdown">input.md</button>
-                        <button class="demo-tab-btn" data-tab="tab-openxml">document.xml</button>
-                        <button class="demo-tab-btn" data-tab="tab-diagram">ShapeForge™</button>
-                        <button class="demo-tab-btn" data-tab="tab-cli">CLI Pipeline</button>
+                    <div class="winui-controls">
+                        <div class="winui-btn"><i class="fas fa-minus"></i></div>
+                        <div class="winui-btn"><i class="far fa-square"></i></div>
+                        <div class="winui-btn close"><i class="fas fa-times"></i></div>
                     </div>
                 </div>
-                <div class="demo-content">
-                    <!-- Tab 1: Markdown -->
-                    <div id="tab-markdown" class="tab-pane active">
-<pre><code><span class="code-comment"># Enterprise Security Architecture</span>
 
-<span class="code-keyword">:::callout[important]</span>
-All production microservices must enforce mutual TLS (mTLS) and zero-trust authentication.
-<span class="code-keyword">:::</span>
-
-<span class="code-comment">## Microservice Topology</span>
-<span class="code-keyword">```mermaid</span>
-flowchart LR
-    Client([Client Browser]) --> Edge[Cloudflare WAF]
-    Edge --> Auth{Authorizer}
-    Auth -->|Valid JWT| Core[MarkSmith Engine]
-    Auth -->|Denied| Drop[Reject 403]
-<span class="code-keyword">```</span>
-
-<span class="code-comment">## ContrastGuard Luminance Theorem</span>
-$$L = 0.2126 R + 0.7152 G + 0.0722 B$$
-$$\text{ContrastRatio} = \frac{\max(L_1, L_2) + 0.05}{\min(L_1, L_2) + 0.05}$$</code></pre>
+                <!-- Simulation Control & Playback Bar -->
+                <div class="simulator-control-bar">
+                    <div class="simulator-actions">
+                        <button id="btn-play-demo" class="btn-playback">
+                            <i class="fas fa-play"></i> Play Live Compilation Walkthrough
+                        </button>
+                        <span class="badge badge-emerald"><i class="fas fa-circle" style="font-size: 8px;"></i> Live Engine Active</span>
                     </div>
 
-                    <!-- Tab 2: OpenXML -->
-                    <div id="tab-openxml" class="tab-pane">
-<pre><code><span class="code-comment">&lt;!-- ECMA-376 Pure WordprocessingML &amp; DrawingML Elements --&gt;</span>
-&lt;<span class="code-tag">w:p</span>&gt;
-  &lt;<span class="code-tag">w:pPr</span>&gt;&lt;<span class="code-tag">w:pStyle</span> <span class="code-attr">w:val</span>=<span class="code-string">"Heading1"</span>/&gt;&lt;/<span class="code-tag">w:pPr</span>&gt;
-  &lt;<span class="code-tag">w:r</span>&gt;&lt;<span class="code-tag">w:t</span>&gt;Enterprise Security Architecture&lt;/<span class="code-tag">w:t</span>&gt;&lt;/<span class="code-tag">w:r</span>&gt;
-&lt;/<span class="code-tag">w:p</span>&gt;
-
-<span class="code-comment">&lt;!-- Native Office Math (OMML) without image rasterization --&gt;</span>
-&lt;<span class="code-tag">m:oMath</span>&gt;
-  &lt;<span class="code-tag">m:f</span>&gt;
-    &lt;<span class="code-tag">m:num</span>&gt;&lt;<span class="code-tag">m:r</span>&gt;&lt;<span class="code-tag">m:t</span>&gt;max(L1, L2) + 0.05&lt;/<span class="code-tag">m:t</span>&gt;&lt;/<span class="code-tag">m:r</span>&gt;&lt;/<span class="code-tag">m:num</span>&gt;
-    &lt;<span class="code-tag">m:den</span>&gt;&lt;<span class="code-tag">m:r</span>&gt;&lt;<span class="code-tag">m:t</span>&gt;min(L1, L2) + 0.05&lt;/<span class="code-tag">m:t</span>&gt;&lt;/<span class="code-tag">m:r</span>&gt;&lt;/<span class="code-tag">m:den</span>&gt;
-  &lt;/<span class="code-tag">m:f</span>&gt;
-&lt;/<span class="code-tag">m:oMath</span>&gt;</code></pre>
+                    <div class="sim-timeline">
+                        <span id="sim-status-text">Interactive Live Studio Mode</span>
+                        <div class="sim-progress-track">
+                            <div id="sim-progress-fill" class="sim-progress-fill"></div>
+                        </div>
                     </div>
+                </div>
 
-                    <!-- Tab 3: ShapeForge -->
-                    <div id="tab-diagram" class="tab-pane">
-<pre><code><span class="code-comment">// ShapeForge™ DrawingML Vector Emitter</span>
-<span class="code-keyword">var</span> shape = <span class="code-keyword">new</span> <span class="code-fn">WordShape</span> {
-    Id = <span class="code-string">"node_Core"</span>,
-    Text = <span class="code-string">"MarkSmith Engine"</span>,
-    Geometry = <span class="code-fn">ShapeType.RoundedRectangle</span>,
-    FillColor = <span class="code-string">"#0284C7"</span>,
-    BorderColor = <span class="code-string">"#38BDF8"</span>
-};
+                <!-- Studio 3-Column Body Layout -->
+                <div class="winui-body">
+                    <!-- Column 1: Source & Input Sidebar -->
+                    <aside class="studio-sidebar">
+                        <div class="sidebar-step-title">
+                            <span class="step-num">1</span>
+                            <span>Source &amp; Ingest</span>
+                        </div>
 
-<span class="code-comment">// Emits &lt;wpg:wgp&gt; grouping container</span>
-<span class="code-comment">// Full vector shape editability inside Word:</span>
-<span class="code-fn">emitter</span>.<span class="code-fn">EmitGroupedShapes</span>(diagramNodes, connectors, <span class="code-fn">ScaleMode.ProportionalShrink</span>);
-<span class="code-comment">// WCAG Contrast Guard verified: 5.8:1 Legibility</span></code></pre>
+                        <div class="drop-zone" title="Drag &amp; Drop Markdown Files">
+                            <i class="fas fa-cloud-arrow-down drop-icon"></i>
+                            <div class="drop-text"><strong>Drop a .md file here</strong><br>or click to browse</div>
+                            <span class="badge badge-cyan" style="font-size: 0.72rem;">Supports CommonMark + GFM</span>
+                        </div>
+
+                        <div class="control-block">
+                            <span class="control-label">Recent Project Files</span>
+                            <div class="recent-files-list">
+                                <div class="recent-file-item active"><i class="far fa-file-lines"></i> Quarterly Report.md</div>
+                                <div class="recent-file-item"><i class="far fa-file-lines"></i> Microservice Spec.md</div>
+                                <div class="recent-file-item"><i class="far fa-file-lines"></i> Architecture Audit.md</div>
+                            </div>
+                        </div>
+
+                        <div class="automation-badge-card">
+                            <i class="fas fa-bolt"></i>
+                            <div>
+                                <strong>Watch Daemon Active</strong><br>
+                                <span>Auto-compiles clipboard / folder</span>
+                            </div>
+                        </div>
+                    </aside>
+
+                    <!-- Column 2: Center Dual-Pane (Markdown Editor + Looking Glass Preview) -->
+                    <main class="studio-center">
+                        <div class="center-header">
+                            <div class="center-title">
+                                <span class="step-num">2</span>
+                                <span>Editor &amp; Looking Glass Preview</span>
+                            </div>
+                            <div class="view-mode-tabs">
+                                <button class="view-tab-btn active" data-mode="split">Split View</button>
+                                <button class="view-tab-btn" data-mode="preview">Preview Only</button>
+                                <button class="view-tab-btn" data-mode="code">Source Only</button>
+                            </div>
+                        </div>
+
+                        <div class="dual-pane-container">
+                            <!-- Left: Markdown Editor Source -->
+                            <div id="sim-editor-pane" class="editor-pane">
+                                <div class="editor-line"><span class="line-no">1</span><span class="line-code"><span class="code-comment"># Executive Security Review</span></span></div>
+                                <div class="editor-line"><span class="line-no">2</span><span class="line-code"></span></div>
+                                <div class="editor-line"><span class="line-no">3</span><span class="line-code"><span class="code-keyword">:::callout[important]</span></span></div>
+                                <div class="editor-line"><span class="line-no">4</span><span class="line-code">All microservices must enforce mutual TLS (mTLS) <span class="doc-pip" style="color: #f59e0b;">[1]</span>.</span></div>
+                                <div class="editor-line"><span class="line-no">5</span><span class="line-code"><span class="code-keyword">:::</span></span></div>
+                                <div class="editor-line"><span class="line-no">6</span><span class="line-code"></span></div>
+                                <div class="editor-line"><span class="line-no">7</span><span class="line-code"><span class="code-comment">## Topology</span></span></div>
+                                <div class="editor-line"><span class="line-no">8</span><span class="line-code"><span class="code-keyword">```mermaid</span></span></div>
+                                <div class="editor-line"><span class="line-no">9</span><span class="line-code">flowchart LR</span></div>
+                                <div class="editor-line"><span class="line-no">10</span><span class="line-code">  Client([Browser]) --&gt; Edge[Cloudflare WAF]</span></div>
+                                <div class="editor-line"><span class="line-no">11</span><span class="line-code">  Edge --&gt; Auth{Authorizer}</span></div>
+                                <div class="editor-line"><span class="line-no">12</span><span class="line-code">  Auth --&gt;|JWT Valid| Engine[MarkSmith Compiler]</span></div>
+                                <div class="editor-line"><span class="line-no">13</span><span class="line-code"><span class="code-keyword">```</span></span></div>
+                                <div class="editor-line"><span class="line-no">14</span><span class="line-code"></span></div>
+                                <div class="editor-line"><span class="line-no">15</span><span class="line-code"><span class="code-comment">## ContrastGuard Theorem</span></span></div>
+                                <div class="editor-line"><span class="line-no">16</span><span class="line-code">$$\text{Ratio} = \frac{\max(L_1, L_2) + 0.05}{\min(L_1, L_2) + 0.05}$$</span></div>
+                            </div>
+
+                            <!-- Right: Rendered Document Page (Looking Glass Layer) -->
+                            <div id="sim-preview-pane" class="preview-pane">
+                                <div id="sim-rendered-page" class="rendered-page theme-executive">
+                                    <div class="doc-heading-1">Executive Security Review</div>
+
+                                    <!-- Table of Contents -->
+                                    <div class="doc-toc">
+                                        <div class="doc-toc-title">Contents</div>
+                                        <ul>
+                                            <li>&bull; 1. Executive Summary</li>
+                                            <li>&bull; 2. Topology &amp; ShapeForge Vector Flow</li>
+                                            <li>&bull; 3. ContrastGuard Theorem (OMML Math)</li>
+                                        </ul>
+                                    </div>
+
+                                    <!-- Callout Card -->
+                                    <div class="doc-callout">
+                                        <i class="fas fa-shield-halved" style="color: #16a34a; margin-right: 0.35rem;"></i>
+                                        <strong>Important:</strong> All microservices must enforce mutual TLS (mTLS)<span class="doc-pip" style="color: #f59e0b; font-weight: bold; margin-left: 2px;">[1]</span>.
+                                    </div>
+
+                                    <!-- ShapeForge Vector Diagram Simulation -->
+                                    <div class="doc-diagram-box">
+                                        <div style="font-size: 0.72rem; color: #64748b; margin-bottom: 0.35rem; font-weight: 600;">
+                                            <i class="fas fa-vector-square" style="color: #38bdf8;"></i> ShapeForge™ Native Vector Diagram
+                                        </div>
+                                        <svg class="vector-svg-container" viewBox="0 0 360 70">
+                                            <defs>
+                                                <linearGradient id="gradBox" x1="0%" y1="0%" x2="100%" y2="100%">
+                                                    <stop offset="0%" stop-color="#0284c7"/>
+                                                    <stop offset="100%" stop-color="#0369a1"/>
+                                                </linearGradient>
+                                            </defs>
+                                            <!-- Node 1 -->
+                                            <rect x="5" y="18" width="80" height="34" rx="17" fill="#f1f5f9" stroke="#94a3b8" stroke-width="1.5"/>
+                                            <text x="45" y="39" font-size="10" font-family="sans-serif" text-anchor="middle" fill="#334155" font-weight="bold">Browser</text>
+                                            <!-- Arrow 1 -->
+                                            <path d="M 85 35 L 120 35" stroke="#38bdf8" stroke-width="2" marker-end="url(#arrow)"/>
+                                            <polygon points="120,35 114,31 114,39" fill="#38bdf8"/>
+                                            <!-- Node 2 -->
+                                            <rect x="125" y="18" width="90" height="34" rx="6" fill="#0f172a" stroke="#38bdf8" stroke-width="1.5"/>
+                                            <text x="170" y="39" font-size="10" font-family="sans-serif" text-anchor="middle" fill="#38bdf8" font-weight="bold">Cloudflare WAF</text>
+                                            <!-- Arrow 2 -->
+                                            <path d="M 215 35 L 245 35" stroke="#38bdf8" stroke-width="2"/>
+                                            <polygon points="245,35 239,31 239,39" fill="#38bdf8"/>
+                                            <!-- Node 3 -->
+                                            <rect x="250" y="18" width="105" height="34" rx="6" fill="url(#gradBox)" stroke="#38bdf8" stroke-width="1.5"/>
+                                            <text x="302" y="39" font-size="10" font-family="sans-serif" text-anchor="middle" fill="#ffffff" font-weight="bold">MarkSmith Engine</text>
+                                        </svg>
+                                    </div>
+
+                                    <!-- Native Math Equation -->
+                                    <div style="text-align: center; margin: 0.85rem 0; font-family: Cambria Math, serif; font-size: 0.95rem; color: #0284c7;">
+                                        <em>Ratio</em> = <sup>max(<em>L</em><sub>1</sub>, <em>L</em><sub>2</sub>) + 0.05</sup> &frasl; <sub>min(<em>L</em><sub>1</sub>, <em>L</em><sub>2</sub>) + 0.05</sub>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Visual Formatting Bottom Toolbar -->
+                        <div class="studio-bottom-toolbar">
+                            <div class="toolbar-group">
+                                <button class="tb-btn" title="Headings"><i class="fas fa-heading"></i> Heading ▾</button>
+                                <button class="tb-btn" title="Bold"><i class="fas fa-bold"></i></button>
+                                <button class="tb-btn" title="Italic"><i class="fas fa-italic"></i></button>
+                                <button class="tb-btn" title="Table"><i class="fas fa-table"></i> Table</button>
+                                <button class="tb-btn" title="Rich Components"><i class="fas fa-puzzle-piece"></i> Callout ▾</button>
+                                <button class="tb-btn" title="ShapeForge Diagrams"><i class="fas fa-diagram-project"></i> ShapeForge ▾</button>
+                            </div>
+                            <div class="toolbar-group">
+                                <span class="badge badge-cyan" style="font-size: 0.72rem;"><i class="fas fa-circle-check"></i> 0 Schema Errors</span>
+                            </div>
+                        </div>
+                    </main>
+
+                    <!-- Column 3: Right Sidebar (Style & Export Panel) -->
+                    <aside class="studio-controls">
+                        <div class="sidebar-step-title">
+                            <span class="step-num">3</span>
+                            <span>Style &amp; Export</span>
+                        </div>
+
+                        <!-- Theme Presets Switcher -->
+                        <div class="control-block">
+                            <span class="control-label">Corporate Themes</span>
+                            <div class="theme-pill-grid">
+                                <button class="theme-pill-btn active" data-theme="executive">Executive Navy</button>
+                                <button class="theme-pill-btn" data-theme="nordic">Nordic Frost</button>
+                                <button class="theme-pill-btn" data-theme="cyberpunk">Cyberpunk Dark</button>
+                                <button class="theme-pill-btn" data-theme="executive">GitHub Clean</button>
+                            </div>
+                        </div>
+
+                        <!-- AI Quirks Normalizer Toggle -->
+                        <div class="control-block">
+                            <span class="control-label">AI Document Cleanup</span>
+                            <div class="winui-toggle-row">
+                                <span>Normalize AI Quirks</span>
+                                <div id="sim-ai-toggle" class="toggle-switch on">
+                                    <div class="toggle-knob"></div>
+                                </div>
+                            </div>
+                            <span style="font-size: 0.72rem; color: var(--text-muted);">Strips citation pips [1], fixes LaTeX math &amp; AI chat banter.</span>
+                        </div>
+
+                        <!-- Diagram Word Export Settings -->
+                        <div class="control-block">
+                            <span class="control-label">Diagram Word Export</span>
+                            <div class="winui-toggle-row">
+                                <span>ShapeForge™ Shapes</span>
+                                <div id="sim-shape-toggle" class="toggle-switch on">
+                                    <div class="toggle-knob"></div>
+                                </div>
+                            </div>
+                            <span style="font-size: 0.72rem; color: var(--text-muted);">Renders editable native vector geometry in Word.</span>
+                        </div>
+
+                        <!-- WCAG Contrast Indicator -->
+                        <div class="control-block">
+                            <div class="winui-toggle-row">
+                                <span>WCAG ContrastGuard</span>
+                                <span class="badge badge-emerald"><i class="fas fa-check"></i> 5.8:1 (AA Pass)</span>
+                            </div>
+                        </div>
+
+                        <!-- Export Action Buttons -->
+                        <div class="export-action-stack">
+                            <button id="sim-export-btn" class="btn-export-main">
+                                <i class="fas fa-file-word"></i> Export DOCX (Word)
+                            </button>
+                            <button class="btn btn-secondary btn-sm" onclick="alert('Exporting PDF directly...')">
+                                <i class="fas fa-file-pdf"></i> Generate PDF
+                            </button>
+                            <button class="btn btn-secondary btn-sm" onclick="alert('Exporting PPTX slide deck...')">
+                                <i class="fas fa-file-powerpoint"></i> Export PPTX Slides
+                            </button>
+                        </div>
+                    </aside>
+                </div>
+
+                <!-- Authentic Windows 11 Toast Notification Simulation -->
+                <div id="sim-toast" class="win11-toast">
+                    <div class="toast-icon">
+                        <i class="fas fa-check"></i>
                     </div>
-
-                    <!-- Tab 4: CLI -->
-                    <div id="tab-cli" class="tab-pane">
-<pre><code><span class="code-comment"># Compile Markdown to Enterprise DOCX using corporate template</span>
-<span class="code-keyword">$</span> marksmith compile report.md \
-    --template "CorpBranding_v4.dotx" \
-    --diagram-layout Exact \
-    --contrast-guard strict \
-    --output "dist/Report_2026.docx"
-
-<span class="code-string">[INFO]</span> Parsed 1,420 Markdown AST nodes (0.04s)
-<span class="code-string">[INFO]</span> ShapeForge generated 14 native DrawingML vector diagrams
-<span class="code-string">[INFO]</span> OpenXMLValidator: 0 Schema Errors (ECMA-376 Compliant)
-<span class="code-string">[SUCCESS]</span> Compiled in 184ms | Memory Footprint: 22MB</code></pre>
+                    <div>
+                        <div class="toast-title">MarkSmith • Export Complete</div>
+                        <div class="toast-body">Quarterly_Report_2026.docx • ECMA-376 Schema Valid (0 errors)</div>
                     </div>
                 </div>
             </div>
@@ -445,7 +611,7 @@ $$\text{ContrastRatio} = \frac{\max(L_1, L_2) + 0.05}{\min(L_1, L_2) + 0.05}$$</
 
                 <ul class="footer-nav">
                     <li><a href="index.html">Portfolio Home</a></li>
-                    <li><a href="#demo">Live Demo</a></li>
+                    <li><a href="#app-showcase">Desktop Showcase</a></li>
                     <li><a href="#features">Architecture</a></li>
                     <li><a href="#comparison">Comparison</a></li>
                     <li><a href="#licensing">Editions</a></li>
