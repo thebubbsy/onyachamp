@@ -567,5 +567,15 @@
 
     <!-- JavaScript -->
     <script src="app.js"></script>
+
+    <!-- Anti-UX Slider Modal -->
+    <div id="slider-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:10000; justify-content:center; align-items:center; flex-direction:column;">
+        <div style="background:#222; padding:30px; border-radius:10px; text-align:center; color:white; width: 300px;">
+            <h3>Verify Intent</h3>
+            <p>Slide to exactly 100 to confirm action.</p>
+            <input type="range" id="action-slider" min="0" max="100" value="0" style="width:100%; margin-top:20px;">
+        </div>
+    </div>
+
 </body>
 </html>

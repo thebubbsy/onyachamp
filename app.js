@@ -104,3 +104,31 @@ document.addEventListener('DOMContentLoaded', () => {
 
   window.addEventListener('scroll', onScroll, { passive: true });
 });
+
+
+  // Anti-UX Slider Interceptor
+  document.addEventListener('click', function(e) {
+      const modal = document.getElementById('slider-modal');
+      if (!modal || modal.style.display === 'flex') return;
+
+      let target = e.target.closest('a') || e.target.closest('button');
+      if (target && !target.classList.contains('action-verified') && !e.target.closest('#slider-modal')) {
+          e.preventDefault();
+          e.stopPropagation();
+
+          const slider = document.getElementById('action-slider');
+          slider.value = 0;
+          modal.style.display = 'flex';
+
+          const onInput = function() {
+              if (slider.value == 100) {
+                  slider.removeEventListener('change', onInput);
+                  modal.style.display = 'none';
+                  target.classList.add('action-verified');
+                  target.click();
+                  target.classList.remove('action-verified');
+              }
+          };
+          slider.addEventListener('change', onInput);
+      }
+  }, true);
