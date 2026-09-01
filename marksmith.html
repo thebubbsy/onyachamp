@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MarkSmith — The Markdown-to-Office Compiler That Never Corrupts</title>
+    <meta name="description" content="MarkSmith is an enterprise offline compiler that translates Markdown ASTs into native ECMA-376 OpenXML (Word/PowerPoint) with zero Microsoft Word or COM dependency.">
+    <meta name="keywords" content="MarkSmith, Markdown to Word, OpenXML, ECMA-376, ShapeForge, DrawingML, OMML, SmartArt, Pandoc alternative, C#">
+    <meta name="author" content="Matthew Bubb">
+
+    <!-- Open Graph / Social Meta -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://onyachamp.com/marksmith.html">
+    <meta property="og:title" content="MarkSmith — Enterprise Markdown-to-Office Compiler">
+    <meta property="og:description" content="Offline compiler generating pure ECMA-376 OpenXML with ShapeForge vector diagrams, native OMML math, and zero file corruption.">
+    <meta property="og:image" content="https://avatars.githubusercontent.com/u/49204026?v=4">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:site" content="@TheBubbsy">
+    <meta name="twitter:title" content="MarkSmith — Enterprise Markdown-to-Office Compiler">
+    <meta name="twitter:description" content="Offline compiler generating pure ECMA-376 OpenXML with ShapeForge vector diagrams, native OMML math, and zero file corruption.">
+    <meta name="twitter:image" content="https://avatars.githubusercontent.com/u/49204026?v=4">
+
+    <link rel="canonical" href="https://onyachamp.com/marksmith.html">
+
+    <!-- Fonts & Icons -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <!-- Navigation Bar -->
+    <header class="navbar">
+        <div class="container nav-container">
+            <a href="index.html" class="nav-brand">
+                <div class="brand-icon">
+                    <i class="fas fa-layer-group"></i>
+                </div>
+                <span class="brand-title">MarkSmith</span>
+            </a>
+
+            <nav>
+                <ul class="nav-links">
+                    <li><a href="index.html"><i class="fas fa-arrow-left"></i> Portfolio Home</a></li>
+                    <li><a href="#demo">Live Demo</a></li>
+                    <li><a href="#features">Architecture</a></li>
+                    <li><a href="#comparison">Benchmark</a></li>
+                    <li><a href="#licensing">Editions &amp; Pricing</a></li>
+                </ul>
+            </nav>
+
+            <div class="nav-cta">
+                <a href="https://github.com/thebubbsy/marksmith" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-sm">
+                    <i class="fab fa-github"></i> GitHub
+                </a>
+                <a href="#licensing" class="btn btn-pro btn-sm">
+                    <i class="fas fa-key"></i> Get Pro License
+                </a>
+            </div>
+
+            <button class="mobile-menu-btn" aria-label="Toggle navigation menu">
+                <i class="fas fa-bars"></i>
+            </button>
+        </div>
+    </header>
+
+    <!-- Product Hero Section -->
+    <section class="hero">
+        <div class="container">
+            <div class="hero-pill">
+                <i class="fas fa-bolt"></i> Next-Gen ECMA-376 Document Compiler Engine
+            </div>
+            
+            <h1>
+                The Markdown-to-Office Compiler <br>
+                <span class="gradient-text">That Never Corrupts.</span>
+            </h1>
+
+            <p class="lead">
+                Compile Markdown ASTs directly into compliant Office Open XML (DOCX, PPTX, PDF) with <strong>zero Microsoft Word installation</strong>, zero COM dependencies, and mathematical schema guarantees. Featuring <strong>ShapeForge™</strong> native vector diagrams, native <strong>OMML</strong> equations, and reverse-engineered <strong>SmartArt</strong>.
+            </p>
+
+            <div class="hero-actions">
+                <a href="#licensing" class="btn btn-pro btn-lg">
+                    <i class="fas fa-key"></i> Get MarkSmith Pro
+                </a>
+                <a href="#demo" class="btn btn-primary btn-lg">
+                    <i class="fas fa-play"></i> View Interactive Demo
+                </a>
+                <a href="https://github.com/thebubbsy/marksmith" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-lg">
+                    <i class="fab fa-github"></i> Star on GitHub
+                </a>
+            </div>
+
+            <div class="hero-stats">
+                <div class="stat-item">
+                    <div class="stat-value">100% Native</div>
+                    <div class="stat-label">ECMA-376 OpenXML (No COM/Interop)</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value">O(1) Streaming</div>
+                    <div class="stat-label">Processes 1,000+ pages with SAX writer</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value">ShapeForge™</div>
+                    <div class="stat-label">Mermaid to Native Editable Word Shapes</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value">WCAG 2.1 AA</div>
+                    <div class="stat-label">Algorithmic ContrastGuard Legibility</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Interactive Code Demonstration -->
+    <section id="demo" class="section-flagship" style="padding-top: 2rem;">
+        <div class="container">
+            <div class="section-header">
+                <span class="badge badge-cyan"><i class="fas fa-code"></i> INTERACTIVE COMPILATION PREVIEW</span>
+                <h2>From Markdown AST to Native Vector Shapes in Milliseconds</h2>
+                <p>Explore how MarkSmith converts raw Markdown text, Mermaid charts, and LaTeX math into pure, compliant OpenXML elements without pixelation or rasterization.</p>
+            </div>
+
+            <div class="demo-window" style="max-width: 960px; margin: 0 auto;">
+                <div class="demo-titlebar">
+                    <div class="window-dots">
+                        <span class="dot dot-red"></span>
+                        <span class="dot dot-yellow"></span>
+                        <span class="dot dot-green"></span>
+                    </div>
+                    <div class="demo-tabs">
+                        <button class="demo-tab-btn active" data-tab="tab-markdown">input.md</button>
+                        <button class="demo-tab-btn" data-tab="tab-openxml">document.xml</button>
+                        <button class="demo-tab-btn" data-tab="tab-diagram">ShapeForge™</button>
+                        <button class="demo-tab-btn" data-tab="tab-cli">CLI Pipeline</button>
+                    </div>
+                </div>
+                <div class="demo-content">
+                    <!-- Tab 1: Markdown -->
+                    <div id="tab-markdown" class="tab-pane active">
+<pre><code><span class="code-comment"># Enterprise Security Architecture</span>
+
+<span class="code-keyword">:::callout[important]</span>
+All production microservices must enforce mutual TLS (mTLS) and zero-trust authentication.
+<span class="code-keyword">:::</span>
+
+<span class="code-comment">## Microservice Topology</span>
+<span class="code-keyword">```mermaid</span>
+flowchart LR
+    Client([Client Browser]) --> Edge[Cloudflare WAF]
+    Edge --> Auth{Authorizer}
+    Auth -->|Valid JWT| Core[MarkSmith Engine]
+    Auth -->|Denied| Drop[Reject 403]
+<span class="code-keyword">```</span>
+
+<span class="code-comment">## ContrastGuard Luminance Theorem</span>
+$$L = 0.2126 R + 0.7152 G + 0.0722 B$$
+$$\text{ContrastRatio} = \frac{\max(L_1, L_2) + 0.05}{\min(L_1, L_2) + 0.05}$$</code></pre>
+                    </div>
+
+                    <!-- Tab 2: OpenXML -->
+                    <div id="tab-openxml" class="tab-pane">
+<pre><code><span class="code-comment">&lt;!-- ECMA-376 Pure WordprocessingML &amp; DrawingML Elements --&gt;</span>
+&lt;<span class="code-tag">w:p</span>&gt;
+  &lt;<span class="code-tag">w:pPr</span>&gt;&lt;<span class="code-tag">w:pStyle</span> <span class="code-attr">w:val</span>=<span class="code-string">"Heading1"</span>/&gt;&lt;/<span class="code-tag">w:pPr</span>&gt;
+  &lt;<span class="code-tag">w:r</span>&gt;&lt;<span class="code-tag">w:t</span>&gt;Enterprise Security Architecture&lt;/<span class="code-tag">w:t</span>&gt;&lt;/<span class="code-tag">w:r</span>&gt;
+&lt;/<span class="code-tag">w:p</span>&gt;
+
+<span class="code-comment">&lt;!-- Native Office Math (OMML) without image rasterization --&gt;</span>
+&lt;<span class="code-tag">m:oMath</span>&gt;
+  &lt;<span class="code-tag">m:f</span>&gt;
+    &lt;<span class="code-tag">m:num</span>&gt;&lt;<span class="code-tag">m:r</span>&gt;&lt;<span class="code-tag">m:t</span>&gt;max(L1, L2) + 0.05&lt;/<span class="code-tag">m:t</span>&gt;&lt;/<span class="code-tag">m:r</span>&gt;&lt;/<span class="code-tag">m:num</span>&gt;
+    &lt;<span class="code-tag">m:den</span>&gt;&lt;<span class="code-tag">m:r</span>&gt;&lt;<span class="code-tag">m:t</span>&gt;min(L1, L2) + 0.05&lt;/<span class="code-tag">m:t</span>&gt;&lt;/<span class="code-tag">m:r</span>&gt;&lt;/<span class="code-tag">m:den</span>&gt;
+  &lt;/<span class="code-tag">m:f</span>&gt;
+&lt;/<span class="code-tag">m:oMath</span>&gt;</code></pre>
+                    </div>
+
+                    <!-- Tab 3: ShapeForge -->
+                    <div id="tab-diagram" class="tab-pane">
+<pre><code><span class="code-comment">// ShapeForge™ DrawingML Vector Emitter</span>
+<span class="code-keyword">var</span> shape = <span class="code-keyword">new</span> <span class="code-fn">WordShape</span> {
+    Id = <span class="code-string">"node_Core"</span>,
+    Text = <span class="code-string">"MarkSmith Engine"</span>,
+    Geometry = <span class="code-fn">ShapeType.RoundedRectangle</span>,
+    FillColor = <span class="code-string">"#0284C7"</span>,
+    BorderColor = <span class="code-string">"#38BDF8"</span>
+};
+
+<span class="code-comment">// Emits &lt;wpg:wgp&gt; grouping container</span>
+<span class="code-comment">// Full vector shape editability inside Word:</span>
+<span class="code-fn">emitter</span>.<span class="code-fn">EmitGroupedShapes</span>(diagramNodes, connectors, <span class="code-fn">ScaleMode.ProportionalShrink</span>);
+<span class="code-comment">// WCAG Contrast Guard verified: 5.8:1 Legibility</span></code></pre>
+                    </div>
+
+                    <!-- Tab 4: CLI -->
+                    <div id="tab-cli" class="tab-pane">
+<pre><code><span class="code-comment"># Compile Markdown to Enterprise DOCX using corporate template</span>
+<span class="code-keyword">$</span> marksmith compile report.md \
+    --template "CorpBranding_v4.dotx" \
+    --diagram-layout Exact \
+    --contrast-guard strict \
+    --output "dist/Report_2026.docx"
+
+<span class="code-string">[INFO]</span> Parsed 1,420 Markdown AST nodes (0.04s)
+<span class="code-string">[INFO]</span> ShapeForge generated 14 native DrawingML vector diagrams
+<span class="code-string">[INFO]</span> OpenXMLValidator: 0 Schema Errors (ECMA-376 Compliant)
+<span class="code-string">[SUCCESS]</span> Compiled in 184ms | Memory Footprint: 22MB</code></pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 6 Core Architectural Capabilities -->
+    <section id="features" class="section-flagship" style="padding-top: 0;">
+        <div class="container">
+            <div class="section-header">
+                <span class="badge badge-purple"><i class="fas fa-microchip"></i> ARCHITECTURAL ADVANTAGES</span>
+                <h2>Engineered for Zero Corruption &amp; Maximum Fidelity</h2>
+                <p>Word's rendering engine is notoriously fragile. MarkSmith was built from the ground up to strictly obey the ECMA-376 OpenXML schema.</p>
+            </div>
+
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon-wrapper icon-cyan">
+                        <i class="fas fa-shield-alt"></i>
+                    </div>
+                    <h4>Zero-Corruption Guarantee</h4>
+                    <p>Enforces all required root namespaces (<code>w:</code>, <code>a:</code>, <code>wp:</code>, <code>m:</code>, <code>wpg:</code>, <code>wps:</code>), dynamic relationship management (<code>rId</code>), and $O(1)$ SAX streaming via <code>OpenXmlWriter</code>.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon-wrapper icon-purple">
+                        <i class="fas fa-project-diagram"></i>
+                    </div>
+                    <h4>ShapeForge™ Diagram Engine</h4>
+                    <p>Translates Mermaid flowcharts, mindmaps, gitgraphs, Gantt charts, quadrant charts, and timelines into native Word vector shapes (<code>&lt;wpg:wgp&gt;</code>). Fully editable inside Microsoft Word.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon-wrapper icon-blue">
+                        <i class="fas fa-square-root-variable"></i>
+                    </div>
+                    <h4>Native OMML Equations</h4>
+                    <p>Translates complex LaTeX math expressions directly into native Microsoft Office Math elements (<code>&lt;m:oMath&gt;</code>) with literal whitespace preservation and high typographical precision.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon-wrapper icon-emerald">
+                        <i class="fas fa-sitemap"></i>
+                    </div>
+                    <h4>Reverse-Engineered SmartArt</h4>
+                    <p>Parses Office OpenXML <code>.glox</code> layout definitions and compiles JSON nodes into standard Word diagram data parts for executive process flows and hierarchy trees.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon-wrapper icon-amber">
+                        <i class="fas fa-file-invoice"></i>
+                    </div>
+                    <h4>Corporate Template Injection</h4>
+                    <p>Injects compiled Markdown runs into existing corporate <code>.dotx</code> / <code>.docx</code> templates, automatically inheriting branded fonts, heading styles, headers, and footers.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon-wrapper icon-pink">
+                        <i class="fas fa-eye"></i>
+                    </div>
+                    <h4>WCAG 2.1 ContrastGuard</h4>
+                    <p>Calculates relative luminance and mathematical contrast ratios in real time, automatically preventing illegible text against dark or light shading (AA 4.5:1 standard).</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Comparison Table: MarkSmith vs Alternatives -->
+    <section id="comparison" class="comparison-section">
+        <div class="container">
+            <div class="section-header">
+                <span class="badge badge-cyan"><i class="fas fa-scale-balanced"></i> TECHNICAL BENCHMARK</span>
+                <h2>Why MarkSmith Outperforms Pandoc &amp; Converters</h2>
+                <p>A side-by-side comparison of technical capabilities between MarkSmith and standard alternatives.</p>
+            </div>
+
+            <div class="table-wrapper">
+                <table class="comparison-table">
+                    <thead>
+                        <tr>
+                            <th>Capability / Architecture</th>
+                            <th class="highlight">MarkSmith Engine</th>
+                            <th>Pandoc</th>
+                            <th>HTML-to-DOCX Tools</th>
+                            <th>Word Interop / COM</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Microsoft Word Required</strong></td>
+                            <td class="highlight"><span class="cell-check"><i class="fas fa-check"></i> No (100% Offline/Standalone)</span></td>
+                            <td><span class="cell-check"><i class="fas fa-check"></i> No</span></td>
+                            <td><span class="cell-check"><i class="fas fa-check"></i> No</span></td>
+                            <td><span class="cell-cross"><i class="fas fa-times"></i> Yes (License &amp; Runtime)</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Diagram Output Fidelity</strong></td>
+                            <td class="highlight"><span class="cell-check"><i class="fas fa-check"></i> Native Editable Vector Shapes</span></td>
+                            <td><span class="cell-cross"><i class="fas fa-times"></i> Blurry Rasterized PNGs</span></td>
+                            <td><span class="cell-cross"><i class="fas fa-times"></i> Broken / Not Supported</span></td>
+                            <td><span class="cell-cross"><i class="fas fa-times"></i> Clunky OLE Objects</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Mathematical Formula (OMML)</strong></td>
+                            <td class="highlight"><span class="cell-check"><i class="fas fa-check"></i> Native Office Math (<code>&lt;m:oMath&gt;</code>)</span></td>
+                            <td><span class="cell-cross"><i class="fas fa-times"></i> MathML or Pixelated PNG</span></td>
+                            <td><span class="cell-cross"><i class="fas fa-times"></i> Raw Unformatted Text</span></td>
+                            <td><span class="cell-check"><i class="fas fa-check"></i> Partial</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Corporate <code>.dotx</code> Template Injection</strong></td>
+                            <td class="highlight"><span class="cell-check"><i class="fas fa-check"></i> Full Style &amp; Header Inheritance</span></td>
+                            <td><span class="cell-cross"><i class="fas fa-times"></i> Partial / Style Drift</span></td>
+                            <td><span class="cell-cross"><i class="fas fa-times"></i> None (Strips styles)</span></td>
+                            <td><span class="cell-check"><i class="fas fa-check"></i> Manual Macro Glue</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>SmartArt &amp; <code>.glox</code> Parsing</strong></td>
+                            <td class="highlight"><span class="cell-check"><i class="fas fa-check"></i> Built-in GLOX Solver</span></td>
+                            <td><span class="cell-cross"><i class="fas fa-times"></i> None</span></td>
+                            <td><span class="cell-cross"><i class="fas fa-times"></i> None</span></td>
+                            <td><span class="cell-cross"><i class="fas fa-times"></i> None</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Memory Overhead (1000+ pages)</strong></td>
+                            <td class="highlight"><span class="cell-check"><i class="fas fa-check"></i> $O(1)$ SAX Streaming</span></td>
+                            <td><span class="cell-cross"><i class="fas fa-times"></i> $O(N)$ DOM Bloat</span></td>
+                            <td><span class="cell-cross"><i class="fas fa-times"></i> Out Of Memory Crashes</span></td>
+                            <td><span class="cell-cross"><i class="fas fa-times"></i> Severe Memory Leaks</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Automated WCAG 2.1 ContrastGuard</strong></td>
+                            <td class="highlight"><span class="cell-check"><i class="fas fa-check"></i> Enforced AA 4.5:1 Ratio</span></td>
+                            <td><span class="cell-cross"><i class="fas fa-times"></i> None</span></td>
+                            <td><span class="cell-cross"><i class="fas fa-times"></i> None</span></td>
+                            <td><span class="cell-cross"><i class="fas fa-times"></i> None</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
+    <!-- Licensing & Editions -->
+    <section id="licensing" class="pricing-section">
+        <div class="container">
+            <div class="section-header">
+                <span class="badge badge-purple"><i class="fas fa-tag"></i> LICENSING &amp; EDITIONS</span>
+                <h2>Choose Your MarkSmith Edition</h2>
+                <p>From local open-source testing to enterprise-grade document compilation and hands-free CI/CD automation.</p>
+            </div>
+
+            <div class="pricing-grid">
+                <!-- Free Community Edition -->
+                <div class="pricing-card">
+                    <div class="pricing-header">
+                        <div class="pricing-tier">Community Edition</div>
+                        <div class="pricing-price">$0 <span>/ forever</span></div>
+                        <div class="pricing-desc">Ideal for individual developers, CLI hobbyists, and standard PDF generation.</div>
+                    </div>
+
+                    <ul class="pricing-features">
+                        <li><i class="fas fa-check"></i> PDF Document Export</li>
+                        <li><i class="fas fa-check"></i> All Standard Highlighting Themes</li>
+                        <li><i class="fas fa-check"></i> AI Text Cleanup &amp; Formatter</li>
+                        <li><i class="fas fa-check"></i> Basic CLI Compiler</li>
+                        <li class="disabled"><i class="fas fa-times"></i> Native DOCX &amp; PPTX Export</li>
+                        <li class="disabled"><i class="fas fa-times"></i> ShapeForge™ Word Vector Shapes</li>
+                        <li class="disabled"><i class="fas fa-times"></i> Hands-Free Watch Folder Automation</li>
+                        <li class="disabled"><i class="fas fa-times"></i> Unbranded Clean Footers</li>
+                    </ul>
+
+                    <a href="https://github.com/thebubbsy/marksmith" target="_blank" rel="noopener noreferrer" class="btn btn-secondary">
+                        <i class="fab fa-github"></i> Download Free on GitHub
+                    </a>
+                </div>
+
+                <!-- Pro Commercial Edition -->
+                <div class="pricing-card featured">
+                    <div class="pricing-badge">PRO EDITION</div>
+                    <div class="pricing-header">
+                        <div class="pricing-tier">MarkSmith Pro</div>
+                        <div class="pricing-price">Perpetual <span>/ license</span></div>
+                        <div class="pricing-desc">Full commercial edition for power users, enterprises, and engineering teams. Includes a 14-day full Pro trial.</div>
+                    </div>
+
+                    <ul class="pricing-features">
+                        <li><i class="fas fa-check"></i> <strong>Native DOCX &amp; PPTX Compilation</strong></li>
+                        <li><i class="fas fa-check"></i> <strong>ShapeForge™ Editable Word Shapes</strong></li>
+                        <li><i class="fas fa-check"></i> <strong>Native OMML Editable Mathematical Formulas</strong></li>
+                        <li><i class="fas fa-check"></i> <strong>Hands-Free Clipboard &amp; Watch Folder Daemon</strong></li>
+                        <li><i class="fas fa-check"></i> <strong>Corporate <code>.dotx</code> Template Injection</strong></li>
+                        <li><i class="fas fa-check"></i> <strong>Zero-Branding Clean White-Label Output</strong></li>
+                        <li><i class="fas fa-check"></i> <strong>Offline RSA Cryptographic License Activation</strong></li>
+                    </ul>
+
+                    <a href="https://github.com/thebubbsy/marksmith" target="_blank" rel="noopener noreferrer" class="btn btn-pro">
+                        <i class="fas fa-key"></i> Get Pro License / Early Access
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Call to Action -->
+    <section class="cta-section">
+        <div class="container">
+            <div class="cta-box">
+                <span class="badge badge-cyan" style="margin-bottom: 1rem;"><i class="fas fa-download"></i> GET STARTED TODAY</span>
+                <h2>Transform Your Markdown Documents Today</h2>
+                <p>Download the open-source CLI or explore the full-featured WinUI 3 desktop application.</p>
+
+                <div class="social-links">
+                    <a href="https://github.com/thebubbsy/marksmith" target="_blank" rel="noopener noreferrer" class="btn btn-primary btn-lg">
+                        <i class="fab fa-github"></i> View MarkSmith on GitHub
+                    </a>
+                    <a href="index.html" class="btn btn-secondary btn-lg">
+                        <i class="fas fa-arrow-left"></i> Return to OnyaChamp Portfolio
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <div class="footer-grid">
+                <div class="footer-brand">
+                    <strong>MarkSmith</strong> — Created by Matthew Bubb (OnyaChamp).
+                </div>
+
+                <ul class="footer-nav">
+                    <li><a href="index.html">Portfolio Home</a></li>
+                    <li><a href="#demo">Live Demo</a></li>
+                    <li><a href="#features">Architecture</a></li>
+                    <li><a href="#comparison">Comparison</a></li>
+                    <li><a href="#licensing">Editions</a></li>
+                    <li><a href="https://github.com/thebubbsy/marksmith" target="_blank" rel="noopener noreferrer">GitHub</a></li>
+                </ul>
+
+                <div class="footer-copy">
+                    &copy; 2026 MarkSmith / Matthew Bubb. All rights reserved.
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- JavaScript -->
+    <script src="app.js"></script>
+</body>
+</html>

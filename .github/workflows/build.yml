@@ -10,7 +10,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Zip Files for Windows
-        run: Compress-Archive -Path "index.html", "style.css", "app.js", "CNAME" -DestinationPath "Onyachamp-Windows.zip"
+        run: Compress-Archive -Path "index.html", "marksmith.html", "style.css", "app.js", "CNAME" -DestinationPath "Onyachamp-Windows.zip"
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
