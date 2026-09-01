@@ -154,35 +154,17 @@
                         </div>
                     </div>
 
-                    <!-- Mini Preview Box -->
-                    <div class="demo-window">
-                        <div class="demo-titlebar">
-                            <div class="window-dots">
-                                <span class="dot dot-red"></span>
-                                <span class="dot dot-yellow"></span>
-                                <span class="dot dot-green"></span>
-                            </div>
-                            <span style="font-family: var(--font-mono); font-size: 0.8rem; color: #38bdf8;">MarkSmith CLI &amp; Architecture</span>
-                        </div>
-                        <div class="demo-content">
-<pre><code><span class="code-comment"># High-speed document compilation via MarkSmith</span>
-<span class="code-keyword">$</span> marksmith compile architectural-review.md \
-    --template "Corporate_Standard_v2.dotx" \
-    --diagram-engine ShapeForge \
-    --contrast-guard strict \
-    --output "dist/Review_2026.docx"
-
-<span class="code-string">[INFO]</span> Parsed 2,840 Markdown AST nodes (0.07s)
-<span class="code-string">[INFO]</span> ShapeForge rendered 8 native DrawingML vector diagrams
-<span class="code-string">[INFO]</span> OpenXMLValidator: 0 Schema Errors (ECMA-376 Valid)
-<span class="code-string">[SUCCESS]</span> Compiled in 210ms | Memory Footprint: 24MB</code></pre>
-                            <div style="margin-top: 1.5rem; text-align: center;">
-                                <a href="marksmith.html#demo" class="btn btn-secondary btn-sm" style="width: 100%;">
-                                    <i class="fas fa-play"></i> Try Full Interactive 4-Tab Demo &rarr;
-                                </a>
-                            </div>
-                        </div>
-                    </div>
+                    <!-- Real screenshot, captured off the running Release build -->
+                    <a class="spotlight-shot" href="marksmith.html#app-showcase">
+                        <img src="media/desktop-split.png"
+                             alt="MarkSmith desktop app in split view: Markdown source on the left, the rendered document preview on the right"
+                             loading="lazy">
+                        <span class="spotlight-shot-caption">
+                            <strong>MarkSmith split view</strong>
+                            <span>A real capture of the desktop app &mdash; source on the left, the Looking&nbsp;Glass preview on the right.</span>
+                            <span class="spotlight-shot-cta"><i class="fas fa-circle-play"></i> Watch it run &rarr;</span>
+                        </span>
+                    </a>
                 </div>
             </div>
         </div>
