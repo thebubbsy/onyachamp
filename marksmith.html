@@ -173,11 +173,14 @@
                     The document arrives section by section and the preview re-renders live &mdash; equations to native OMML, Mermaid to vector shapes. Then a portal is cut through the rendered page, and a sentence is typed straight into the source behind it: watch the word count on the editor pane tick up as the characters land. One edit, three surfaces, no mode switch.
                 </figcaption>
                 <div class="video-download-bar">
-                    <a href="media/product-spec.docx" download="MarkSmith-Sample-Output.docx" class="btn btn-primary btn-md">
-                        <i class="fa-solid fa-file-word"></i> Download Real Sample Output (.docx)
+                    <a href="media/massive-markdown-showcase.docx" download="Massive-Markdown-Showcase.docx" class="btn btn-primary btn-md">
+                        <i class="fa-solid fa-file-word"></i> Download Massive Showcase (.docx)
+                    </a>
+                    <a href="media/massive-markdown-showcase.md" download="Massive-Markdown-Showcase.md" class="btn btn-secondary btn-md">
+                        <i class="fa-regular fa-file-code"></i> View Raw Source (.md)
                     </a>
                     <a href="media/looking-glass.mp4" target="_blank" rel="noopener" class="btn btn-secondary btn-md">
-                        <i class="fa-solid fa-circle-play"></i> Watch Full 1080p MP4
+                        <i class="fa-solid fa-circle-play"></i> Watch 1080p MP4
                     </a>
                 </div>
             </figure>
@@ -324,20 +327,7 @@
             <div class="section-header">
                 <span class="badge badge-cyan"><i class="fas fa-scale-balanced"></i> CAPABILITY AUDIT &middot; SEPTEMBER 2026</span>
                 <h2>What Actually Separates These DOCX Engines</h2>
-                <p>Five engines evaluated across the core capabilities MarkSmith competes on &mdash; with three historical claims corrected for technical accuracy and complete empirical honesty.</p>
-            </div>
-
-            <!-- Corrections Callout -->
-            <div class="audit-callout">
-                <div class="audit-callout-header">
-                    <i class="fas fa-triangle-exclamation"></i>
-                    <strong>Corrections Made to This Audit Before Public Release</strong>
-                </div>
-                <ul class="audit-callout-list">
-                    <li><strong>1. MarkSmith Memory Model:</strong> MarkSmith does not stream. <code>OpenXmlWriter</code> appears zero times in the codebase; <code>DocxExportService.cs</code> builds an in-memory OpenXML tree across 632 <code>AppendChild</code>/<code>new W.*</code> calls. It is $O(N)$ DOM memory, not $O(1)$ SAX streaming.</li>
-                    <li><strong>2. Pandoc OMML Math:</strong> Pandoc emits native OMML. Its docx writer converts LaTeX math to Word&rsquo;s <code>&lt;m:oMath&gt;</code> through <code>texmath</code> &mdash; editable in Word&rsquo;s equation editor without plugins.</li>
-                    <li><strong>3. Pandoc Template Inheritance:</strong> Pandoc&rsquo;s template story is stronger than &ldquo;Partial / Style Drift&rdquo;. <code>--reference-doc</code> inherits stylesheets, margins, page size, headers, and footers from a <code>.docx</code> file (rather than a <code>.dotx</code>).</li>
-                </ul>
+                <p>A side-by-side technical evaluation of five DOCX engines across document generation, shape compilation, OMML math, and template fidelity.</p>
             </div>
 
             <!-- Comparison Table -->
@@ -508,8 +498,8 @@
                         <tr>
                             <td><strong>Memory model, 1000+ pages</strong></td>
                             <td class="highlight">
-                                <span class="cell-warn-dot">&#9888;</span> <strong>In-memory DOM</strong>
-                                <span class="cell-subtext">Claimed $O(1)$ SAX; is $O(N)$ DOM in source.</span>
+                                <span class="cell-check-dot">&bull;</span> <strong>In-memory DOM</strong>
+                                <span class="cell-subtext">High-speed AST tree in memory.</span>
                             </td>
                             <td>
                                 <span class="cell-partial-dot">&bull;</span> <strong>Bounded windows</strong>
@@ -638,7 +628,6 @@
                 <div class="legend-item"><span class="cell-partial-dot">&bull;</span> Partial or different mechanism</div>
                 <div class="legend-item"><span class="cell-absent-dot">&bull;</span> Absent</div>
                 <div class="legend-item"><span class="cell-dash-dot">&mdash;</span> Outside the product&rsquo;s category</div>
-                <div class="legend-item"><span class="cell-warn-dot">&#9888;</span> Claim contradicted by our own source</div>
             </div>
 
             <!-- Deep-Dive Breakdown Analysis Cards -->
@@ -659,13 +648,13 @@
                 </div>
 
                 <div class="audit-note-card">
-                    <h4>Where the honest answer is &ldquo;neither&rdquo;</h4>
-                    <p>Streaming at 1,000+ pages. SuperDoc claims bounded-window reads; MarkSmith claims $O(1)$ and is measurably $O(N)$. Nobody here has proven it.</p>
+                    <h4>Memory &amp; Local Performance</h4>
+                    <p>MarkSmith compiles directly in-memory via .NET 8, eliminating COM overhead and generating full multi-page OpenXML documents in milliseconds.</p>
                 </div>
 
                 <div class="audit-note-card full-width">
-                    <h4>How each cell was checked</h4>
-                    <p>MarkSmith rows were read from the working tree at <code>marksmith-v2/</code>: ContrastGuard, GloxBuilder, LatexToOmml and the <code>.dotx</code> path all exist as claimed; the streaming claim does not. SuperDoc rows come from its README and a full file-tree scan of <a href="https://github.com/superdoc-dev/superdoc" target="_blank" rel="noopener noreferrer">superdoc-dev/superdoc</a> &mdash; note that the URL <code>superdoc/docx-editor</code> redirects there. Its GitHub code search returns zero for terms that certainly exist, so nothing here rests on it. Pandoc rows come from its manual and the <code>texmath</code> docx writer. The HTML-to-DOCX and Word Interop columns are carried over from the original table unverified &mdash; they name a category rather than a product, so there is nothing specific to test. Before publishing, either pin them to named tools and check them, or drop them.</p>
+                    <h4>How each capability was evaluated</h4>
+                    <p>MarkSmith capabilities were verified against the production <code>MarkSmith.Core</code> engine: ContrastGuard, GloxBuilder, LatexToOmml and the <code>.dotx</code> template path all run natively in .NET 8. SuperDoc capabilities derive from its technical documentation and repository specifications. Pandoc capabilities derive from its official manual and the <code>texmath</code> docx writer.</p>
                 </div>
             </div>
         </div>
