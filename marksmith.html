@@ -98,21 +98,41 @@
             </div>
 
             <div class="hero-stats">
-                <div class="stat-item">
-                    <div class="stat-value">100% Native</div>
-                    <div class="stat-label">ECMA-376 OpenXML (No COM/Interop)</div>
+                <div class="stat-item stat-item-word">
+                    <div class="stat-icon-badge icon-word">
+                        <i class="fa-solid fa-shield-halved"></i>
+                    </div>
+                    <div class="stat-content">
+                        <div class="stat-value">100% Native</div>
+                        <div class="stat-label">ECMA-376 OpenXML (No COM/Interop)</div>
+                    </div>
                 </div>
-                <div class="stat-item">
-                    <div class="stat-value">O(1) Streaming</div>
-                    <div class="stat-label">Processes 1,000+ pages with SAX writer</div>
+                <div class="stat-item stat-item-intune">
+                    <div class="stat-icon-badge icon-intune">
+                        <i class="fa-solid fa-bolt-lightning"></i>
+                    </div>
+                    <div class="stat-content">
+                        <div class="stat-value">Pure .NET Engine</div>
+                        <div class="stat-label">High-Speed In-Memory AST Compiler</div>
+                    </div>
                 </div>
-                <div class="stat-item">
-                    <div class="stat-value">ShapeForge™</div>
-                    <div class="stat-label">Mermaid to Native Editable Word Shapes</div>
+                <div class="stat-item stat-item-autopilot">
+                    <div class="stat-icon-badge icon-autopilot">
+                        <i class="fa-solid fa-diagram-project"></i>
+                    </div>
+                    <div class="stat-content">
+                        <div class="stat-value">ShapeForge™</div>
+                        <div class="stat-label">Mermaid to Native Editable Word Shapes</div>
+                    </div>
                 </div>
-                <div class="stat-item">
-                    <div class="stat-value">WCAG 2.1 AA</div>
-                    <div class="stat-label">Algorithmic ContrastGuard Legibility</div>
+                <div class="stat-item stat-item-powershell">
+                    <div class="stat-icon-badge icon-powershell">
+                        <i class="fa-solid fa-circle-check"></i>
+                    </div>
+                    <div class="stat-content">
+                        <div class="stat-value">WCAG 2.1 AA</div>
+                        <div class="stat-label">Algorithmic ContrastGuard Legibility</div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -151,13 +171,20 @@
                 </div>
                 <figcaption>
                     The document arrives section by section and the preview re-renders live &mdash; equations to native OMML, Mermaid to vector shapes. Then a portal is cut through the rendered page, and a sentence is typed straight into the source behind it: watch the word count on the editor pane tick up as the characters land. One edit, three surfaces, no mode switch.
-                    <a href="media/looking-glass.mp4" target="_blank" rel="noopener">Open the full-resolution MP4</a>
                 </figcaption>
+                <div class="video-download-bar">
+                    <a href="media/product-spec.docx" download="MarkSmith-Sample-Output.docx" class="btn btn-primary btn-md">
+                        <i class="fa-solid fa-file-word"></i> Download Real Sample Output (.docx)
+                    </a>
+                    <a href="media/looking-glass.mp4" target="_blank" rel="noopener" class="btn btn-secondary btn-md">
+                        <i class="fa-solid fa-circle-play"></i> Watch Full 1080p MP4
+                    </a>
+                </div>
             </figure>
 
             <!-- Real screenshots -->
             <h3 class="gallery-heading">Screenshots, straight off the window</h3>
-            <p class="gallery-sub">Every image below is a <code>PrintWindow</code> capture of the running Release build &mdash; nothing composited, nothing hand-drawn. Click any shot to enlarge.</p>
+            <p class="gallery-sub">Every image below is a <code>PrintWindow</code> capture of the running Release build &mdash; nothing composited, nothing hand-drawn. Click any shot to enlarge or download the real generated DOCX files to test in Word.</p>
 
             <div class="shot-grid">
                 <figure class="shot" data-full="media/desktop-split.png">
@@ -165,6 +192,7 @@
                     <figcaption>
                         <strong>Split view</strong>
                         <span>Source and the Looking&nbsp;Glass preview side by side, rendering exactly what Word will produce.</span>
+                        <a href="media/product-spec.docx" download class="shot-download-link"><i class="fa-solid fa-download"></i> Download sample DOCX</a>
                     </figcaption>
                 </figure>
 
@@ -173,6 +201,7 @@
                     <figcaption>
                         <strong>It knows what pasted that</strong>
                         <span>Drop in a raw ChatGPT export and the status bar names the source with a confidence score and a fix count &mdash; citation pips like <code>[12&dagger;source]</code>, stray <code>:contentReference</code> markers and <code>\( \)</code> math delimiters, all cleaned on the way to Word.</span>
+                        <a href="media/chatgpt-export.docx" download class="shot-download-link"><i class="fa-solid fa-download"></i> Download chatgpt-export.docx</a>
                     </figcaption>
                 </figure>
 
@@ -181,6 +210,7 @@
                     <figcaption>
                         <strong>Math that survives the trip</strong>
                         <span>Matrices, integrals and mhchem compiled to native OMML &mdash; editable in Word's equation editor, not pasted images.</span>
+                        <a href="media/math-cheatsheet.docx" download class="shot-download-link"><i class="fa-solid fa-download"></i> Download math-cheatsheet.docx</a>
                     </figcaption>
                 </figure>
 
@@ -189,6 +219,7 @@
                     <figcaption>
                         <strong>ShapeForge&trade; output in Word</strong>
                         <span>A Mermaid diagram compiled to real DrawingML shapes. Select a node in Word and drag it &mdash; it is a shape, not a PNG.</span>
+                        <a href="media/product-spec.docx" download class="shot-download-link"><i class="fa-solid fa-download"></i> Download product-spec.docx</a>
                     </figcaption>
                 </figure>
 
@@ -197,6 +228,7 @@
                     <figcaption>
                         <strong>The gauntlet document, in Word</strong>
                         <span>Native equations, syntax-highlighted code and a nested table, opened in Word with zero repair prompts.</span>
+                        <a href="media/product-spec.docx" download class="shot-download-link"><i class="fa-solid fa-download"></i> Download gauntlet DOCX</a>
                     </figcaption>
                 </figure>
 
@@ -286,78 +318,355 @@
         </div>
     </section>
 
-    <!-- Comparison Table: MarkSmith vs Alternatives -->
+    <!-- Capability Audit / Benchmark Section -->
     <section id="comparison" class="comparison-section">
         <div class="container">
             <div class="section-header">
-                <span class="badge badge-cyan"><i class="fas fa-scale-balanced"></i> TECHNICAL BENCHMARK</span>
-                <h2>Why MarkSmith Outperforms Pandoc &amp; Converters</h2>
-                <p>A side-by-side comparison of technical capabilities between MarkSmith and standard alternatives.</p>
+                <span class="badge badge-cyan"><i class="fas fa-scale-balanced"></i> CAPABILITY AUDIT &middot; SEPTEMBER 2026</span>
+                <h2>What Actually Separates These DOCX Engines</h2>
+                <p>Five engines evaluated across the core capabilities MarkSmith competes on &mdash; with three historical claims corrected for technical accuracy and complete empirical honesty.</p>
             </div>
 
+            <!-- Corrections Callout -->
+            <div class="audit-callout">
+                <div class="audit-callout-header">
+                    <i class="fas fa-triangle-exclamation"></i>
+                    <strong>Corrections Made to This Audit Before Public Release</strong>
+                </div>
+                <ul class="audit-callout-list">
+                    <li><strong>1. MarkSmith Memory Model:</strong> MarkSmith does not stream. <code>OpenXmlWriter</code> appears zero times in the codebase; <code>DocxExportService.cs</code> builds an in-memory OpenXML tree across 632 <code>AppendChild</code>/<code>new W.*</code> calls. It is $O(N)$ DOM memory, not $O(1)$ SAX streaming.</li>
+                    <li><strong>2. Pandoc OMML Math:</strong> Pandoc emits native OMML. Its docx writer converts LaTeX math to Word&rsquo;s <code>&lt;m:oMath&gt;</code> through <code>texmath</code> &mdash; editable in Word&rsquo;s equation editor without plugins.</li>
+                    <li><strong>3. Pandoc Template Inheritance:</strong> Pandoc&rsquo;s template story is stronger than &ldquo;Partial / Style Drift&rdquo;. <code>--reference-doc</code> inherits stylesheets, margins, page size, headers, and footers from a <code>.docx</code> file (rather than a <code>.dotx</code>).</li>
+                </ul>
+            </div>
+
+            <!-- Comparison Table -->
             <div class="table-wrapper">
-                <table class="comparison-table">
+                <table class="comparison-table audit-table">
                     <thead>
                         <tr>
-                            <th>Capability / Architecture</th>
-                            <th class="highlight">MarkSmith Engine</th>
-                            <th>Pandoc</th>
-                            <th>HTML-to-DOCX Tools</th>
-                            <th>Word Interop / COM</th>
+                            <th style="min-width: 190px;">Capability</th>
+                            <th class="highlight" style="min-width: 210px;">MarkSmith</th>
+                            <th style="min-width: 210px;">SuperDoc</th>
+                            <th style="min-width: 190px;">Pandoc</th>
+                            <th style="min-width: 160px;">HTML&ndash;to&ndash;DOCX</th>
+                            <th style="min-width: 170px;">Word Interop</th>
                         </tr>
                     </thead>
                     <tbody>
+                        <!-- Row 1: Fundamental nature -->
                         <tr>
-                            <td><strong>Microsoft Word Required</strong></td>
-                            <td class="highlight"><span class="cell-check"><i class="fas fa-check"></i> No (100% Offline/Standalone)</span></td>
-                            <td><span class="cell-check"><i class="fas fa-check"></i> No</span></td>
-                            <td><span class="cell-check"><i class="fas fa-check"></i> No</span></td>
-                            <td><span class="cell-cross"><i class="fas fa-times"></i> Yes (License &amp; Runtime)</span></td>
+                            <td><strong>What it fundamentally is</strong></td>
+                            <td class="highlight">
+                                <strong>Markdown &rarr; DOCX generator.</strong>
+                                <span class="cell-subtext">Authors new documents from text.</span>
+                            </td>
+                            <td>
+                                <strong>DOCX editor &amp; SDK.</strong>
+                                <span class="cell-subtext">Round-trips documents that already exist.</span>
+                            </td>
+                            <td>
+                                <strong>Universal document converter.</strong>
+                                <span class="cell-subtext">Multi-format conversion engine.</span>
+                            </td>
+                            <td>
+                                <strong>HTML serialiser.</strong>
+                                <span class="cell-subtext">Converts web markup to document runs.</span>
+                            </td>
+                            <td>
+                                <strong>Word Application automation.</strong>
+                                <span class="cell-subtext">Drives Microsoft Word via COM.</span>
+                            </td>
                         </tr>
+
+                        <!-- Row 2: Microsoft Word required -->
                         <tr>
-                            <td><strong>Diagram Output Fidelity</strong></td>
-                            <td class="highlight"><span class="cell-check"><i class="fas fa-check"></i> Native Editable Vector Shapes</span></td>
-                            <td><span class="cell-cross"><i class="fas fa-times"></i> Blurry Rasterized PNGs</span></td>
-                            <td><span class="cell-cross"><i class="fas fa-times"></i> Broken / Not Supported</span></td>
-                            <td><span class="cell-cross"><i class="fas fa-times"></i> Clunky OLE Objects</span></td>
+                            <td><strong>Microsoft Word required</strong></td>
+                            <td class="highlight">
+                                <span class="cell-check-dot">&bull;</span> <strong>No</strong>
+                                <span class="cell-subtext">Fully offline, standalone compiler.</span>
+                            </td>
+                            <td>
+                                <span class="cell-check-dot">&bull;</span> <strong>No</strong>
+                                <span class="cell-subtext">Browser, Node, Python, CLI, MCP.</span>
+                            </td>
+                            <td>
+                                <span class="cell-check-dot">&bull;</span> <strong>No</strong>
+                                <span class="cell-subtext">Standalone binary.</span>
+                            </td>
+                            <td>
+                                <span class="cell-check-dot">&bull;</span> <strong>No</strong>
+                                <span class="cell-subtext">Library-level parser.</span>
+                            </td>
+                            <td>
+                                <span class="cell-absent-dot">&bull;</span> <strong>Yes</strong>
+                                <span class="cell-subtext">Licence and runtime on every machine.</span>
+                            </td>
                         </tr>
+
+                        <!-- Row 3: Diagrams generated from source text -->
                         <tr>
-                            <td><strong>Mathematical Formula (OMML)</strong></td>
-                            <td class="highlight"><span class="cell-check"><i class="fas fa-check"></i> Native Office Math (<code>&lt;m:oMath&gt;</code>)</span></td>
-                            <td><span class="cell-cross"><i class="fas fa-times"></i> MathML or Pixelated PNG</span></td>
-                            <td><span class="cell-cross"><i class="fas fa-times"></i> Raw Unformatted Text</span></td>
-                            <td><span class="cell-check"><i class="fas fa-check"></i> Partial</span></td>
+                            <td><strong>Diagrams from source text</strong></td>
+                            <td class="highlight">
+                                <span class="cell-check-dot">&bull;</span> <strong>Native vector</strong>
+                                <span class="cell-subtext">Editable DrawingML shapes, not pictures.</span>
+                            </td>
+                            <td>
+                                <span class="cell-dash-dot">&mdash;</span> <strong>Out of scope</strong>
+                                <span class="cell-subtext">Renders existing charts/shapes; no authoring.</span>
+                            </td>
+                            <td>
+                                <span class="cell-absent-dot">&bull;</span> <strong>Rasterised</strong>
+                                <span class="cell-subtext">Filter output lands as PNG images.</span>
+                            </td>
+                            <td>
+                                <span class="cell-absent-dot">&bull;</span> <strong>None</strong>
+                                <span class="cell-subtext">Not supported.</span>
+                            </td>
+                            <td>
+                                <span class="cell-partial-dot">&bull;</span> <strong>OLE objects</strong>
+                                <span class="cell-subtext">Clunky embedded binary objects.</span>
+                            </td>
                         </tr>
+
+                        <!-- Row 4: Math as native Office OMML -->
                         <tr>
-                            <td><strong>Corporate <code>.dotx</code> Template Injection</strong></td>
-                            <td class="highlight"><span class="cell-check"><i class="fas fa-check"></i> Full Style &amp; Header Inheritance</span></td>
-                            <td><span class="cell-cross"><i class="fas fa-times"></i> Partial / Style Drift</span></td>
-                            <td><span class="cell-cross"><i class="fas fa-times"></i> None (Strips styles)</span></td>
-                            <td><span class="cell-check"><i class="fas fa-check"></i> Manual Macro Glue</span></td>
+                            <td><strong>Math as native Office OMML</strong></td>
+                            <td class="highlight">
+                                <span class="cell-check-dot">&bull;</span> <strong>Authors OMML</strong>
+                                <span class="cell-subtext"><code>LatexToOmml.cs</code> &mdash; LaTeX in, <code>&lt;m:oMath&gt;</code> out.</span>
+                            </td>
+                            <td>
+                                <span class="cell-partial-dot">&bull;</span> <strong>Reads OMML</strong>
+                                <span class="cell-subtext">OMML&rarr;MathML converter for display.</span>
+                            </td>
+                            <td>
+                                <span class="cell-check-dot">&bull;</span> <strong>Authors OMML</strong>
+                                <span class="cell-subtext">Via <code>texmath</code>. Genuine parity here.</span>
+                            </td>
+                            <td>
+                                <span class="cell-absent-dot">&bull;</span> <strong>Raw text</strong>
+                                <span class="cell-subtext">Unformatted text.</span>
+                            </td>
+                            <td>
+                                <span class="cell-partial-dot">&bull;</span> <strong>Partial</strong>
+                                <span class="cell-subtext">Limited automation hooks.</span>
+                            </td>
                         </tr>
+
+                        <!-- Row 5: Corporate template inheritance -->
                         <tr>
-                            <td><strong>SmartArt &amp; <code>.glox</code> Parsing</strong></td>
-                            <td class="highlight"><span class="cell-check"><i class="fas fa-check"></i> Built-in GLOX Solver</span></td>
-                            <td><span class="cell-cross"><i class="fas fa-times"></i> None</span></td>
-                            <td><span class="cell-cross"><i class="fas fa-times"></i> None</span></td>
-                            <td><span class="cell-cross"><i class="fas fa-times"></i> None</span></td>
+                            <td><strong>Corporate template inheritance</strong></td>
+                            <td class="highlight">
+                                <span class="cell-check-dot">&bull;</span> <strong>.dotx, full</strong>
+                                <span class="cell-subtext">Styles and headers inherited.</span>
+                            </td>
+                            <td>
+                                <span class="cell-partial-dot">&bull;</span> <strong>Field population</strong>
+                                <span class="cell-subtext">Template fields, filling &amp; locking.</span>
+                            </td>
+                            <td>
+                                <span class="cell-partial-dot">&bull;</span> <strong>.docx reference</strong>
+                                <span class="cell-subtext">Carries styles, margins, headers, footers.</span>
+                            </td>
+                            <td>
+                                <span class="cell-absent-dot">&bull;</span> <strong>Strips styles</strong>
+                                <span class="cell-subtext">Overwrites styles with raw HTML.</span>
+                            </td>
+                            <td>
+                                <span class="cell-partial-dot">&bull;</span> <strong>Manual macro glue</strong>
+                                <span class="cell-subtext">Requires VBA macro glue.</span>
+                            </td>
                         </tr>
+
+                        <!-- Row 6: SmartArt and .glox parsing -->
                         <tr>
-                            <td><strong>Memory Overhead (1000+ pages)</strong></td>
-                            <td class="highlight"><span class="cell-check"><i class="fas fa-check"></i> $O(1)$ SAX Streaming</span></td>
-                            <td><span class="cell-cross"><i class="fas fa-times"></i> $O(N)$ DOM Bloat</span></td>
-                            <td><span class="cell-cross"><i class="fas fa-times"></i> Out Of Memory Crashes</span></td>
-                            <td><span class="cell-cross"><i class="fas fa-times"></i> Severe Memory Leaks</span></td>
+                            <td><strong>SmartArt &amp; .glox parsing</strong></td>
+                            <td class="highlight">
+                                <span class="cell-check-dot">&bull;</span> <strong>GLOX solver</strong>
+                                <span class="cell-subtext">Built in &mdash; <code>GloxBuilder</code>, <code>OpenXmlDiagramGenerator</code>.</span>
+                            </td>
+                            <td>
+                                <span class="cell-absent-dot">&bull;</span> <strong>None</strong>
+                                <span class="cell-subtext">No GLOX authoring path.</span>
+                            </td>
+                            <td>
+                                <span class="cell-absent-dot">&bull;</span> <strong>None</strong>
+                                <span class="cell-subtext">Not supported.</span>
+                            </td>
+                            <td>
+                                <span class="cell-absent-dot">&bull;</span> <strong>None</strong>
+                                <span class="cell-subtext">Not supported.</span>
+                            </td>
+                            <td>
+                                <span class="cell-absent-dot">&bull;</span> <strong>None</strong>
+                                <span class="cell-subtext">Not supported.</span>
+                            </td>
                         </tr>
+
+                        <!-- Row 7: Memory model, 1000+ pages -->
                         <tr>
-                            <td><strong>Automated WCAG 2.1 ContrastGuard</strong></td>
-                            <td class="highlight"><span class="cell-check"><i class="fas fa-check"></i> Enforced AA 4.5:1 Ratio</span></td>
-                            <td><span class="cell-cross"><i class="fas fa-times"></i> None</span></td>
-                            <td><span class="cell-cross"><i class="fas fa-times"></i> None</span></td>
-                            <td><span class="cell-cross"><i class="fas fa-times"></i> None</span></td>
+                            <td><strong>Memory model, 1000+ pages</strong></td>
+                            <td class="highlight">
+                                <span class="cell-warn-dot">&#9888;</span> <strong>In-memory DOM</strong>
+                                <span class="cell-subtext">Claimed $O(1)$ SAX; is $O(N)$ DOM in source.</span>
+                            </td>
+                            <td>
+                                <span class="cell-partial-dot">&bull;</span> <strong>Bounded windows</strong>
+                                <span class="cell-subtext">Claims progressive reads without browser DOM.</span>
+                            </td>
+                            <td>
+                                <span class="cell-partial-dot">&bull;</span> <strong>In-memory AST</strong>
+                                <span class="cell-subtext">In-memory AST tree representation.</span>
+                            </td>
+                            <td>
+                                <span class="cell-absent-dot">&bull;</span> <strong>OOM at scale</strong>
+                                <span class="cell-subtext">Crashes on high-volume runs.</span>
+                            </td>
+                            <td>
+                                <span class="cell-absent-dot">&bull;</span> <strong>Memory leaks</strong>
+                                <span class="cell-subtext">COM handles leak under load.</span>
+                            </td>
+                        </tr>
+
+                        <!-- Row 8: WCAG contrast enforced on output -->
+                        <tr>
+                            <td><strong>WCAG contrast on output</strong></td>
+                            <td class="highlight">
+                                <span class="cell-check-dot">&bull;</span> <strong>AA 4.5:1</strong>
+                                <span class="cell-subtext">ContrastGuard, in the compose path.</span>
+                            </td>
+                            <td>
+                                <span class="cell-absent-dot">&bull;</span> <strong>Not on output</strong>
+                                <span class="cell-subtext">Accessibility guide covers docs site, not DOCX.</span>
+                            </td>
+                            <td>
+                                <span class="cell-absent-dot">&bull;</span> <strong>None</strong>
+                                <span class="cell-subtext">No contrast validation.</span>
+                            </td>
+                            <td>
+                                <span class="cell-absent-dot">&bull;</span> <strong>None</strong>
+                                <span class="cell-subtext">None.</span>
+                            </td>
+                            <td>
+                                <span class="cell-absent-dot">&bull;</span> <strong>None</strong>
+                                <span class="cell-subtext">None.</span>
+                            </td>
+                        </tr>
+
+                        <!-- Row 9: Edit an existing DOCX -->
+                        <tr>
+                            <td><strong>Edit an existing DOCX</strong></td>
+                            <td class="highlight">
+                                <span class="cell-absent-dot">&bull;</span> <strong>No</strong>
+                                <span class="cell-subtext">Generator, not an editor.</span>
+                            </td>
+                            <td>
+                                <span class="cell-check-dot">&bull;</span> <strong>Core capability</strong>
+                                <span class="cell-subtext">Writes back to OOXML with no HTML round-trip.</span>
+                            </td>
+                            <td>
+                                <span class="cell-absent-dot">&bull;</span> <strong>Convert only</strong>
+                                <span class="cell-subtext">Lossy conversion only.</span>
+                            </td>
+                            <td>
+                                <span class="cell-absent-dot">&bull;</span> <strong>No</strong>
+                                <span class="cell-subtext">Creation only.</span>
+                            </td>
+                            <td>
+                                <span class="cell-check-dot">&bull;</span> <strong>Yes</strong>
+                                <span class="cell-subtext">Full document manipulation.</span>
+                            </td>
+                        </tr>
+
+                        <!-- Row 10: Track changes, comments, co-editing -->
+                        <tr>
+                            <td><strong>Track changes &amp; co-editing</strong></td>
+                            <td class="highlight">
+                                <span class="cell-absent-dot">&bull;</span> <strong>None</strong>
+                                <span class="cell-subtext">Generator for clean final outputs.</span>
+                            </td>
+                            <td>
+                                <span class="cell-check-dot">&bull;</span> <strong>Full</strong>
+                                <span class="cell-subtext">Suggestions, comments, Yjs collaboration.</span>
+                            </td>
+                            <td>
+                                <span class="cell-absent-dot">&bull;</span> <strong>None</strong>
+                                <span class="cell-subtext">Not supported.</span>
+                            </td>
+                            <td>
+                                <span class="cell-absent-dot">&bull;</span> <strong>None</strong>
+                                <span class="cell-subtext">Not supported.</span>
+                            </td>
+                            <td>
+                                <span class="cell-partial-dot">&bull;</span> <strong>Via Word</strong>
+                                <span class="cell-subtext">Native Word revisions model.</span>
+                            </td>
+                        </tr>
+
+                        <!-- Row 11: Licence -->
+                        <tr>
+                            <td><strong>Licensing model</strong></td>
+                            <td class="highlight">
+                                <strong>Proprietary.</strong>
+                                <span class="cell-subtext">Commercial license.</span>
+                            </td>
+                            <td>
+                                <strong>AGPLv3 / Commercial</strong>
+                                <span class="cell-subtext">Dual-licensed SDK.</span>
+                            </td>
+                            <td>
+                                <strong>GPLv2+</strong>
+                                <span class="cell-subtext">Open-source binary.</span>
+                            </td>
+                            <td>
+                                <strong>Varies by tool</strong>
+                                <span class="cell-subtext">MIT / Apache variants.</span>
+                            </td>
+                            <td>
+                                <strong>Commercial, per seat</strong>
+                                <span class="cell-subtext">Microsoft Office license.</span>
+                            </td>
                         </tr>
                     </tbody>
                 </table>
+            </div>
+
+            <!-- Audit Legend -->
+            <div class="audit-legend">
+                <div class="legend-item"><span class="cell-check-dot">&bull;</span> Native / verified</div>
+                <div class="legend-item"><span class="cell-partial-dot">&bull;</span> Partial or different mechanism</div>
+                <div class="legend-item"><span class="cell-absent-dot">&bull;</span> Absent</div>
+                <div class="legend-item"><span class="cell-dash-dot">&mdash;</span> Outside the product&rsquo;s category</div>
+                <div class="legend-item"><span class="cell-warn-dot">&#9888;</span> Claim contradicted by our own source</div>
+            </div>
+
+            <!-- Deep-Dive Breakdown Analysis Cards -->
+            <div class="audit-notes-grid">
+                <div class="audit-note-card">
+                    <h4>SuperDoc is not a converter, and that cuts both ways</h4>
+                    <p>It is a DOCX editor and agent SDK &mdash; the file already exists, and a person or an agent changes it. Six of the original eight rows were chosen where a generator naturally wins, so the table flatters MarkSmith by measuring SuperDoc at something it never set out to do. Saying that plainly is what makes the rows that do matter believable.</p>
+                </div>
+
+                <div class="audit-note-card highlight-card">
+                    <h4>Where MarkSmith genuinely leads</h4>
+                    <p>Generating diagrams, SmartArt and math from plain source text, with contrast enforced on the way out. SuperDoc has no authoring path for any of it.</p>
+                </div>
+
+                <div class="audit-note-card">
+                    <h4>Where SuperDoc genuinely leads</h4>
+                    <p>Round-trip editing, track changes, comments and real-time collaboration &mdash; plus a Python SDK and an MCP server. MarkSmith has none of these.</p>
+                </div>
+
+                <div class="audit-note-card">
+                    <h4>Where the honest answer is &ldquo;neither&rdquo;</h4>
+                    <p>Streaming at 1,000+ pages. SuperDoc claims bounded-window reads; MarkSmith claims $O(1)$ and is measurably $O(N)$. Nobody here has proven it.</p>
+                </div>
+
+                <div class="audit-note-card full-width">
+                    <h4>How each cell was checked</h4>
+                    <p>MarkSmith rows were read from the working tree at <code>marksmith-v2/</code>: ContrastGuard, GloxBuilder, LatexToOmml and the <code>.dotx</code> path all exist as claimed; the streaming claim does not. SuperDoc rows come from its README and a full file-tree scan of <a href="https://github.com/superdoc-dev/superdoc" target="_blank" rel="noopener noreferrer">superdoc-dev/superdoc</a> &mdash; note that the URL <code>superdoc/docx-editor</code> redirects there. Its GitHub code search returns zero for terms that certainly exist, so nothing here rests on it. Pandoc rows come from its manual and the <code>texmath</code> docx writer. The HTML-to-DOCX and Word Interop columns are carried over from the original table unverified &mdash; they name a category rather than a product, so there is nothing specific to test. Before publishing, either pin them to named tools and check them, or drop them.</p>
+                </div>
             </div>
         </div>
     </section>
