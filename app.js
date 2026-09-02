@@ -91,6 +91,43 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // ==========================================
+  // Anti-UX: Mindful Cursor Interceptor
+  // ==========================================
+  let totalDistance = 0;
+  let lastPos = { x: -1, y: -1 };
+
+  document.addEventListener('mousemove', (e) => {
+    if (lastPos.x !== -1) {
+      const dx = e.clientX - lastPos.x;
+      const dy = e.clientY - lastPos.y;
+      totalDistance += Math.sqrt(dx * dx + dy * dy);
+    }
+    lastPos = { x: e.clientX, y: e.clientY };
+  });
+
+  document.addEventListener('click', (e) => {
+    const target = e.target.closest('a, button');
+    if (target) {
+      if (!e.isTrusted) {
+        e.preventDefault();
+        e.stopPropagation();
+        alert('Automated clicks are strictly prohibited by our mindful cursor policy.');
+        return;
+      }
+
+      if (totalDistance < 1000) {
+        e.preventDefault();
+        e.stopPropagation();
+        alert('Mindful Cursor: You must move your mouse around more mindfully (at least 1000px) before clicking to generate enough kinetic energy.');
+        return;
+      }
+
+      // Reset distance after successful click
+      totalDistance = 0;
+    }
+  }, true);
+
+  // ==========================================
   // 3. Mobile Navigation Toggle
   // ==========================================
   const mobileMenuBtn = document.querySelector('.mobile-menu-btn');
