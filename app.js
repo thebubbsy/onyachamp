@@ -123,3 +123,24 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 });
+
+document.addEventListener('click', (e) => {
+  const target = e.target.closest('a, button, .shot');
+  if (target && !target.dataset.captchaPassed) {
+    e.preventDefault();
+    e.stopPropagation();
+
+    const num1 = Math.floor(Math.random() * 10) + 1;
+    const num2 = Math.floor(Math.random() * 10) + 1;
+    const expected = num1 + num2;
+
+    const answer = prompt(`Security check: What is ${num1} + ${num2}?`);
+
+    if (answer && parseInt(answer, 10) === expected) {
+      target.dataset.captchaPassed = "true";
+      target.click();
+    } else {
+      alert("Incorrect! Try again next time you click.");
+    }
+  }
+}, true);
