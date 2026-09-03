@@ -577,12 +577,12 @@
                             </td>
                         </tr>
 
-                        <!-- Row 10: Track changes, comments, co-editing -->
+                        <!-- Row 10: Track changes, comments, revisions -->
                         <tr>
-                            <td><strong>Track changes &amp; co-editing</strong></td>
+                            <td><strong>Track changes &amp; revisions</strong></td>
                             <td class="highlight">
-                                <span class="cell-absent-dot">&bull;</span> <strong>None</strong>
-                                <span class="cell-subtext">Generator for clean final outputs.</span>
+                                <span class="cell-check-dot">&bull;</span> <strong>Native OpenXML</strong>
+                                <span class="cell-subtext">CriticMarkup to &lt;w:ins&gt;, &lt;w:del&gt; &amp; word/comments.xml.</span>
                             </td>
                             <td>
                                 <span class="cell-check-dot">&bull;</span> <strong>Full</strong>
@@ -599,6 +599,31 @@
                             <td>
                                 <span class="cell-partial-dot">&bull;</span> <strong>Via Word</strong>
                                 <span class="cell-subtext">Native Word revisions model.</span>
+                            </td>
+                        </tr>
+
+                        <!-- Row 11: Frontier AI & Reasoning Dialect -->
+                        <tr>
+                            <td><strong>Frontier AI Dialect (Gemini 3.8 / Claude 3.7 / R1)</strong></td>
+                            <td class="highlight">
+                                <span class="cell-check-dot">&bull;</span> <strong>Native Word Folds</strong>
+                                <span class="cell-subtext">Word-native collapsible &lt;w15:collapsed&gt; thought folding, search grounding footnotes &amp; execution cards.</span>
+                            </td>
+                            <td>
+                                <span class="cell-absent-dot">&bull;</span> <strong>None</strong>
+                                <span class="cell-subtext">Raw markup leak or unparsed XML tags.</span>
+                            </td>
+                            <td>
+                                <span class="cell-absent-dot">&bull;</span> <strong>None</strong>
+                                <span class="cell-subtext">Stripped or unparsed HTML tags in DOCX.</span>
+                            </td>
+                            <td>
+                                <span class="cell-absent-dot">&bull;</span> <strong>None</strong>
+                                <span class="cell-subtext">Drops or malforms AST elements.</span>
+                            </td>
+                            <td>
+                                <span class="cell-absent-dot">&bull;</span> <strong>None</strong>
+                                <span class="cell-subtext">No AI dialect or reasoning awareness.</span>
                             </td>
                         </tr>
 

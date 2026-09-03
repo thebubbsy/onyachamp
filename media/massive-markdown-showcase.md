@@ -288,6 +288,81 @@ marksmith/
 > [!IMPORTANT]
 > MarkSmith embeds the exact Markdown source in a private Custom XML part (`customXml/item1.xml`) for lossless round-tripping.
 
+> [!WARNING]
+> Legacy COM Word automation is vulnerable to server deadlocks and memory handle leaks under enterprise workloads.
+
+> [!CAUTION]
+> Never hardcode OpenXML relationship IDs (`rId1`, `rId2`) into generated document markup.
+
+---
+
+# Gemini 3.8 Frontier Reasoning Trace
+
+<details>
+<summary>Gemini 3.8 Deep Reasoning &amp; Architecture Synthesis</summary>
+
+### Step 1: Constraint Verification
+Analyzing multi-tenant OpenXML generation constraints. Memory budget: $O(1)$ SAX allocation with streaming paragraph emission.
+
+### Step 2: Vector Geometry Optimization
+Computing affine transforms for ShapeForge DrawingML geometry:
+
+$$
+\begin{bmatrix}
+x' \\
+y'
+\end{bmatrix}
+=
+\begin{bmatrix}
+\cos\theta & -\sin\theta \\
+\sin\theta & \cos\theta
+\end{bmatrix}
+\begin{bmatrix}
+x \\
+y
+\end{bmatrix}
+$$
+
+### Step 3: Schema Validation
+Confirming presence of root namespace declarations: `w:`, `a:`, `wp:`, `pic:`, `m:`, `wpg:`, `wps:`, `w15:`. All required structures compiled.
+
+</details>
+
+---
+
+# Code Interpreter Execution Card
+
+```output
+[MarkSmith Kernel]: Document compiled successfully in 38ms.
+[Diagnostics]: 0 schema violations, 14 vector shapes synthesized.
+[Memory Profile]: 18.2 MB heap allocation, O(1) streaming SAX pipeline.
+```
+
+---
+
+# Multi-Column Layout
+
+:::columns count="2"
+### Architecture Advantages
+- **Pure .NET Core Engine**: Runs anywhere .NET 8 runs.
+- **Mathematical Layout Solver**: Precise bounding box calculations.
+- **Native OMML Equations**: Direct math editor integration.
+
+### Enterprise Compliance
+- **Zero-Installation Footprint**: No Microsoft Office license on server.
+- **WCAG 2.1 AA Contrast**: Guaranteed legible text ratios.
+- **DLP Protection**: Offline AST transformation.
+:::
+
+---
+
+# Hyperlinked Research Citations
+
+MarkSmith leverages the OpenXML SDK for high-performance document generation[^1], eliminating the need for Office interop[^2].
+
+[^1]: ECMA-376 5th Edition: Office Open XML File Formats standard.
+[^2]: Microsoft Knowledge Base: Considerations for server-side Automation of Office.
+
 ---
 
 # Nested Example
@@ -303,3 +378,11 @@ marksmith/
 > | Core Engine | 100% | Verified |
 > | ShapeForge | 100% | Verified |
 > | OMML Math | 100% | Verified |
+
+---
+
+## References
+
+1. [ECMA-376 Specification](https://www.ecma-international.org/publications-and-standards/standards/ecma-376/)
+2. [OpenXML SDK GitHub Repository](https://github.com/dotnet/Open-XML-SDK)
+3. [MarkSmith Official Documentation](https://onyachamp.com/marksmith.html)
