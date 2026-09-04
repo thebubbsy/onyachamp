@@ -325,6 +325,14 @@
                     <h4>Gemini 3.8 &amp; Frontier Reasoning Dialect</h4>
                     <p>Native parsing for frontier reasoning models: automatically folds <code>&lt;thought&gt;</code> chains into native Word collapsible sections, synthesizes Google Search Grounding citations into bidirectional footnotes, and styles code execution console outputs.</p>
                 </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon-wrapper icon-blue">
+                        <i class="fas fa-chart-pie"></i>
+                    </div>
+                    <h4>Executive KPI Cards &amp; Proportional Tables</h4>
+                    <p>Compiles <code>:::metrics</code> blocks into multi-column executive card grids with 24pt bold metrics, rounded shaded panels, and muted subtitles. Calculates dynamic proportional column widths across <code>w:gridCol</code> and <code>w:tcW</code> for rock-solid, zero-clipping table typography.</p>
+                </div>
             </div>
         </div>
     </section>
@@ -627,7 +635,32 @@
                             </td>
                         </tr>
 
-                        <!-- Row 11: Licence -->
+                        <!-- Row 12: Executive KPI Cards & Proportional Tables -->
+                        <tr>
+                            <td><strong>Executive KPI Cards &amp; Proportional Tables</strong></td>
+                            <td class="highlight">
+                                <span class="cell-check-dot">&bull;</span> <strong>Native OpenXML Grid</strong>
+                                <span class="cell-subtext">Native <code>:::metrics</code> 24pt executive dashboard cards &amp; mathematical proportional column widths.</span>
+                            </td>
+                            <td>
+                                <span class="cell-absent-dot">&bull;</span> <strong>None</strong>
+                                <span class="cell-subtext">Manual tables only; no metrics cards.</span>
+                            </td>
+                            <td>
+                                <span class="cell-partial-dot">&bull;</span> <strong>Auto-Fit Heuristics</strong>
+                                <span class="cell-subtext">No metric cards; cell widths rely on Word layout engine.</span>
+                            </td>
+                            <td>
+                                <span class="cell-absent-dot">&bull;</span> <strong>None</strong>
+                                <span class="cell-subtext">No metric cards; rough CSS table translation.</span>
+                            </td>
+                            <td>
+                                <span class="cell-partial-dot">&bull;</span> <strong>Programmatic Only</strong>
+                                <span class="cell-subtext">No markdown syntax; requires manual cell coding.</span>
+                            </td>
+                        </tr>
+
+                        <!-- Row 13: Licence -->
                         <tr>
                             <td><strong>Licensing model</strong></td>
                             <td class="highlight">

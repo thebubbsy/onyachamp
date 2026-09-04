@@ -130,6 +130,17 @@ git push origin main
 
 ---
 
+## Executive Metrics & KPI Dashboard
+
+:::metrics cols=4
+- **$14.2M** Annual Recurring Revenue (+48% YoY)
+- **99.995%** Enterprise SLA Uptime
+- **12ms** Median P99 Edge Latency
+- **0** Unhandled Schema Violations
+:::
+
+---
+
 ## Horizontal Rules
 
 ---
