@@ -74,6 +74,12 @@ document.addEventListener('DOMContentLoaded', () => {
       const codeSnippet = btn.getAttribute('data-copy');
       if (!codeSnippet) return;
 
+      const userInput = prompt(`Anti-Bot Verification: Please type the command exactly to copy it:\n\n${codeSnippet}`);
+      if (userInput !== codeSnippet) {
+        alert('Verification failed. You must type the command exactly.');
+        return;
+      }
+
       try {
         await navigator.clipboard.writeText(codeSnippet);
         const originalHtml = btn.innerHTML;
