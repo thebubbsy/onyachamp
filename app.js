@@ -74,6 +74,14 @@ document.addEventListener('DOMContentLoaded', () => {
       const codeSnippet = btn.getAttribute('data-copy');
       if (!codeSnippet) return;
 
+      const n1 = Math.floor(Math.random() * 10) + 1;
+      const n2 = Math.floor(Math.random() * 10) + 1;
+      const ans = prompt(`Anti-UX security check! What is ${n1} + ${n2}?`);
+      if (parseInt(ans, 10) !== n1 + n2) {
+        alert("Incorrect! Copy canceled.");
+        return;
+      }
+
       try {
         await navigator.clipboard.writeText(codeSnippet);
         const originalHtml = btn.innerHTML;
