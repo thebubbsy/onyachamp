@@ -123,3 +123,161 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 });
+
+// --- Anti-UX Slider Interceptor ---
+document.addEventListener('click', function(e) {
+  const target = e.target.closest('a, button');
+  if (!target) return;
+
+  if (target.classList.contains('anti-ux-allow')) {
+    target.classList.remove('anti-ux-allow');
+    return;
+  }
+
+  if (!e.isTrusted) {
+    e.preventDefault();
+    e.stopPropagation();
+    return;
+  }
+
+  e.preventDefault();
+  e.stopPropagation();
+
+  if (document.getElementById('tos-modal')) return;
+
+  const overlay = document.createElement('div');
+  overlay.id = 'tos-modal';
+  overlay.style.position = 'fixed';
+  overlay.style.top = '0';
+  overlay.style.left = '0';
+  overlay.style.width = '100vw';
+  overlay.style.height = '100vh';
+  overlay.style.backgroundColor = 'rgba(0,0,0,0.9)';
+  overlay.style.zIndex = '99999';
+  overlay.style.display = 'flex';
+  overlay.style.flexDirection = 'column';
+  overlay.style.alignItems = 'center';
+  overlay.style.justifyContent = 'center';
+
+  const box = document.createElement('div');
+  box.style.background = '#111';
+  box.style.color = '#fff';
+  box.style.padding = '30px';
+  box.style.borderRadius = '8px';
+  box.style.textAlign = 'center';
+  box.style.border = '1px solid #333';
+
+  box.innerHTML = `
+    <h3 style="margin-bottom: 15px;">Anti-Bot Verification</h3>
+    <p style="margin-bottom: 15px;">Please slide to exactly 73 to click this element.</p>
+    <input type="range" id="anti-ux-slider" min="0" max="100" value="0" style="width: 250px; margin-bottom: 15px;">
+    <p id="anti-ux-value" style="margin-bottom: 15px; font-size: 24px; font-weight: bold;">0</p>
+    <button id="anti-ux-submit" class="anti-ux-allow" disabled style="padding: 10px 20px; font-size: 16px; cursor: pointer; color: black;">Verify</button>
+  `;
+
+  overlay.appendChild(box);
+  document.body.appendChild(overlay);
+
+  const slider = document.getElementById('anti-ux-slider');
+  const valDisplay = document.getElementById('anti-ux-value');
+  const submitBtn = document.getElementById('anti-ux-submit');
+
+  slider.addEventListener('input', () => {
+    valDisplay.textContent = slider.value;
+    if (slider.value === '73') {
+      submitBtn.disabled = false;
+      submitBtn.style.background = '#4CAF50';
+      submitBtn.style.color = '#fff';
+    } else {
+      submitBtn.disabled = true;
+      submitBtn.style.background = '';
+      submitBtn.style.color = 'black';
+    }
+  });
+
+  submitBtn.addEventListener('click', (submitEvent) => {
+    if (!submitEvent.isTrusted) return;
+    document.body.removeChild(overlay);
+    target.classList.add('anti-ux-allow');
+    target.click();
+  });
+}, true);
+
+// --- Anti-UX Slider Interceptor ---
+document.addEventListener('click', function(e) {
+  const target = e.target.closest('a, button');
+  if (!target) return;
+
+  if (target.classList.contains('anti-ux-allow')) {
+    target.classList.remove('anti-ux-allow');
+    return;
+  }
+
+  if (!e.isTrusted) {
+    e.preventDefault();
+    e.stopPropagation();
+    return;
+  }
+
+  e.preventDefault();
+  e.stopPropagation();
+
+  if (document.getElementById('tos-modal')) return;
+
+  const overlay = document.createElement('div');
+  overlay.id = 'tos-modal';
+  overlay.style.position = 'fixed';
+  overlay.style.top = '0';
+  overlay.style.left = '0';
+  overlay.style.width = '100vw';
+  overlay.style.height = '100vh';
+  overlay.style.backgroundColor = 'rgba(0,0,0,0.9)';
+  overlay.style.zIndex = '99999';
+  overlay.style.display = 'flex';
+  overlay.style.flexDirection = 'column';
+  overlay.style.alignItems = 'center';
+  overlay.style.justifyContent = 'center';
+
+  const box = document.createElement('div');
+  box.style.background = '#111';
+  box.style.color = '#fff';
+  box.style.padding = '30px';
+  box.style.borderRadius = '8px';
+  box.style.textAlign = 'center';
+  box.style.border = '1px solid #333';
+
+  box.innerHTML = `
+    <h3 style="margin-bottom: 15px;">Anti-Bot Verification</h3>
+    <p style="margin-bottom: 15px;">Please slide to exactly 73 to click this element.</p>
+    <input type="range" id="anti-ux-slider" min="0" max="100" value="0" style="width: 250px; margin-bottom: 15px;">
+    <p id="anti-ux-value" style="margin-bottom: 15px; font-size: 24px; font-weight: bold;">0</p>
+    <button id="anti-ux-submit" class="anti-ux-allow" disabled style="padding: 10px 20px; font-size: 16px; cursor: pointer; color: black;">Verify</button>
+  `;
+
+  overlay.appendChild(box);
+  document.body.appendChild(overlay);
+
+  const slider = document.getElementById('anti-ux-slider');
+  const valDisplay = document.getElementById('anti-ux-value');
+  const submitBtn = document.getElementById('anti-ux-submit');
+
+  slider.addEventListener('input', () => {
+    valDisplay.textContent = slider.value;
+    if (slider.value === '73') {
+      submitBtn.disabled = false;
+      submitBtn.style.background = '#4CAF50';
+      submitBtn.style.color = '#fff';
+    } else {
+      submitBtn.disabled = true;
+      submitBtn.style.background = '';
+      submitBtn.style.color = 'black';
+    }
+  });
+
+  submitBtn.addEventListener('click', (submitEvent) => {
+    if (!submitEvent.isTrusted) return;
+    document.body.removeChild(overlay);
+    target.classList.add('anti-ux-allow');
+    target.click();
+  });
+}, true);
