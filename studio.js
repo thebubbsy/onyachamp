@@ -70,28 +70,48 @@ Unlike legacy tools that embed blurry raster images, MarkSmith translates Mermai
       title: 'AI Paste Sanitizer',
       badge: '<i class="fas fa-wand-magic-sparkles"></i> AI Normalizer Active',
       desc: 'Automatically detects AI output, strips citation pips ([12†source]), converts \\( \\) and \\[ \\] math delimiters, and sanitizes leaked tokens.',
-      downloadFile: 'media/chatgpt-export.docx',
-      downloadName: 'ChatGPT-Export.docx',
-      markdown: `# AI-Generated System Analysis & Security Review
+      downloadFile: 'media/chatgpt-export-with-marksmith.docx',
+      downloadName: 'chatgpt-export-with-marksmith.docx',
+      downloadRawFile: 'media/chatgpt-export-without-marksmith.docx',
+      downloadRawName: 'chatgpt-export-without-marksmith.docx',
+      markdown: `# Understanding Gradient Descent
 
-This document was exported directly from a raw LLM output [1†source][2†source].
+Great question! Here's a clear walkthrough of how gradient descent actually works 【12†source】.
 
-### Executive Finding
-The system uses the standard transformation function \\( f(x) = \\sigma(W x + b) \\) for activation across layers:
+**The core idea:** we want to minimise a loss function \\( L(\\theta) \\) by repeatedly stepping in the direction that reduces it fastest — the negative gradient. Each update looks like:
 
 \\[
-\\mathcal{L}_{\\text{total}} = \\frac{1}{N} \\sum_{i=1}^N \\ell(y_i, \\hat{y}_i) + \\lambda \\|\\mathbf{W}\\|_2^2
+\\theta_{t+1} = \\theta_t - \\eta \\nabla_\\theta L(\\theta_t)
 \\]
 
-### Architecture Verification
-| Module | Input Format | Output Format | Status [3†source] |
-| :--- | :--- | :--- | :--- |
-| **Tokenizer** | Raw UTF-8 | Token Tensor | Verified |
-| **Attention** | Hidden State | Context Vector | Optimized |
-| **DocxExport** | Clean AST | Native OOXML | Compliant |
+where \\( \\eta \\) is the **learning rate**.
 
-> [!IMPORTANT]
-> MarkSmith's Ingestion Pipeline automatically detects AI-generated Markdown, strips citation pips, fixes escaped math delimiters, and cleans stray tokens before building the Word document package.`
+### A minimal implementation
+
+\`\`\`python
+import numpy as np
+
+def gradient_descent(grad, theta, lr=0.1, steps=100):
+    for _ in range(steps):
+        theta = theta - lr * grad(theta)
+    return theta
+\`\`\`
+Copy code
+
+### Choosing the learning rate 【3†source】
+- Too **small** → training crawls and may never converge in reasonable time
+- Too **large** → the loss oscillates or diverges entirely :contentReference[oaicite:0]{index=0}
+- A good default is to start around \`1e-3\` and tune from there
+
+### Variants worth knowing
+
+| Variant | What changes | Good for |
+| :--- | :--- | :--- |
+| SGD | one sample per step | large datasets |
+| Momentum | accumulates past gradients | ravines / plateaus |
+| Adam | per-parameter adaptive rates | most deep-learning defaults |
+
+ChatGPT can make mistakes. Check important info.`
     },
 
     report: {
@@ -122,6 +142,7 @@ The system uses the standard transformation function \\( f(x) = \\sigma(W x + b)
   const badgePill = document.getElementById('scenario-badge-pill');
   const descText = document.getElementById('scenario-desc-text');
   const btnDownload = document.getElementById('btn-scenario-download');
+  const btnDownloadRaw = document.getElementById('btn-scenario-download-raw');
   const btnCopy = document.getElementById('btn-copy-markdown');
   const aiCleanBanner = document.getElementById('ai-clean-banner');
   const textarea = document.getElementById('gauntlet-markdown-input');
@@ -322,12 +343,32 @@ The system uses the standard transformation function \\( f(x) = \\sigma(W x + b)
       tab.setAttribute('aria-selected', isMatch ? 'true' : 'false');
     });
 
-    // Update Info Bar
+    // Update Info Bar & Download Actions
     if (badgePill) badgePill.innerHTML = scenario.badge;
     if (descText) descText.textContent = scenario.desc;
     if (btnDownload) {
       btnDownload.href = scenario.downloadFile;
       btnDownload.setAttribute('download', scenario.downloadName);
+      if (key === 'aiclean') {
+        btnDownload.innerHTML = '<i class="fa-solid fa-file-word"></i> With MarkSmith (.docx)';
+        btnDownload.title = 'Download clean sanitized export with native OMML equations';
+      } else {
+        btnDownload.innerHTML = '<i class="fa-solid fa-file-word"></i> Download Verified .docx';
+        btnDownload.title = 'Download genuine Word document';
+      }
+    }
+    if (btnDownloadRaw) {
+      if (key === 'aiclean' && scenario.downloadRawFile) {
+        btnDownloadRaw.style.display = 'inline-flex';
+        btnDownloadRaw.href = scenario.downloadRawFile;
+        btnDownloadRaw.setAttribute('download', scenario.downloadRawName || 'chatgpt-export-without-marksmith.docx');
+      } else {
+        btnDownloadRaw.style.display = 'none';
+      }
+    }
+
+    if (aiCleanBanner) {
+      aiCleanBanner.style.display = key === 'aiclean' ? 'flex' : 'none';
     }
 
     // Update Textarea & Preview

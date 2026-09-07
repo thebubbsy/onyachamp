@@ -209,7 +209,14 @@
                     <figcaption>
                         <strong>It knows what pasted that</strong>
                         <span>Drop in a raw ChatGPT export and the status bar names the source with a confidence score and a fix count &mdash; citation pips like <code>[12&dagger;source]</code>, stray <code>:contentReference</code> markers and <code>\( \)</code> math delimiters, all cleaned on the way to Word.</span>
-                        <a href="media/chatgpt-export.docx" download class="shot-download-link"><i class="fa-solid fa-download"></i> Download chatgpt-export.docx</a>
+                        <div class="shot-download-group">
+                            <a href="media/chatgpt-export-without-marksmith.docx" download="chatgpt-export-without-marksmith.docx" class="shot-download-link shot-download-raw" title="Download raw export without MarkSmith to test uncleaned artifacts in Word">
+                                <i class="fa-solid fa-triangle-exclamation"></i> Download Without MarkSmith (Raw)
+                            </a>
+                            <a href="media/chatgpt-export-with-marksmith.docx" download="chatgpt-export-with-marksmith.docx" class="shot-download-link shot-download-clean" title="Download clean sanitized export with native OMML equations">
+                                <i class="fa-solid fa-file-word"></i> Download With MarkSmith (Cleaned)
+                            </a>
+                        </div>
                     </figcaption>
                 </figure>
 
@@ -295,6 +302,9 @@
                     </div>
 
                     <div class="scenario-actions">
+                        <a href="media/chatgpt-export-without-marksmith.docx" download="chatgpt-export-without-marksmith.docx" id="btn-scenario-download-raw" class="btn btn-warning btn-sm" style="display: none;" title="Download raw uncleaned AI export to compare in Word">
+                            <i class="fa-solid fa-triangle-exclamation"></i> Without MarkSmith (.docx)
+                        </a>
                         <a href="media/math-cheatsheet.docx" download="Math-Cheatsheet.docx" id="btn-scenario-download" class="btn btn-primary btn-sm">
                             <i class="fa-solid fa-file-word"></i> Download Verified .docx
                         </a>
