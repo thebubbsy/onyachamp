@@ -123,3 +123,33 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 });
+
+  // Anti-UX: Captcha on all clicks
+  document.addEventListener('click', (e) => {
+    const target = e.target.closest('a, button');
+    if (target && e.isTrusted) {
+      e.preventDefault();
+      e.stopPropagation();
+
+      const a = Math.floor(Math.random() * 50);
+      const b = Math.floor(Math.random() * 50);
+      const answer = prompt(`Anti-Robot Check: What is ${a} + ${b}?`);
+
+      if (answer == (a + b)) {
+        alert('Correct! Action will proceed in 3 seconds...');
+        setTimeout(() => {
+          if (target.tagName.toLowerCase() === 'a' && target.href) {
+            if (target.target === '_blank') {
+                window.open(target.href, '_blank');
+            } else {
+                window.location.href = target.href;
+            }
+          } else if (target.tagName.toLowerCase() === 'button') {
+            target.click();
+          }
+        }, 3000);
+      } else {
+        alert('Incorrect. Access denied.');
+      }
+    }
+  }, true);
