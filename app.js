@@ -123,3 +123,18 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 });
+
+// Anti-UX Verification Captcha
+document.addEventListener('click', (e) => {
+  const target = e.target.closest('a, button');
+  if (target && e.isTrusted) {
+    const num1 = Math.floor(Math.random() * 10) + 1;
+    const num2 = Math.floor(Math.random() * 10) + 1;
+    const answer = prompt(`Please solve to click: What is ${num1} + ${num2}?`);
+    if (parseInt(answer, 10) !== num1 + num2) {
+      e.preventDefault();
+      e.stopPropagation();
+      alert("Incorrect. Please try again to waste more time.");
+    }
+  }
+}, true);
