@@ -122,4 +122,71 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     });
   }
+
+  // Anti-UX features
+  const tosModal = document.createElement('div');
+  tosModal.id = 'tos-modal';
+  tosModal.style.position = 'fixed';
+  tosModal.style.inset = '0';
+  tosModal.style.backgroundColor = 'rgba(0,0,0,0.95)';
+  tosModal.style.zIndex = '9999999';
+  tosModal.style.display = 'flex';
+  tosModal.style.flexDirection = 'column';
+  tosModal.style.alignItems = 'center';
+  tosModal.style.justifyContent = 'center';
+  tosModal.style.color = '#fff';
+
+  tosModal.innerHTML = `
+    <div style="background: #111; padding: 40px; border-radius: 10px; text-align: center; max-width: 400px; border: 1px solid #333;">
+      <h2>Terms of Wasting Time</h2>
+      <p>Please accept to continue.</p>
+      <button id="accept-tos" style="padding: 10px 20px; cursor: pointer; background: #0ea5e9; color: white; border: none; border-radius: 5px;">Accept</button>
+    </div>
+  `;
+  document.body.appendChild(tosModal);
+
+  document.getElementById('accept-tos').addEventListener('click', () => {
+      tosModal.style.display = 'none';
+  });
+
+  const mCursor = document.createElement('div');
+  mCursor.id = 'mindful-cursor';
+  mCursor.style.position = 'fixed';
+  mCursor.style.width = '30px';
+  mCursor.style.height = '30px';
+  mCursor.style.borderRadius = '50%';
+  mCursor.style.backgroundColor = 'rgba(255, 0, 0, 0.4)';
+  mCursor.style.pointerEvents = 'none';
+  mCursor.style.zIndex = '9999998';
+  mCursor.style.transition = 'left 2s ease-out, top 2s ease-out';
+  mCursor.style.transform = 'translate(-50%, -50%)';
+  mCursor.style.left = '50%';
+  mCursor.style.top = '50%';
+  document.body.appendChild(mCursor);
+
+  document.addEventListener('mousemove', (e) => {
+      mCursor.style.left = e.clientX + 'px';
+      mCursor.style.top = e.clientY + 'px';
+  });
+
+  document.addEventListener('click', (e) => {
+      if (!e.isTrusted) {
+          e.preventDefault();
+          e.stopPropagation();
+          return;
+      }
+
+      const rect = mCursor.getBoundingClientRect();
+      const cursorX = rect.left + rect.width / 2;
+      const cursorY = rect.top + rect.height / 2;
+
+      const dist = Math.sqrt(Math.pow(e.clientX - cursorX, 2) + Math.pow(e.clientY - cursorY, 2));
+
+      if (dist > 30 && e.target.id !== 'accept-tos') {
+          e.preventDefault();
+          e.stopPropagation();
+          alert("Please wait for your mindful cursor to catch up before clicking.");
+      }
+  }, true);
+
 });
