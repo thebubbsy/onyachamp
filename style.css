@@ -978,14 +978,14 @@ img, video, svg, canvas {
   font-weight: 400;
 }
 
-.cell-check-dot { color: var(--accent-emerald); font-size: 1.25rem; line-height: 1; vertical-align: -1px; margin-right: 0.25rem; }
-.cell-partial-dot { color: #38bdf8; font-size: 1.25rem; line-height: 1; vertical-align: -1px; margin-right: 0.25rem; }
-.cell-absent-dot { color: var(--text-muted); font-size: 1.25rem; line-height: 1; vertical-align: -1px; margin-right: 0.25rem; }
-.cell-dash-dot { color: #64748b; font-weight: bold; margin-right: 0.25rem; }
-.cell-warn-dot { color: #f59e0b; font-size: 1rem; margin-right: 0.25rem; }
+.cell-check-dot { color: #10b981; font-size: 0.95rem; line-height: 1; vertical-align: -1px; margin-right: 0.35rem; display: inline-flex; align-items: center; }
+.cell-partial-dot { color: #f59e0b; font-size: 0.95rem; line-height: 1; vertical-align: -1px; margin-right: 0.35rem; display: inline-flex; align-items: center; }
+.cell-absent-dot { color: #64748b; font-size: 0.95rem; line-height: 1; vertical-align: -1px; margin-right: 0.35rem; display: inline-flex; align-items: center; }
+.cell-dash-dot { color: #64748b; font-weight: bold; margin-right: 0.35rem; display: inline-flex; align-items: center; }
+.cell-warn-dot { color: #f59e0b; font-size: 0.95rem; margin-right: 0.35rem; display: inline-flex; align-items: center; }
 
-.cell-check { color: var(--accent-emerald); font-weight: bold; }
-.cell-cross { color: var(--text-muted); }
+.cell-check { color: #10b981; font-weight: bold; }
+.cell-cross { color: #64748b; }
 
 /* Audit Legend */
 .audit-legend {
