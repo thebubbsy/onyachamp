@@ -608,13 +608,417 @@ function Poll-GraphDeviceCodeToken {
             return $res.access_token
         }
     } catch {
-        $errText = $_.ErrorDetails.Message
-        if ($errText -match 'authorization_pending') {
+        $errBody = $null
+        try {
+            if ($_.Exception.Response) {
+                $stream = $_.Exception.Response.GetResponseStream()
+                $reader = [System.IO.StreamReader]::new($stream)
+                $errBody = $reader.ReadToEnd()
+            }
+        } catch { }
+        if (-not $errBody -and $_.ErrorDetails) { $errBody = $_.ErrorDetails.Message }
+        if (-not $errBody) { $errBody = $_.Exception.Message }
+
+        if ($errBody -match 'authorization_pending') {
             return $null
-        } elseif ($errText -match 'code_expired') {
+        } elseif ($errBody -match 'code_expired') {
             throw "Device login code has expired."
         }
     }
+    return $null
+}
+
+# --- Function: Start-GraphAuthDialog ---
+function Start-GraphAuthDialog {
+    [CmdletBinding()]
+    param(
+        [System.Windows.Window]$Owner = $null
+    )
+
+    $dialogXaml = @'
+<Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Microsoft Graph &amp; Intune Authentication"
+        Height="470" Width="540" WindowStartupLocation="CenterOwner"
+        Background="#202020" Foreground="#FFFFFF"
+        ResizeMode="NoResize" WindowStyle="ToolWindow"
+        FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif">
+    <Window.Resources>
+        <Style TargetType="Button">
+            <Setter Property="Background" Value="#2D2D2D"/>
+            <Setter Property="Foreground" Value="#FFFFFF"/>
+            <Setter Property="BorderBrush" Value="#3E3E3E"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="12,6"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="border" Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="4">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" Margin="{TemplateBinding Padding}"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Background" TargetName="border" Value="#383838"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter Property="Background" TargetName="border" Value="#1F1F1F"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="AccentBtn" TargetType="Button">
+            <Setter Property="Background" Value="#0067C0"/>
+            <Setter Property="Foreground" Value="#FFFFFF"/>
+            <Setter Property="BorderBrush" Value="#1975C5"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="14,6"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="border" Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="4">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" Margin="{TemplateBinding Padding}"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Background" TargetName="border" Value="#1975C5"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter Property="Background" TargetName="border" Value="#0054A4"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style TargetType="TextBox">
+            <Setter Property="Background" Value="#1F1F1F"/>
+            <Setter Property="Foreground" Value="#FFFFFF"/>
+            <Setter Property="BorderBrush" Value="#383838"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="8,5"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="CaretBrush" Value="#0067C0"/>
+        </Style>
+
+        <Style TargetType="TabItem">
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TabItem">
+                        <Border x:Name="border" Background="#242424" CornerRadius="4,4,0,0" Margin="0,0,4,0" Padding="12,6" BorderBrush="#333333" BorderThickness="1,1,1,0">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" ContentSource="Header"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="border" Property="Background" Value="#2B2B2B"/>
+                                <Setter TargetName="border" Property="BorderBrush" Value="#383838"/>
+                                <Setter Property="Foreground" Value="#FFFFFF"/>
+                                <Setter Property="FontWeight" Value="SemiBold"/>
+                            </Trigger>
+                            <Trigger Property="IsSelected" Value="False">
+                                <Setter Property="Foreground" Value="#9E9E9E"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
+
+    <Grid Margin="18">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <StackPanel Grid.Row="0" Margin="0,0,0,14">
+            <TextBlock Text="Microsoft Graph Authentication" FontSize="16" FontWeight="Bold" Foreground="#FFFFFF"/>
+            <TextBlock Text="Authenticate once to unlock all Intune cloud provisioning, app publishing, and device registration actions."
+                       FontSize="11.5" Foreground="#8A8A8A" Margin="0,3,0,0" TextWrapping="Wrap"/>
+        </StackPanel>
+
+        <!-- Tab Modes -->
+        <TabControl Grid.Row="1" Background="Transparent" BorderThickness="0" Margin="0,0,0,14">
+            <!-- TAB 1: Device Code Flow -->
+            <TabItem Header="Device Code Flow (OOBE / Phone)">
+                <Border Background="#2B2B2B" CornerRadius="0,4,4,4" BorderBrush="#383838" BorderThickness="1" Padding="14">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+
+                        <!-- Step 1: Verification URL -->
+                        <TextBlock Grid.Row="0" Text="1. On any device (phone, laptop), visit:" FontSize="11.5" Foreground="#B0B0B0" Margin="0,0,0,4"/>
+                        <Grid Grid.Row="1" Margin="0,0,0,12">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBox Name="TxtDeviceUrl" Text="https://microsoft.com/devicelogin" IsReadOnly="True" Height="28"/>
+                            <Button Name="BtnCopyUrl" Grid.Column="1" Content="Copy URL" Margin="6,0,0,0" Padding="10,3"/>
+                        </Grid>
+
+                        <!-- Step 2: Code -->
+                        <TextBlock Grid.Row="2" Text="2. Enter authorization code:" FontSize="11.5" Foreground="#B0B0B0" Margin="0,0,0,4"/>
+                        <Border Grid.Row="3" Background="#1F1F1F" CornerRadius="4" BorderBrush="#383838" BorderThickness="1" Padding="12">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="*"/>
+                                </Grid.RowDefinitions>
+                                <Grid Grid.Row="0">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Name="TxtDeviceCode" Text="CLICK START TO GENERATE" FontSize="18" FontWeight="Bold" FontFamily="Consolas" Foreground="#60CDFF" VerticalAlignment="Center"/>
+                                    <Button Name="BtnCopyCode" Grid.Column="1" Content="Copy Code" Padding="10,4" Visibility="Collapsed"/>
+                                </Grid>
+                                <TextBlock Name="TxtDeviceMsg" Grid.Row="1" Text="Click 'Start Device Login' to request a code from Microsoft Graph." FontSize="11" Foreground="#8A8A8A" Margin="0,8,0,8" TextWrapping="Wrap"/>
+                                <ProgressBar Name="PrgDevicePoll" Grid.Row="2" Height="4" IsIndeterminate="False" Background="#1A1A1A" Foreground="#0067C0" Visibility="Collapsed" VerticalAlignment="Bottom"/>
+                            </Grid>
+                        </Border>
+                    </Grid>
+                </Border>
+            </TabItem>
+
+            <!-- TAB 2: App Secret / Service Principal -->
+            <TabItem Header="App Secret (.env / Automated)">
+                <Border Background="#2B2B2B" CornerRadius="0,4,4,4" BorderBrush="#383838" BorderThickness="1" Padding="14">
+                    <StackPanel>
+                        <TextBlock Text="Tenant ID (Directory ID):" FontSize="11.5" Foreground="#B0B0B0" Margin="0,0,0,4"/>
+                        <TextBox Name="TxtAuthTenant" Height="28" Margin="0,0,0,8"/>
+
+                        <TextBlock Text="Client ID (Application ID):" FontSize="11.5" Foreground="#B0B0B0" Margin="0,0,0,4"/>
+                        <TextBox Name="TxtAuthClientId" Text="d1ddf0e6-50e1-4fb8-8182-76f584d73f3e" Height="28" Margin="0,0,0,8"/>
+
+                        <TextBlock Text="Client Secret:" FontSize="11.5" Foreground="#B0B0B0" Margin="0,0,0,4"/>
+                        <TextBox Name="TxtAuthSecret" Height="28" Margin="0,0,0,12"/>
+
+                        <Button Name="BtnConnectSecret" Content="Authenticate with App Secret" Style="{StaticResource AccentBtn}" Height="32"/>
+                    </StackPanel>
+                </Border>
+            </TabItem>
+        </TabControl>
+
+        <!-- Footer -->
+        <Grid Grid.Row="2">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <Button Name="BtnStartDeviceFlow" Grid.Column="0" Content="Start Device Login" Style="{StaticResource AccentBtn}"/>
+            <TextBlock Name="TxtAuthStatus" Grid.Column="1" Text="" Foreground="#EAA300" FontSize="11.5" VerticalAlignment="Center" Margin="12,0,0,0"/>
+            <Button Name="BtnCloseDialog" Grid.Column="2" Content="Cancel" Padding="14,6"/>
+        </Grid>
+    </Grid>
+</Window>
+'@
+
+    $reader = [System.Xml.XmlReader]::Create([System.IO.StringReader]::new($dialogXaml))
+    $dialog = [System.Windows.Markup.XamlReader]::Load($reader)
+    if ($Owner) { $dialog.Owner = $Owner }
+
+    $txtDeviceUrl       = $dialog.FindName('TxtDeviceUrl')
+    $btnCopyUrl         = $dialog.FindName('BtnCopyUrl')
+    $txtDeviceCode      = $dialog.FindName('TxtDeviceCode')
+    $btnCopyCode        = $dialog.FindName('BtnCopyCode')
+    $txtDeviceMsg       = $dialog.FindName('TxtDeviceMsg')
+    $prgDevicePoll      = $dialog.FindName('PrgDevicePoll')
+    $txtAuthTenant      = $dialog.FindName('TxtAuthTenant')
+    $txtAuthClientId    = $dialog.FindName('TxtAuthClientId')
+    $txtAuthSecret      = $dialog.FindName('TxtAuthSecret')
+    $btnConnectSecret   = $dialog.FindName('BtnConnectSecret')
+    $btnStartDeviceFlow = $dialog.FindName('BtnStartDeviceFlow')
+    $txtAuthStatus      = $dialog.FindName('TxtAuthStatus')
+    $btnCloseDialog     = $dialog.FindName('BtnCloseDialog')
+
+    if ($env:AZURE_TENANT_ID) { $txtAuthTenant.Text = $env:AZURE_TENANT_ID }
+    elseif ($env:INTUNE_TENANT_ID) { $txtAuthTenant.Text = $env:INTUNE_TENANT_ID }
+
+    if ($env:AZURE_CLIENT_ID) { $txtAuthClientId.Text = $env:AZURE_CLIENT_ID }
+    elseif ($env:INTUNE_CLIENT_ID) { $txtAuthClientId.Text = $env:INTUNE_CLIENT_ID }
+
+    if ($env:AZURE_CLIENT_SECRET) { $txtAuthSecret.Text = $env:AZURE_CLIENT_SECRET }
+    elseif ($env:INTUNE_CLIENT_SECRET) { $txtAuthSecret.Text = $env:INTUNE_CLIENT_SECRET }
+
+    $script:ActiveDeviceCode = $null
+    $script:PollTimer = $null
+    $script:PollAttempts = 0
+
+    $btnCopyUrl.Add_Click({
+        [System.Windows.Clipboard]::SetText($txtDeviceUrl.Text)
+        $txtAuthStatus.Text = "URL copied to clipboard."
+    })
+
+    $btnCopyCode.Add_Click({
+        if ($script:ActiveDeviceCode -and $script:ActiveDeviceCode.UserCode) {
+            [System.Windows.Clipboard]::SetText($script:ActiveDeviceCode.UserCode)
+            $txtAuthStatus.Text = "Code copied to clipboard."
+        }
+    })
+
+    $btnStartDeviceFlow.Add_Click({
+        $btnStartDeviceFlow.IsEnabled = $false
+        $txtAuthStatus.Text = "Requesting code from Microsoft..."
+        $txtAuthStatus.Foreground = [System.Windows.Media.BrushConverter]::new().ConvertFromString("#60CDFF")
+
+        try {
+            $dc = Connect-GraphToken -InteractiveDeviceCode
+            if ($dc -is [PSCustomObject] -and $dc.UserCode) {
+                $script:ActiveDeviceCode = $dc
+                $txtDeviceCode.Text = $dc.UserCode
+                $btnCopyCode.Visibility = [System.Windows.Visibility]::Visible
+                [System.Windows.Clipboard]::SetText($dc.UserCode)
+
+                $txtDeviceMsg.Text = "Code $($dc.UserCode) copied to clipboard! Visit $($dc.VerificationUrl) on any device, enter the code, and approve."
+                $prgDevicePoll.Visibility = [System.Windows.Visibility]::Visible
+                $prgDevicePoll.IsIndeterminate = $true
+                $txtAuthStatus.Text = "Waiting for browser approval..."
+                $txtAuthStatus.Foreground = [System.Windows.Media.BrushConverter]::new().ConvertFromString("#EAA300")
+
+                $script:PollAttempts = 0
+                $intervalSec = if ($dc.Interval) { [Math]::Max(3, [int]$dc.Interval) } else { 4 }
+                $script:PollTimer = [System.Windows.Threading.DispatcherTimer]::new()
+                $script:PollTimer.Interval = [TimeSpan]::FromSeconds($intervalSec)
+                $script:PollTimer.Add_Tick({
+                    $script:PollAttempts++
+                    if ($script:PollAttempts -gt 75) {
+                        $script:PollTimer.Stop()
+                        $txtAuthStatus.Text = "Device code polling timed out."
+                        $txtAuthStatus.Foreground = [System.Windows.Media.BrushConverter]::new().ConvertFromString("#FFAA99")
+                        $prgDevicePoll.Visibility = [System.Windows.Visibility]::Collapsed
+                        $btnStartDeviceFlow.IsEnabled = $true
+                        return
+                    }
+
+                    try {
+                        $token = Poll-GraphDeviceCodeToken -DeviceCodeContext $script:ActiveDeviceCode
+                        if ($token) {
+                            $script:PollTimer.Stop()
+                            $txtAuthStatus.Text = "Authenticated Successfully!"
+                            $txtAuthStatus.Foreground = [System.Windows.Media.BrushConverter]::new().ConvertFromString("#6CCB5F")
+                            $prgDevicePoll.Visibility = [System.Windows.Visibility]::Collapsed
+                            $txtDeviceMsg.Text = "Session active. You can now use all Intune features across the application."
+                            $btnCloseDialog.Content = "Done"
+
+                            $closeTimer = [System.Windows.Threading.DispatcherTimer]::new()
+                            $closeTimer.Interval = [TimeSpan]::FromMilliseconds(1200)
+                            $closeTimer.Add_Tick({
+                                $closeTimer.Stop()
+                                $dialog.Close()
+                            })
+                            $closeTimer.Start()
+                        }
+                    } catch {
+                        $script:PollTimer.Stop()
+                        $txtAuthStatus.Text = "Auth error: $($_.Exception.Message)"
+                        $txtAuthStatus.Foreground = [System.Windows.Media.BrushConverter]::new().ConvertFromString("#FFAA99")
+                        $prgDevicePoll.Visibility = [System.Windows.Visibility]::Collapsed
+                        $btnStartDeviceFlow.IsEnabled = $true
+                    }
+                })
+                $script:PollTimer.Start()
+            }
+        } catch {
+            $txtAuthStatus.Text = "Failed: $($_.Exception.Message)"
+            $txtAuthStatus.Foreground = [System.Windows.Media.BrushConverter]::new().ConvertFromString("#FFAA99")
+            $btnStartDeviceFlow.IsEnabled = $true
+        }
+    })
+
+    $btnConnectSecret.Add_Click({
+        $t = $txtAuthTenant.Text.Trim()
+        $c = $txtAuthClientId.Text.Trim()
+        $s = $txtAuthSecret.Text.Trim()
+
+        if (-not $t -or -not $s) {
+            $txtAuthStatus.Text = "Tenant ID and Secret required."
+            $txtAuthStatus.Foreground = [System.Windows.Media.BrushConverter]::new().ConvertFromString("#FFAA99")
+            return
+        }
+
+        $txtAuthStatus.Text = "Authenticating with Secret..."
+        $txtAuthStatus.Foreground = [System.Windows.Media.BrushConverter]::new().ConvertFromString("#60CDFF")
+
+        try {
+            $token = Connect-GraphToken -TenantId $t -ClientId $c -ClientSecret $s
+            if ($token) {
+                $txtAuthStatus.Text = "Connected via App Secret!"
+                $txtAuthStatus.Foreground = [System.Windows.Media.BrushConverter]::new().ConvertFromString("#6CCB5F")
+                Start-Sleep -Milliseconds 600
+                $dialog.Close()
+            }
+        } catch {
+            $txtAuthStatus.Text = "Failed: $($_.Exception.Message)"
+            $txtAuthStatus.Foreground = [System.Windows.Media.BrushConverter]::new().ConvertFromString("#FFAA99")
+        }
+    })
+
+    $btnCloseDialog.Add_Click({
+        if ($script:PollTimer) { $script:PollTimer.Stop() }
+        $dialog.Close()
+    })
+
+    $dialog.Add_Closed({
+        if ($script:PollTimer) { $script:PollTimer.Stop() }
+    })
+
+    $dialog.ShowDialog() | Out-Null
+    if ($script:GraphAuthContext) { return $script:GraphAuthContext.AccessToken }
+    return $null
+}
+
+# --- Function: Get-CurrentGraphToken ---
+function Get-CurrentGraphToken {
+    [CmdletBinding()]
+    param(
+        [switch]$AllowInteractive,
+        [System.Windows.Window]$Owner = $null
+    )
+
+    if ($script:GraphAuthContext -and $script:GraphAuthContext.AccessToken -and $script:GraphAuthContext.ExpiresOn -gt [datetime]::UtcNow.AddMinutes(2)) {
+        return $script:GraphAuthContext.AccessToken
+    }
+
+    # Silent check via .env
+    $tenant = if ($env:AZURE_TENANT_ID) { $env:AZURE_TENANT_ID } else { $env:INTUNE_TENANT_ID }
+    $secret = if ($env:AZURE_CLIENT_SECRET) { $env:AZURE_CLIENT_SECRET } else { $env:INTUNE_CLIENT_SECRET }
+    $client = if ($env:AZURE_CLIENT_ID) { $env:AZURE_CLIENT_ID } else { $env:INTUNE_CLIENT_ID }
+    if (-not $client) { $client = 'd1ddf0e6-50e1-4fb8-8182-76f584d73f3e' }
+
+    if ($tenant -and $secret) {
+        try {
+            $token = Connect-GraphToken -TenantId $tenant -ClientId $client -ClientSecret $secret
+            if ($token) { return $token }
+        } catch { }
+    }
+
+    if ($AllowInteractive) {
+        return (Start-GraphAuthDialog -Owner $Owner)
+    }
+
     return $null
 }
 
@@ -1431,6 +1835,16 @@ function Start-AutopilotHubGui {
                 </Setter.Value>
             </Setter>
         </Style>
+        <!-- WinUI 3 Dark ToolTip Style -->
+        <Style TargetType="ToolTip">
+            <Setter Property="Background" Value="#2B2B2B"/>
+            <Setter Property="Foreground" Value="#FFFFFF"/>
+            <Setter Property="BorderBrush" Value="#444444"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="8,5"/>
+            <Setter Property="FontSize" Value="11.5"/>
+            <Setter Property="HasDropShadow" Value="True"/>
+        </Style>
     </Window.Resources>
 
     <Grid Margin="18">
@@ -1463,6 +1877,17 @@ function Start-AutopilotHubGui {
             </StackPanel>
 
             <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                <!-- Graph Authentication Session Badge & Connector -->
+                <Border Name="BadgeGraphAuth" Background="#2E2221" CornerRadius="3" Padding="8,4" Margin="0,0,8,0" VerticalAlignment="Center" BorderBrush="#542E2A" BorderThickness="1">
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <Ellipse Name="DotGraphStatus" Width="7" Height="7" Fill="#FFAA99" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                        <TextBlock Name="TxtGraphStatus" Text="GRAPH: NOT SIGNED IN" FontSize="10.5" FontWeight="SemiBold" Foreground="#D0D0D0" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </Border>
+                <Button Name="BtnConnectGraph" Content="Sign In to Intune" Style="{StaticResource AccentBtn}" Margin="0,0,8,0"/>
+
+                <Button Name="BtnInstallPwsh" Content="Install PS7" Margin="0,0,8,0"
+                        ToolTip="Cause fuck Microsoft for still shipping Windows with the outta date garbage that is PowerShell 5.1."/>
                 <Button Name="BtnQuickCmd" Content="Command Prompt (Shift+F10)" Margin="0,0,8,0"/>
                 <Button Name="BtnTimeSync" Content="Sync Clock" Margin="0,0,8,0"/>
                 <Button Name="BtnReboot" Content="Restart System" Style="{StaticResource DestructiveBtn}"/>
@@ -2005,6 +2430,12 @@ function Start-AutopilotHubGui {
     $window = [System.Windows.Markup.XamlReader]::Load($reader)
 
     # Resolve UI Controls
+    $badgeGraphAuth    = $window.FindName('BadgeGraphAuth')
+    $dotGraphStatus    = $window.FindName('DotGraphStatus')
+    $txtGraphStatus    = $window.FindName('TxtGraphStatus')
+    $btnConnectGraph   = $window.FindName('BtnConnectGraph')
+    $btnInstallPwsh    = $window.FindName('BtnInstallPwsh')
+
     $txtSerial         = $window.FindName('TxtSerial')
     $txtModel          = $window.FindName('TxtModel')
     $txtTpm            = $window.FindName('TxtTpm')
@@ -2027,6 +2458,52 @@ function Start-AutopilotHubGui {
     $txtHashStatus     = $window.FindName('TxtHashStatus')
     $badgeHashStatus   = $window.FindName('BadgeHashStatus')
     $btnCopyHash       = $window.FindName('BtnCopyHash')
+
+    function Update-GraphAuthHeader {
+        if ($script:GraphAuthContext -and $script:GraphAuthContext.AccessToken -and $script:GraphAuthContext.ExpiresOn -gt [datetime]::UtcNow.AddMinutes(2)) {
+            $dotGraphStatus.Fill = [System.Windows.Media.BrushConverter]::new().ConvertFromString("#6CCB5F")
+            $badgeGraphAuth.Background = [System.Windows.Media.BrushConverter]::new().ConvertFromString("#1F2822")
+            $badgeGraphAuth.BorderBrush = [System.Windows.Media.BrushConverter]::new().ConvertFromString("#2A5435")
+            $tDisplay = if ($script:GraphAuthContext.TenantId -and $script:GraphAuthContext.TenantId -ne 'organizations') {
+                if ($script:GraphAuthContext.TenantId.Length -gt 18) {
+                    $script:GraphAuthContext.TenantId.Substring(0, 8) + '...'
+                } else {
+                    $script:GraphAuthContext.TenantId
+                }
+            } else {
+                'Connected'
+            }
+            $txtGraphStatus.Text = "GRAPH: CONNECTED ($tDisplay)"
+            $txtGraphStatus.Foreground = [System.Windows.Media.BrushConverter]::new().ConvertFromString("#6CCB5F")
+            $btnConnectGraph.Content = "Disconnect"
+            $btnConnectGraph.Style = [System.Windows.Style]$window.Resources['DestructiveBtn']
+        } else {
+            $dotGraphStatus.Fill = [System.Windows.Media.BrushConverter]::new().ConvertFromString("#FFAA99")
+            $badgeGraphAuth.Background = [System.Windows.Media.BrushConverter]::new().ConvertFromString("#2E2221")
+            $badgeGraphAuth.BorderBrush = [System.Windows.Media.BrushConverter]::new().ConvertFromString("#542E2A")
+            $txtGraphStatus.Text = "GRAPH: NOT SIGNED IN"
+            $txtGraphStatus.Foreground = [System.Windows.Media.BrushConverter]::new().ConvertFromString("#D0D0D0")
+            $btnConnectGraph.Content = "Sign In to Intune"
+            $btnConnectGraph.Style = [System.Windows.Style]$window.Resources['AccentBtn']
+        }
+    }
+
+    $btnConnectGraph.Add_Click({
+        if ($script:GraphAuthContext -and $script:GraphAuthContext.AccessToken) {
+            $ans = [System.Windows.MessageBox]::Show("Disconnect the current Microsoft Graph session?", "Disconnect Session", [System.Windows.MessageBoxButton]::YesNo, [System.Windows.MessageBoxImage]::Question)
+            if ($ans -eq [System.Windows.MessageBoxResult]::Yes) {
+                $script:GraphAuthContext = $null
+                Update-GraphAuthHeader
+                Write-HubLog "Microsoft Graph session disconnected." "WARN"
+            }
+        } else {
+            $token = Start-GraphAuthDialog -Owner $window
+            Update-GraphAuthHeader
+            if ($token) {
+                Write-HubLog "Authenticated to Microsoft Graph session ($($script:GraphAuthContext.TenantId)). All cloud capabilities active." "SUCCESS"
+            }
+        }
+    })
 
     $btnPresetWorkstation = $window.FindName('BtnPresetWorkstation')
     $btnPresetBrowsers    = $window.FindName('BtnPresetBrowsers')
@@ -2326,49 +2803,28 @@ function Start-AutopilotHubGui {
     # --- ACTION: Register Directly to Intune ---
     $btnRegisterIntune.Add_Click({
         Write-HubLog "Initiating Microsoft Graph cloud registration pipeline..."
-        Set-HubProgress -Percent 10 -Status "Connecting Graph"
+        Set-HubProgress -Percent 10 -Status "Checking Auth Session"
+
+        $token = Get-CurrentGraphToken -AllowInteractive -Owner $window
+        if (-not $token) {
+            Write-HubLog "Cloud registration paused: Microsoft Graph authentication required." "WARN"
+            Set-HubProgress -Percent 0 -Status "Auth Required"
+            return
+        }
+        Update-GraphAuthHeader
+
+        Write-HubLog "Using active Microsoft Graph session ($($script:GraphAuthContext.TenantId))." "SUCCESS"
+        Set-HubProgress -Percent 40 -Status "Uploading Device Hash"
 
         try {
-            # Start Device Code Flow
-            $dc = Connect-GraphToken -InteractiveDeviceCode
-            if ($dc -is [PSCustomObject] -and $dc.UserCode) {
-                Write-HubLog "=========================================================" "WARN"
-                Write-HubLog "VISIT: $($dc.VerificationUrl)" "WARN"
-                Write-HubLog "ENTER AUTH CODE: $($dc.UserCode)" "WARN"
-                Write-HubLog "=========================================================" "WARN"
+            $reg = Register-AutopilotDevice -GroupTag $cmbGroupTag.Text -AssignedUser $txtAssignedUser.Text -AccessToken $token -WaitForSync:$chkWaitForSync.IsChecked
+            if ($reg.Success) {
+                Write-HubLog "Device registered to Intune! Import ID: $($reg.ImportId)" "SUCCESS"
+                Set-HubProgress -Percent 100 -Status "Registration Complete"
 
-                [System.Windows.Clipboard]::SetText($dc.UserCode)
-                [System.Windows.MessageBox]::Show("Authentication required!`n`n1. Visit: $($dc.VerificationUrl)`n2. Enter Code: $($dc.UserCode) (Copied to Clipboard)`n`nClick OK once authenticated in your browser or phone.", "Autopilot Graph Auth", [System.Windows.MessageBoxButton]::OK, [System.Windows.MessageBoxImage]::Information)
-
-                # Poll for token
-                Set-HubProgress -Percent 30 -Status "Waiting for Auth"
-                $token = $null
-                $pollAttempts = 0
-                while ($pollAttempts -lt 20 -and -not $token) {
-                    $pollAttempts++
-                    Start-Sleep -Seconds 5
-                    $token = Poll-GraphDeviceCodeToken -DeviceCodeContext $dc
-                    if ($token) { break }
-                }
-
-                if (-not $token) {
-                    Write-HubLog "Authentication polling timed out." "ERROR"
-                    Set-HubProgress -Percent 0 -Status "Auth Timeout"
-                    return
-                }
-
-                Write-HubLog "Authenticated to Microsoft Graph successfully." "SUCCESS"
-                Set-HubProgress -Percent 60 -Status "Uploading Device"
-
-                $reg = Register-AutopilotDevice -GroupTag $cmbGroupTag.Text -AssignedUser $txtAssignedUser.Text -AccessToken $token -WaitForSync:$chkWaitForSync.IsChecked
-                if ($reg.Success) {
-                    Write-HubLog "Device registered to Intune! Import ID: $($reg.ImportId)" "SUCCESS"
-                    Set-HubProgress -Percent 100 -Status "Registration Complete"
-
-                    if ($chkAutoReboot.IsChecked) {
-                        Write-HubLog "Auto-reboot scheduled in 10 seconds..." "WARN"
-                        Start-Process shutdown.exe -ArgumentList '/r /t 10 /c "Autopilot Registration Complete - Rebooting into OOBE ESP"'
-                    }
+                if ($chkAutoReboot.IsChecked) {
+                    Write-HubLog "Auto-reboot scheduled in 10 seconds..." "WARN"
+                    Start-Process shutdown.exe -ArgumentList '/r /t 10 /c "Autopilot Registration Complete - Rebooting into OOBE ESP"'
                 }
             }
         } catch {
@@ -2472,9 +2928,16 @@ function Start-AutopilotHubGui {
 
     # --- ACTION: Publish Package to Intune ---
     $btnPublishIntune.Add_Click({
-        Write-HubLog "Cloud publishing trigger for '$($txtPkgId.Text)' to Microsoft Intune..."
-        Write-HubLog "Initiating Graph token handshake..."
-        [System.Windows.MessageBox]::Show("Cloud publisher ready. Connect your tenant token to upload the .intunewin package directly to Intune mobileApps.", "Intune Publisher", [System.Windows.MessageBoxButton]::OK, [System.Windows.MessageBoxImage]::Information)
+        Write-HubLog "Initiating cloud publishing pipeline for '$($txtPkgId.Text)'..."
+        $token = Get-CurrentGraphToken -AllowInteractive -Owner $window
+        if (-not $token) {
+            Write-HubLog "Publishing halted: Microsoft Graph authentication required." "WARN"
+            return
+        }
+        Update-GraphAuthHeader
+        Write-HubLog "Active Graph session verified for tenant $($script:GraphAuthContext.TenantId)." "SUCCESS"
+        Write-HubLog "Ready to upload .intunewin package '$($txtPkgDisplayName.Text)' ($($txtPkgId.Text)) to Microsoft Intune mobileApps." "INFO"
+        [System.Windows.MessageBox]::Show("Authenticated as $($script:GraphAuthContext.TenantId).`n`nReady to publish '$($txtPkgDisplayName.Text)' directly to Intune mobileApps.", "Intune Cloud Publisher", [System.Windows.MessageBoxButton]::OK, [System.Windows.MessageBoxImage]::Information)
     })
 
     # --- ACTION: Run Diagnostics ---
@@ -2487,6 +2950,107 @@ function Start-AutopilotHubGui {
 
         Write-HubLog "Diagnostics completed: $($diag.StagesPassed) / $($diag.TotalStages) stages passed." $(if ($diag.IsFullyReady) { "SUCCESS" } else { "WARN" })
         Set-HubProgress -Percent 100 -Status "Diagnostics Done"
+    })
+
+    # PowerShell 7 Modern Runtime Handler
+    $pwshPath = $null
+    $pwshCmd = Get-Command pwsh -ErrorAction SilentlyContinue
+    if ($pwshCmd) { $pwshPath = $pwshCmd.Source }
+    if (-not $pwshPath) {
+        $possiblePwsh = @(
+            "C:\Program Files\PowerShell\7\pwsh.exe",
+            "C:\Program Files\PowerShell\7-preview\pwsh.exe",
+            "$env:LOCALAPPDATA\Microsoft\WindowsApps\pwsh.exe"
+        )
+        foreach ($p in $possiblePwsh) {
+            if (Test-Path $p) { $pwshPath = $p; break }
+        }
+    }
+    if ($pwshPath) {
+        $btnInstallPwsh.Content = "Launch PS7"
+    }
+
+    $btnInstallPwsh.Add_Click({
+        $existing = $null
+        $check = Get-Command pwsh -ErrorAction SilentlyContinue
+        if ($check) { $existing = $check.Source }
+        if (-not $existing) {
+            $candidates = @(
+                "C:\Program Files\PowerShell\7\pwsh.exe",
+                "C:\Program Files\PowerShell\7-preview\pwsh.exe",
+                "$env:LOCALAPPDATA\Microsoft\WindowsApps\pwsh.exe"
+            )
+            foreach ($c in $candidates) {
+                if (Test-Path $c) { $existing = $c; break }
+            }
+        }
+
+        if ($existing) {
+            Write-HubLog "Launching modern PowerShell 7 console ($existing)..." "SUCCESS"
+            Start-Process $existing
+            return
+        }
+
+        Write-HubLog "Initiating modern PowerShell 7 (pwsh) automated deployment..." "INFO"
+        Write-HubLog "Targeting latest stable PowerShell 7.4.x x64 MSI package..." "INFO"
+        Set-HubProgress -Percent 15 -Status "Deploying PS7"
+
+        $installed = $false
+        $wingetCmd = Get-Command winget -ErrorAction SilentlyContinue
+        if ($wingetCmd) {
+            try {
+                Write-HubLog "Attempting installation via Windows Package Manager (winget)..."
+                $p = Start-Process winget -ArgumentList 'install', '--id', 'Microsoft.PowerShell', '--exact', '--silent', '--accept-source-agreements', '--accept-package-agreements' -PassThru -Wait -NoNewWindow
+                if ($p.ExitCode -eq 0 -or $p.ExitCode -eq 3010) {
+                    $installed = $true
+                }
+            } catch { }
+        }
+
+        if (-not $installed) {
+            try {
+                $msiUrl = "https://github.com/PowerShell/PowerShell/releases/download/v7.4.5/PowerShell-7.4.5-win-x64.msi"
+                $msiDest = "$env:TEMP\PowerShell-7.4.5-win-x64.msi"
+                Write-HubLog "Downloading PowerShell 7 x64 MSI directly from GitHub releases..."
+                Set-HubProgress -Percent 35 -Status "Downloading PS7"
+
+                [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.SecurityProtocolType]::Tls12
+                $wc = [System.Net.WebClient]::new()
+                $wc.DownloadFile($msiUrl, $msiDest)
+
+                Write-HubLog "Executing silent msiexec deployment (/qn /norestart)..."
+                Set-HubProgress -Percent 70 -Status "Installing PS7"
+                $msiArgs = @(
+                    '/i', "`"$msiDest`"",
+                    '/qn',
+                    '/norestart',
+                    'ADD_EXPLORER_CONTEXT_MENU_OPENPOWERSHELL=1',
+                    'ADD_FILE_CONTEXT_MENU_RUNPOWERSHELL=1',
+                    'ENABLE_PSREMOTING=1',
+                    'REGISTER_MANIFEST=1'
+                ) -join ' '
+                $p = Start-Process msiexec.exe -ArgumentList $msiArgs -PassThru -Wait
+                if ($p.ExitCode -eq 0 -or $p.ExitCode -eq 3010) {
+                    $installed = $true
+                } else {
+                    Write-HubLog "msiexec returned exit code: $($p.ExitCode)" "WARN"
+                }
+            } catch {
+                Write-HubLog "Direct MSI install error: $($_.Exception.Message)" "ERROR"
+            }
+        }
+
+        $targetPwsh = "C:\Program Files\PowerShell\7\pwsh.exe"
+        if (Test-Path $targetPwsh) {
+            Write-HubLog "PowerShell 7 installed successfully! Launching modern console..." "SUCCESS"
+            Set-HubProgress -Percent 100 -Status "PS7 Ready"
+            $btnInstallPwsh.Content = "Launch PS7"
+            Start-Process $targetPwsh
+            [System.Windows.MessageBox]::Show("PowerShell 7 (pwsh) has been installed and launched.`n`nExecutable: $targetPwsh", "PowerShell 7 Ready", [System.Windows.MessageBoxButton]::OK, [System.Windows.MessageBoxImage]::Information)
+        } else {
+            Write-HubLog "PowerShell 7 installation could not be verified at $targetPwsh" "ERROR"
+            Set-HubProgress -Percent 0 -Status "PS7 Install Failed"
+        }
     })
 
     # Quick Utility Handlers
@@ -2708,6 +3272,13 @@ $($r.Entitlements | ForEach-Object { "| $($_.ServiceLevelDescription) | $($_.Ent
     # Initial Diagnostic Run
     $initialDiag = Test-StagedNetwork
     $lstDiagStages.ItemsSource = $initialDiag.Stages
+
+    # Check for Existing / Silent Graph Session (.env)
+    $silentToken = Get-CurrentGraphToken
+    if ($silentToken) {
+        Write-HubLog "Microsoft Graph session auto-connected from environment ($($script:GraphAuthContext.TenantId))." "SUCCESS"
+    }
+    Update-GraphAuthHeader
 
     # Show Window
     $window.ShowDialog() | Out-Null
