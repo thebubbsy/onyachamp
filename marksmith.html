@@ -192,19 +192,19 @@
 
             <!-- Real screenshots -->
             <h3 class="gallery-heading">Screenshots, straight off the window</h3>
-            <p class="gallery-sub">Every image below is a <code>PrintWindow</code> capture of the running Release build &mdash; nothing composited, nothing hand-drawn. Click any shot to enlarge or download the real generated DOCX files to test in Word.</p>
+            <p class="gallery-sub">Every image below is a <code>PrintWindow</code> capture of the running Release build &mdash; nothing composited, nothing hand-drawn. Click any shot to enlarge or download the real compiled DOCX files to test in Word.</p>
 
             <div class="shot-grid">
-                <figure class="shot" data-full="media/desktop-split.png">
+                <figure class="shot" data-full="media/desktop-split.png" data-caption="Split View & Looking Glass: Source on the left, rendered document preview on the right, matching Word's exact layout.">
                     <img src="media/desktop-split.png" alt="Split view: Markdown source on the left, the rendered document preview on the right" loading="lazy">
                     <figcaption>
-                        <strong>Split view</strong>
+                        <strong>Split view &amp; Looking Glass</strong>
                         <span>Source and the Looking&nbsp;Glass preview side by side, rendering exactly what Word will produce.</span>
                         <a href="media/product-spec.docx" download class="shot-download-link"><i class="fa-solid fa-download"></i> Download sample DOCX</a>
                     </figcaption>
                 </figure>
 
-                <figure class="shot" data-full="media/desktop-editor.png">
+                <figure class="shot" data-full="media/desktop-editor.png" data-caption="AI Citation Sanitizer: MarkSmith identifies pasted ChatGPT exports, counts hallucinated citation pips, and cleans them.">
                     <img src="media/desktop-editor.png" alt="MarkSmith identifying a pasted ChatGPT export and reporting the fixes it will apply" loading="lazy">
                     <figcaption>
                         <strong>It knows what pasted that</strong>
@@ -220,16 +220,7 @@
                     </figcaption>
                 </figure>
 
-                <figure class="shot" data-full="media/desktop-math.png">
-                    <img src="media/desktop-math.png" alt="LaTeX matrices, integrals and chemistry equations rendered in the MarkSmith preview" loading="lazy">
-                    <figcaption>
-                        <strong>Math that survives the trip</strong>
-                        <span>Matrices, integrals and mhchem compiled to native OMML &mdash; editable in Word's equation editor, not pasted images.</span>
-                        <a href="media/math-cheatsheet.docx" download class="shot-download-link"><i class="fa-solid fa-download"></i> Download math-cheatsheet.docx</a>
-                    </figcaption>
-                </figure>
-
-                <figure class="shot" data-full="media/word-product-spec.png">
+                <figure class="shot" data-full="media/word-product-spec.png" data-caption="ShapeForge™ Output in Microsoft Word: Mermaid architecture diagram compiled to real editable DrawingML shapes.">
                     <img src="media/word-product-spec.png" alt="A Mermaid architecture diagram compiled into native editable Word shapes" loading="lazy">
                     <figcaption>
                         <strong>ShapeForge&trade; output in Word</strong>
@@ -238,7 +229,16 @@
                     </figcaption>
                 </figure>
 
-                <figure class="shot" data-full="media/word-gauntlet.png">
+                <figure class="shot" data-full="media/desktop-math.png" data-caption="Native OMML Math: Matrices, integrals, and chemistry compiled into Word's native equation format.">
+                    <img src="media/desktop-math.png" alt="LaTeX matrices, integrals and chemistry equations rendered in the MarkSmith preview" loading="lazy">
+                    <figcaption>
+                        <strong>Math that survives the trip</strong>
+                        <span>Matrices, integrals and mhchem compiled to native OMML &mdash; editable in Word's equation editor, not pasted images.</span>
+                        <a href="media/math-cheatsheet.docx" download class="shot-download-link"><i class="fa-solid fa-download"></i> Download math-cheatsheet.docx</a>
+                    </figcaption>
+                </figure>
+
+                <figure class="shot" data-full="media/word-gauntlet.png" data-caption="The Document Gauntlet in Microsoft Word: Complex equations, syntax highlighting, and nested tables open with zero repair warnings.">
                     <img src="media/word-gauntlet.png" alt="A MarkSmith-generated DOCX open in Microsoft Word with equations, code and a complex table" loading="lazy">
                     <figcaption>
                         <strong>The gauntlet document, in Word</strong>
@@ -247,20 +247,64 @@
                     </figcaption>
                 </figure>
 
-                <figure class="shot" data-full="media/express-loaded.png">
+                <figure class="shot" data-full="media/marksmith-mermaid-network.png" data-caption="Mermaid Network Diagram: Complex flowchart architecture with node themes and custom styling rendered in MarkSmith.">
+                    <img src="media/marksmith-mermaid-network.png" alt="Mermaid network architecture diagram rendered inside MarkSmith" loading="lazy">
+                    <figcaption>
+                        <strong>ShapeForge&trade; network solver</strong>
+                        <span>Mermaid network topologies compiled into vector geometry with automated connector routing and node fills.</span>
+                        <a href="media/enterprise-architecture.docx" download class="shot-download-link"><i class="fa-solid fa-download"></i> Download enterprise DOCX</a>
+                    </figcaption>
+                </figure>
+
+                <figure class="shot" data-full="media/marksmith-housestyle.png" data-caption="Corporate Template & House Style Preview: Automatically inherits typography, heading hierarchies, and brand palettes.">
+                    <img src="media/marksmith-housestyle.png" alt="MarkSmith house-style themed preview with corporate template styling" loading="lazy">
+                    <figcaption>
+                        <strong>Corporate house style engine</strong>
+                        <span>Live theme engine previewing branded fonts, paragraph spacing, and custom heading aesthetics before compiling.</span>
+                        <a href="media/product-spec.docx" download class="shot-download-link"><i class="fa-solid fa-download"></i> Download branded DOCX</a>
+                    </figcaption>
+                </figure>
+
+                <figure class="shot" data-full="media/marksmith-word-exact.png" data-caption="Word-Exact Side-by-Side Preview: Mathematical fidelity between the live canvas and the compiled OpenXML package.">
+                    <img src="media/marksmith-word-exact.png" alt="Word-exact side-by-side rendering comparison" loading="lazy">
+                    <figcaption>
+                        <strong>Word-exact fidelity</strong>
+                        <span>What you preview is mathematically identical to what Word renders on disk. No surprise font shifts or table reflows.</span>
+                    </figcaption>
+                </figure>
+
+                <figure class="shot" data-full="media/marksmith-ai-detection.png" data-caption="AI Prompt & Citations Inspector: Sanitizes hallucinated web citations and converts delimiter artifacts.">
+                    <img src="media/marksmith-ai-detection.png" alt="MarkSmith AI prompt detection and citation cleanup tool" loading="lazy">
+                    <figcaption>
+                        <strong>AI prompt &amp; citation cleaner</strong>
+                        <span>Sanitizes hallucinated citations, converts <code>\( \)</code> to standard LaTeX math, and strips leaked Markdown wrappers.</span>
+                    </figcaption>
+                </figure>
+
+                <figure class="shot" data-full="media/marksmith-formatting.png" data-caption="Typography & Formatting Engine: Executive KPI metric cards, callout alerts, and table geometry solvers.">
+                    <img src="media/marksmith-formatting.png" alt="MarkSmith formatting engine and typography settings" loading="lazy">
+                    <figcaption>
+                        <strong>Typography &amp; formatting inspector</strong>
+                        <span>Configure proportional column widths, heading numbering, code block shading, and WCAG AA contrast rules.</span>
+                    </figcaption>
+                </figure>
+
+                <figure class="shot" data-full="media/marksmith-governance.png" data-caption="OpenXML Schema Governance: Dynamic relationship IDs, namespace declarations, and zero-corruption enforcement.">
+                    <img src="media/marksmith-governance.png" alt="OpenXML schema governance and XML inspector" loading="lazy">
+                    <figcaption>
+                        <strong>Schema governance &amp; XML inspector</strong>
+                        <span>Strict ECMA-376 schema enforcement. Dynamic <code>.rels</code> manager guarantees zero 'File is corrupted' prompts.</span>
+                    </figcaption>
+                </figure>
+
+                <figure class="shot" data-full="media/express-loaded.png" data-caption="MarkSmith Express Web UI: Browser-based compilation engine with target profile selector.">
                     <img src="media/express-loaded.png" alt="The MarkSmith Express web UI with a loaded document and the output profile panel" loading="lazy">
                     <figcaption>
                         <strong>MarkSmith Express</strong>
-                        <span>The same engine behind a local web UI &mdash; switch the output profile between Word, HTML, slides and eBook.</span>
+                        <span>The same engine behind a local web UI &mdash; switch output profile between Word, HTML, slides, and eBook.</span>
                     </figcaption>
                 </figure>
             </div>
-        </div>
-
-        <!-- Lightbox -->
-        <div id="shot-lightbox" class="shot-lightbox" role="dialog" aria-modal="true" aria-label="Enlarged screenshot" hidden>
-            <button class="lightbox-close" type="button" aria-label="Close">&times;</button>
-            <img id="lightbox-img" src="" alt="">
         </div>
     </section>
 
@@ -373,82 +417,118 @@
     <section id="features" class="section-flagship" style="padding-top: 0;">
         <div class="container">
             <div class="section-header">
-                <span class="badge badge-purple"><i class="fas fa-microchip"></i> ARCHITECTURAL ADVANTAGES</span>
+                <span class="badge badge-purple"><i class="fas fa-microchip"></i> ARCHITECTURAL CAPABILITIES</span>
                 <h2>Engineered for Zero Corruption &amp; Maximum Fidelity</h2>
-                <p>Word's rendering engine is notoriously fragile. MarkSmith was built from the ground up to strictly obey the ECMA-376 OpenXML schema.</p>
+                <p>Word's rendering engine is notoriously fragile. MarkSmith was built from the ground up to strictly obey the ECMA-376 OpenXML schema with mathematical guarantees.</p>
             </div>
 
-            <div class="features-grid">
-                <div class="feature-card">
-                    <div class="feature-icon-wrapper icon-cyan">
-                        <i class="fas fa-shield-alt"></i>
+            <div class="features-visual-grid">
+                <!-- Card 1: ShapeForge -->
+                <div class="feature-visual-card">
+                    <div class="feature-visual-media" data-full="media/marksmith-mermaid-network.png" data-caption="ShapeForge™ Diagram Engine: Mermaid flowchart compiled into native DrawingML vector geometry.">
+                        <img src="media/marksmith-mermaid-network.png" alt="Mermaid network diagram compiled to native Word shapes" loading="lazy">
+                        <div class="shot-overlay-tag">
+                            <span>ShapeForge™ Vector Engine</span>
+                            <i class="fas fa-magnifying-glass-plus zoom-icon"></i>
+                        </div>
                     </div>
-                    <h4>Zero-Corruption Guarantee</h4>
-                    <p>Enforces all required root namespaces (<code>w:</code>, <code>a:</code>, <code>wp:</code>, <code>m:</code>, <code>wpg:</code>, <code>wps:</code>), dynamic relationship management (<code>rId</code>), and $O(1)$ SAX streaming via <code>OpenXmlWriter</code>.</p>
+                    <div class="feature-visual-body">
+                        <h4><i class="fas fa-project-diagram" style="color: #c084fc;"></i> ShapeForge™ Diagram Engine</h4>
+                        <p>Translates Mermaid flowcharts, mindmaps, state diagrams, and Gantt charts into native Word grouped vector shapes (<code>&lt;wpg:wgp&gt;</code>). Never a blurry PNG. In Word, click any node to drag it, recolor it, or edit text directly.</p>
+                        <div class="feature-spec-snippet">
+                            <code>&lt;wpg:wgp&gt;&lt;wps:wsp&gt;&lt;wps:spPr&gt;&lt;a:prstGeom prst="roundRect"/&gt;...</code>
+                        </div>
+                    </div>
                 </div>
 
-                <div class="feature-card">
-                    <div class="feature-icon-wrapper icon-purple">
-                        <i class="fas fa-project-diagram"></i>
+                <!-- Card 2: Native OMML Math -->
+                <div class="feature-visual-card">
+                    <div class="feature-visual-media" data-full="media/desktop-math.png" data-caption="Native OMML Math: Complex LaTeX matrices and equations rendered as native editable Office Math.">
+                        <img src="media/desktop-math.png" alt="LaTeX matrices and equations rendered in MarkSmith" loading="lazy">
+                        <div class="shot-overlay-tag">
+                            <span>Native OMML Equations</span>
+                            <i class="fas fa-magnifying-glass-plus zoom-icon"></i>
+                        </div>
                     </div>
-                    <h4>ShapeForge™ Diagram Engine</h4>
-                    <p>Translates Mermaid flowcharts, mindmaps, gitgraphs, Gantt charts, quadrant charts, and timelines into native Word vector shapes (<code>&lt;wpg:wgp&gt;</code>). Fully editable inside Microsoft Word.</p>
+                    <div class="feature-visual-body">
+                        <h4><i class="fas fa-square-root-variable" style="color: #38bdf8;"></i> Native OMML Equations</h4>
+                        <p>Translates complex LaTeX math expressions directly into native Microsoft Office Math elements (<code>&lt;m:oMath&gt;</code>) with literal whitespace preservation (<code>xml:space="preserve"</code>). 100% editable inside Word's Equation Tools.</p>
+                        <div class="feature-spec-snippet">
+                            <code>&lt;m:oMath&gt;&lt;m:r&gt;&lt;m:t xml:space="preserve"&gt;\mathbf{M} = ...&lt;/m:t&gt;&lt;/m:r&gt;&lt;/m:oMath&gt;</code>
+                        </div>
+                    </div>
                 </div>
 
-                <div class="feature-card">
-                    <div class="feature-icon-wrapper icon-cyan">
-                        <i class="fas fa-circle-half-stroke"></i>
+                <!-- Card 3: AI Citation Sanitizer -->
+                <div class="feature-visual-card">
+                    <div class="feature-visual-media" data-full="media/marksmith-ai-detection.png" data-caption="AI Citation Sanitizer: Detects ChatGPT/Claude exports, strips citation pips and converts math delimiters.">
+                        <img src="media/marksmith-ai-detection.png" alt="AI prompt detection and citation cleaner" loading="lazy">
+                        <div class="shot-overlay-tag">
+                            <span>AI Export Sanitizer</span>
+                            <i class="fas fa-magnifying-glass-plus zoom-icon"></i>
+                        </div>
                     </div>
-                    <h4>Looking Glass Portal</h4>
-                    <p>Stop toggling between source and preview. The rendered page <em>is</em> the editing surface: click anywhere and a portal cuts through to the live Markdown behind that exact block, with the rest of the page blurred out of focus. Circle, focus band, square or logo-shaped aperture; edits inside the glass go straight back into the document. <a href="#app-showcase">See it in the clip above &uarr;</a></p>
+                    <div class="feature-visual-body">
+                        <h4><i class="fas fa-wand-magic-sparkles" style="color: #34d399;"></i> AI Prompt &amp; Citation Sanitizer</h4>
+                        <p>Pasting raw ChatGPT or Claude exports breaks Word converters with unparsed <code>[12†source]</code> citation pips, leaked <code>:contentReference</code> tags, and raw <code>\( \)</code> delimiters. MarkSmith normalizes the AST before Word ever sees it.</p>
+                        <div class="feature-spec-snippet">
+                            <code>Regex Sanitizer: [12†source] &amp; \( \theta \) &rarr; Cleaned Word AST</code>
+                        </div>
+                    </div>
                 </div>
 
-                <div class="feature-card">
-                    <div class="feature-icon-wrapper icon-blue">
-                        <i class="fas fa-square-root-variable"></i>
+                <!-- Card 4: Corporate Template Injection -->
+                <div class="feature-visual-card">
+                    <div class="feature-visual-media" data-full="media/marksmith-housestyle.png" data-caption="Corporate Template Injection: Inherits branded typography and styles from .dotx master templates.">
+                        <img src="media/marksmith-housestyle.png" alt="Corporate house-style preview" loading="lazy">
+                        <div class="shot-overlay-tag">
+                            <span>.dotx Master Injection</span>
+                            <i class="fas fa-magnifying-glass-plus zoom-icon"></i>
+                        </div>
                     </div>
-                    <h4>Native OMML Equations</h4>
-                    <p>Translates complex LaTeX math expressions directly into native Microsoft Office Math elements (<code>&lt;m:oMath&gt;</code>) with literal whitespace preservation and high typographical precision.</p>
+                    <div class="feature-visual-body">
+                        <h4><i class="fas fa-file-invoice" style="color: #f59e0b;"></i> Corporate Template Injection</h4>
+                        <p>Injects compiled Markdown runs into existing corporate <code>.dotx</code> / <code>.docx</code> masters. Automatically inherits company fonts, heading hierarchies, cover pages, headers, and footers without manual formatting overhead.</p>
+                        <div class="feature-spec-snippet">
+                            <code>&lt;w:style w:type="paragraph" w:styleId="Heading1"&gt;&lt;w:rPr&gt;&lt;w:rFonts w:ascii="..."/&gt;</code>
+                        </div>
+                    </div>
                 </div>
 
-                <div class="feature-card">
-                    <div class="feature-icon-wrapper icon-emerald">
-                        <i class="fas fa-sitemap"></i>
+                <!-- Card 5: Zero-Corruption Schema Governance -->
+                <div class="feature-visual-card">
+                    <div class="feature-visual-media" data-full="media/marksmith-governance.png" data-caption="OpenXML Schema Governance: Dynamic relationship IDs and root namespace enforcement for corruption-free documents.">
+                        <img src="media/marksmith-governance.png" alt="Schema governance and OpenXML inspector" loading="lazy">
+                        <div class="shot-overlay-tag">
+                            <span>ECMA-376 Governance</span>
+                            <i class="fas fa-magnifying-glass-plus zoom-icon"></i>
+                        </div>
                     </div>
-                    <h4>Reverse-Engineered SmartArt</h4>
-                    <p>Parses Office OpenXML <code>.glox</code> layout definitions and compiles JSON nodes into standard Word diagram data parts for executive process flows and hierarchy trees.</p>
+                    <div class="feature-visual-body">
+                        <h4><i class="fas fa-shield-alt" style="color: #38bdf8;"></i> Zero-Corruption Guarantee</h4>
+                        <p>Word throws "The file is corrupted" errors whenever relationship IDs (<code>rId</code>) are hardcoded or namespaces are omitted. MarkSmith guarantees valid ECMA-376 schema generation with dynamic relationship management and $O(1)$ SAX streaming via <code>OpenXmlWriter</code>.</p>
+                        <div class="feature-spec-snippet">
+                            <code>Namespaces: w:, a:, wp:, m:, wpg:, wps: | Dynamic rId in .rels</code>
+                        </div>
+                    </div>
                 </div>
 
-                <div class="feature-card">
-                    <div class="feature-icon-wrapper icon-amber">
-                        <i class="fas fa-file-invoice"></i>
+                <!-- Card 6: Executive KPI Cards & Formatting -->
+                <div class="feature-visual-card">
+                    <div class="feature-visual-media" data-full="media/marksmith-formatting.png" data-caption="Typography & Formatting Engine: Executive KPI metric cards, callout alerts, and table geometry solvers.">
+                        <img src="media/marksmith-formatting.png" alt="Formatting engine and typography inspector" loading="lazy">
+                        <div class="shot-overlay-tag">
+                            <span>KPI Cards &amp; Geometry</span>
+                            <i class="fas fa-magnifying-glass-plus zoom-icon"></i>
+                        </div>
                     </div>
-                    <h4>Corporate Template Injection</h4>
-                    <p>Injects compiled Markdown runs into existing corporate <code>.dotx</code> / <code>.docx</code> templates, automatically inheriting branded fonts, heading styles, headers, and footers.</p>
-                </div>
-
-                <div class="feature-card">
-                    <div class="feature-icon-wrapper icon-pink">
-                        <i class="fas fa-eye"></i>
+                    <div class="feature-visual-body">
+                        <h4><i class="fas fa-chart-pie" style="color: #ec4899;"></i> Executive KPI Cards &amp; Proportional Tables</h4>
+                        <p>Compiles <code>:::metrics</code> blocks into multi-column executive card grids with 24pt bold metrics, rounded shaded panels, and muted subtitles. Calculates dynamic proportional column widths across <code>w:gridCol</code> and <code>w:tcW</code> for rock-solid, zero-clipping table typography.</p>
+                        <div class="feature-spec-snippet">
+                            <code>&lt;w:tcW w:w="4800" w:type="dxa"/&gt;&lt;w:gridCol w:w="4800"/&gt; (Zero-Clipping)</code>
+                        </div>
                     </div>
-                    <h4>WCAG 2.1 ContrastGuard</h4>
-                    <p>Calculates relative luminance and mathematical contrast ratios in real time, automatically preventing illegible text against dark or light shading (AA 4.5:1 standard).</p>
-                </div>
-
-                <div class="feature-card">
-                    <div class="feature-icon-wrapper icon-purple">
-                        <i class="fas fa-brain"></i>
-                    </div>
-                    <h4>Gemini 3.8 &amp; Frontier Reasoning Dialect</h4>
-                    <p>Native parsing for frontier reasoning models: automatically folds <code>&lt;thought&gt;</code> chains into native Word collapsible sections, synthesizes Google Search Grounding citations into bidirectional footnotes, and styles code execution console outputs.</p>
-                </div>
-
-                <div class="feature-card">
-                    <div class="feature-icon-wrapper icon-blue">
-                        <i class="fas fa-chart-pie"></i>
-                    </div>
-                    <h4>Executive KPI Cards &amp; Proportional Tables</h4>
-                    <p>Compiles <code>:::metrics</code> blocks into multi-column executive card grids with 24pt bold metrics, rounded shaded panels, and muted subtitles. Calculates dynamic proportional column widths across <code>w:gridCol</code> and <code>w:tcW</code> for rock-solid, zero-clipping table typography.</p>
                 </div>
             </div>
         </div>
@@ -461,6 +541,42 @@
                 <span class="badge badge-cyan"><i class="fas fa-scale-balanced"></i> CAPABILITY AUDIT &middot; SEPTEMBER 2026</span>
                 <h2>What Actually Separates These DOCX Engines</h2>
                 <p>A side-by-side technical evaluation of five DOCX engines across document generation, shape compilation, OMML math, and template fidelity.</p>
+            </div>
+
+            <!-- Visual Diff Showcase: Pandoc vs MarkSmith -->
+            <div class="gauntlet-comparison-card">
+                <div class="comparison-card-header">
+                    <div>
+                        <span class="badge badge-purple" style="margin-bottom: 0.35rem;"><i class="fas fa-microscope"></i> SIDE-BY-SIDE VISUAL PROOF</span>
+                        <h3 style="font-size: 1.25rem; margin-bottom: 0.25rem;">The Document Gauntlet: Pandoc vs. MarkSmith OpenXML Fidelity</h3>
+                        <p style="font-size: 0.88rem; color: var(--text-secondary); margin-bottom: 0;">Inspecting real Microsoft Word outputs compiled from the exact same Markdown document.</p>
+                    </div>
+                    <div style="display: flex; gap: 0.5rem; align-items: center;">
+                        <span class="badge badge-cyan"><i class="fas fa-check-double"></i> ISO/IEC 29500 Clean</span>
+                    </div>
+                </div>
+
+                <div class="comparison-card-media" data-full="media/marksmith-word-comparison.png" data-caption="The Document Gauntlet Diff: Pandoc &amp; HTML-to-Word (blurry 96 DPI rasterized diagram, unformatted math, corrupt schema alerts) vs MarkSmith Native Engine (100% editable DrawingML vector shapes, native OMML equations, zero corruption).">
+                    <img src="media/marksmith-word-comparison.png" alt="Side-by-side comparison of Word outputs: Pandoc rasterized vs MarkSmith native vector shapes" loading="lazy">
+                    <div class="lead-shot-caption" style="background: rgba(10, 14, 24, 0.85); border-top: 1px solid var(--border-subtle); padding: 0.65rem 1.25rem; display: flex; justify-content: space-between; align-items: center;">
+                        <span><strong>Visual Diff Inspection</strong> &bull; Click to enlarge high-resolution comparison</span>
+                        <span class="zoom-icon"><i class="fas fa-magnifying-glass-plus"></i> Enlarge Diff</span>
+                    </div>
+                </div>
+
+                <div class="comparison-card-footer">
+                    <div style="font-size: 0.88rem; color: var(--text-secondary);">
+                        <strong style="color: #f8fafc;">Key Takeaway:</strong> Pandoc embeds diagrams as dead raster PNG images. MarkSmith emits native Word DrawingML vector shapes (<code>&lt;wpg:wgp&gt;</code>) that remain fully editable.
+                    </div>
+                    <div style="display: flex; gap: 0.75rem;">
+                        <a href="media/product-spec.docx" download="product-spec.docx" class="btn btn-primary btn-sm">
+                            <i class="fa-solid fa-file-word"></i> Download Verified DOCX
+                        </a>
+                        <a href="media/massive-markdown-showcase.md" download="massive-markdown-showcase.md" class="btn btn-secondary btn-sm">
+                            <i class="fa-regular fa-file-code"></i> Source Markdown
+                        </a>
+                    </div>
+                </div>
             </div>
 
             <!-- Comparison Table -->
@@ -947,6 +1063,22 @@
             </div>
         </div>
     </footer>
+
+    <!-- Universal Lightbox Modal -->
+    <div id="shot-lightbox" class="shot-lightbox" role="dialog" aria-modal="true" aria-label="Enlarged screenshot" hidden>
+        <button class="lightbox-close" type="button" aria-label="Close screenshot preview">&times;</button>
+        <button class="lightbox-nav-btn lightbox-prev" type="button" aria-label="Previous screenshot">
+            <i class="fas fa-chevron-left"></i>
+        </button>
+        <button class="lightbox-nav-btn lightbox-next" type="button" aria-label="Next screenshot">
+            <i class="fas fa-chevron-right"></i>
+        </button>
+        <div class="shot-lightbox-inner">
+            <img id="lightbox-img" src="" alt="Enlarged screenshot preview">
+            <div id="lightbox-caption" class="lightbox-caption"></div>
+            <div id="lightbox-counter" class="lightbox-counter"></div>
+        </div>
+    </div>
 
     <!-- JavaScript -->
     <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
