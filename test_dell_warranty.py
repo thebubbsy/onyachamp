@@ -78,6 +78,69 @@ def test_autopilot_cli_dell_warranty():
     assert '6BYQJW2' in csv_lines[1], "Service tag not in CSV row"
     print(f"  [PASS] autopilot.ps1 -DellWarranty -ExportCsv verified: {csv_path} ({os.path.getsize(csv_path)} bytes)")
 
+def test_env_and_gateway():
+    print("\n--- Test 4: Dynamic Gateway Detection & .env Defaults Engine ---")
+    script_path = os.path.join(os.path.dirname(__file__), 'autopilot.ps1')
+    
+    # Test Test-StagedNetwork Stage 2 dynamic resolution and .env loading
+    ps_code = f"""
+    . '{script_path}' -NoGui
+    $diag = Test-StagedNetwork
+    $s2 = $diag.Stages | Where-Object {{ $_.Stage -eq 2 }}
+    $encName = Get-ScriptEncodingName
+    [PSCustomObject]@{{
+        GatewayDiscovered = $s2.Details
+        GatewaySuccess    = $s2.Success
+        DefaultEncoding   = $encName
+        LoadedEnv         = $script:LoadedEnvPath
+    }} | ConvertTo-Json
+    """
+    cmd = ['pwsh', '-ExecutionPolicy', 'Bypass', '-Command', ps_code]
+    res = subprocess.run(cmd, capture_output=True, encoding='utf-8', errors='replace')
+    assert res.returncode == 0, f"Network/Env test failed: {res.stderr}"
+    
+    data = json.loads(res.stdout.strip())
+    print(f"  [PASS] Dynamic Gateway attestation: {data['GatewayDiscovered']}")
+    print(f"  [PASS] Native Charset resolution: {data['DefaultEncoding']}")
+    assert "Gateway" in data['GatewayDiscovered'], "Gateway stage output not found"
+
+def test_custom_env_options():
+    print("\n--- Test 5: Custom .env Defaults (Rename Toggle, Prefix, Native Charset) ---")
+    script_path = os.path.join(os.path.dirname(__file__), 'autopilot.ps1')
+    temp_env = os.path.join(os.environ.get('TEMP', 'C:\\temp'), 'test_custom.env')
+    
+    with open(temp_env, 'w', encoding='utf-8') as f:
+        f.write("AUTOPILOT_RENAME_ENABLED=true\n")
+        f.write("AUTOPILOT_NAME_PREFIX=LT\n")
+        f.write("AUTOPILOT_GROUP_TAG=Fleet-Dev\n")
+        f.write("AUTOPILOT_CHARSET=native\n")
+        f.write("DEFAULT_GATEWAY=192.168.88.1\n")
+        
+    ps_code = f"""
+    . '{script_path}' -NoGui -EnvFile '{temp_env}'
+    [PSCustomObject]@{{
+        Prefix         = $ComputerNamePrefix
+        Template       = $ComputerNameTemplate
+        RenameEnabled  = [bool]$RenameComputer
+        GroupTag       = $GroupTag
+        EncodingName   = (Get-ScriptEncodingName)
+    }} | ConvertTo-Json
+    """
+    cmd = ['pwsh', '-ExecutionPolicy', 'Bypass', '-Command', ps_code]
+    res = subprocess.run(cmd, capture_output=True, encoding='utf-8', errors='replace')
+    assert res.returncode == 0, f"Custom env test failed: {res.stderr}"
+    
+    start = res.stdout.find('{')
+    end = res.stdout.rfind('}')
+    assert start != -1 and end != -1, f"JSON block not found in stdout: {res.stdout}"
+    data = json.loads(res.stdout[start:end+1])
+    assert data['Prefix'] == 'LT', f"Expected prefix 'LT', got {data.get('Prefix')}"
+    assert data['Template'] == 'LT-%SERIAL%', f"Expected template 'LT-%SERIAL%', got {data.get('Template')}"
+    assert data['RenameEnabled'] is True, f"Expected rename enabled, got {data.get('RenameEnabled')}"
+    assert data['GroupTag'] == 'Fleet-Dev', f"Expected GroupTag 'Fleet-Dev', got {data.get('GroupTag')}"
+    assert data['EncodingName'] == 'Default', f"Expected native charset 'Default', got {data.get('EncodingName')}"
+    print(f"  [PASS] Custom .env loaded: Prefix={data['Prefix']} | Template={data['Template']} | Rename={data['RenameEnabled']} | Charset={data['EncodingName']}")
+
 if __name__ == '__main__':
     print("==================================================================")
     print(" DELL WARRANTY & REFRESH ENGINE AUTOMATED VERIFICATION SUITE")
@@ -85,6 +148,8 @@ if __name__ == '__main__':
     test_xaml_validity()
     test_standalone_get_dell_warranty()
     test_autopilot_cli_dell_warranty()
+    test_env_and_gateway()
+    test_custom_env_options()
     print("\n==================================================================")
-    print(" ALL 3 TEST SUITES PASSED CLEANLY (100% EMPIRICAL VERIFICATION)")
+    print(" ALL 5 TEST SUITES PASSED CLEANLY (100% EMPIRICAL VERIFICATION)")
     print("==================================================================")

@@ -34,8 +34,172 @@ param(
     [switch]$ExportCsv,
     [string]$CsvPath = '',
     [switch]$DellWarranty,
-    [string]$DellServiceTag = ''
+    [string]$DellServiceTag = '',
+    [string]$EnvFile = '',
+    [switch]$RenameComputer,
+    [string]$ComputerNamePrefix = '',
+    [string]$ComputerNameTemplate = ''
 )
+
+# 0. Central Environment & Configuration Engine (.env)
+$script:LoadedEnvPath = $null
+
+function Get-ScriptEncoding {
+    param([string]$CharsetName = $env:AUTOPILOT_CHARSET)
+    if ([string]::IsNullOrWhiteSpace($CharsetName)) { $CharsetName = $env:CHARSET }
+    if ([string]::IsNullOrWhiteSpace($CharsetName)) { return [System.Text.Encoding]::Default }
+    switch -Regex ($CharsetName.Trim().ToLowerInvariant()) {
+        '^(native|default|ansi|current)$' { return [System.Text.Encoding]::Default }
+        '^(utf-?8|utf8)$'                  { return [System.Text.UTF8Encoding]::new($false) }
+        '^(ascii|us-ascii)$'               { return [System.Text.Encoding]::ASCII }
+        '^(unicode|utf-?16|utf16)$'        { return [System.Text.Encoding]::Unicode }
+        '^(oem)$'                          { return [System.Text.Encoding]::GetEncoding([System.Globalization.CultureInfo]::CurrentCulture.TextInfo.OEMCodePage) }
+        default                            {
+            try { return [System.Text.Encoding]::GetEncoding($CharsetName) } catch { return [System.Text.Encoding]::Default }
+        }
+    }
+}
+
+function Get-ScriptEncodingName {
+    param([string]$CharsetName = $env:AUTOPILOT_CHARSET)
+    if ([string]::IsNullOrWhiteSpace($CharsetName)) { $CharsetName = $env:CHARSET }
+    if ([string]::IsNullOrWhiteSpace($CharsetName)) { return 'Default' }
+    switch -Regex ($CharsetName.Trim().ToLowerInvariant()) {
+        '^(native|default|ansi|current)$' { return 'Default' }
+        '^(utf-?8|utf8)$'                  { return 'utf8' }
+        '^(ascii|us-ascii)$'               { return 'ascii' }
+        '^(unicode|utf-?16|utf16)$'        { return 'unicode' }
+        '^(oem)$'                          { return 'oem' }
+        default                            { return 'Default' }
+    }
+}
+
+function Import-EnvConfig {
+    [CmdletBinding()]
+    param([string]$Path = '')
+
+    $targetFile = $null
+    if ($Path -and (Test-Path -LiteralPath $Path -ErrorAction SilentlyContinue)) {
+        $targetFile = $Path
+    } else {
+        $candidates = [System.Collections.Generic.List[string]]::new()
+        if ($env:DOTENV_PATH -and (Test-Path -LiteralPath $env:DOTENV_PATH -ErrorAction SilentlyContinue)) {
+            $candidates.Add($env:DOTENV_PATH)
+        }
+        if (-not [string]::IsNullOrWhiteSpace($PSScriptRoot)) {
+            $candidates.Add((Join-Path -Path $PSScriptRoot -ChildPath '.env'))
+            try {
+                $parent = Split-Path -Path $PSScriptRoot -Parent
+                if (-not [string]::IsNullOrWhiteSpace($parent)) {
+                    $candidates.Add((Join-Path -Path $parent -ChildPath '.env'))
+                }
+            } catch { }
+        }
+        try {
+            $cur = (Get-Location -ErrorAction SilentlyContinue).Path
+            if (-not [string]::IsNullOrWhiteSpace($cur)) {
+                $candidates.Add((Join-Path -Path $cur -ChildPath '.env'))
+                $curParent = Split-Path -Path $cur -Parent
+                if (-not [string]::IsNullOrWhiteSpace($curParent)) {
+                    $candidates.Add((Join-Path -Path $curParent -ChildPath '.env'))
+                }
+            }
+        } catch { }
+        try {
+            $removable = Get-CimInstance Win32_Volume -Filter "DriveType = 2" -ErrorAction SilentlyContinue
+            foreach ($vol in $removable) {
+                if ($vol.DriveLetter) {
+                    $candidates.Add((Join-Path -Path "$($vol.DriveLetter)\" -ChildPath '.env'))
+                }
+            }
+        } catch { }
+        $userProfile = [Environment]::GetFolderPath('UserProfile')
+        if (-not [string]::IsNullOrWhiteSpace($userProfile)) {
+            $candidates.Add((Join-Path -Path $userProfile -ChildPath '.env'))
+        }
+
+        foreach ($c in $candidates) {
+            if (-not [string]::IsNullOrWhiteSpace($c)) {
+                try {
+                    if (Test-Path -LiteralPath $c -ErrorAction SilentlyContinue) {
+                        $targetFile = $c
+                        break
+                    }
+                } catch { }
+            }
+        }
+    }
+
+    if ($targetFile) {
+        try {
+            $lines = [System.IO.File]::ReadAllLines($targetFile, (Get-ScriptEncoding))
+            foreach ($line in $lines) {
+                if ($line -match '^\s*([^#=]+?)\s*=\s*(.*)$') {
+                    $k = $Matches[1].Trim()
+                    $v = $Matches[2].Trim().Trim('"').Trim("'")
+                    if (-not [string]::IsNullOrWhiteSpace($k)) {
+                        [Environment]::SetEnvironmentVariable($k, $v, 'Process')
+                    }
+                }
+            }
+            $script:LoadedEnvPath = $targetFile
+            return $targetFile
+        } catch { }
+    }
+    return $null
+}
+
+function Save-EnvConfig {
+    param(
+        [hashtable]$Settings,
+        [string]$Path = ''
+    )
+    if (-not $Path) {
+        $Path = if ($script:LoadedEnvPath) { $script:LoadedEnvPath } else { Join-Path (Get-Location) '.env' }
+    }
+    $existing = [System.Collections.Generic.Dictionary[string, string]]::new([System.StringComparer]::OrdinalIgnoreCase)
+    if (Test-Path -LiteralPath $Path -ErrorAction SilentlyContinue) {
+        try {
+            $lines = [System.IO.File]::ReadAllLines($Path, (Get-ScriptEncoding))
+            foreach ($line in $lines) {
+                if ($line -match '^\s*([^#=]+?)\s*=\s*(.*)$') {
+                    $existing[$Matches[1].Trim()] = $Matches[2].Trim()
+                }
+            }
+        } catch { }
+    }
+    foreach ($k in $Settings.Keys) {
+        $existing[$k] = [string]$Settings[$k]
+    }
+    $outLines = [System.Collections.Generic.List[string]]::new()
+    $outLines.Add("# Autopilot Hub Configuration & Environment Variables")
+    $outLines.Add("# Saved at $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') via $(Get-ScriptEncodingName) charset")
+    foreach ($k in $existing.Keys) {
+        $outLines.Add("$k=$($existing[$k])")
+    }
+    [System.IO.File]::WriteAllLines($Path, $outLines, (Get-ScriptEncoding))
+    $script:LoadedEnvPath = $Path
+    return $Path
+}
+
+# Auto-load .env configuration at bootstrap
+Import-EnvConfig -Path $EnvFile | Out-Null
+
+if ([string]::IsNullOrWhiteSpace($GroupTag) -and $env:AUTOPILOT_GROUP_TAG) {
+    $GroupTag = $env:AUTOPILOT_GROUP_TAG
+}
+if ([string]::IsNullOrWhiteSpace($AssignedUser) -and $env:AUTOPILOT_ASSIGNED_USER) {
+    $AssignedUser = $env:AUTOPILOT_ASSIGNED_USER
+}
+if (-not $RenameComputer -and ($env:AUTOPILOT_RENAME_ENABLED -match '^(true|1|yes)$')) {
+    $RenameComputer = $true
+}
+if ([string]::IsNullOrWhiteSpace($ComputerNamePrefix)) {
+    $ComputerNamePrefix = if ($env:AUTOPILOT_NAME_PREFIX) { $env:AUTOPILOT_NAME_PREFIX } else { 'WS' }
+}
+if ([string]::IsNullOrWhiteSpace($ComputerNameTemplate)) {
+    $ComputerNameTemplate = if ($env:AUTOPILOT_NAME_TEMPLATE) { $env:AUTOPILOT_NAME_TEMPLATE } else { "$ComputerNamePrefix-%SERIAL%" }
+}
 
 # 1. Enforce Modern Cryptographic TLS Protocols (TLS 1.2 / TLS 1.3)
 try {
@@ -79,13 +243,30 @@ function Test-StagedNetwork {
     $stages.Add([PSCustomObject]@{ Stage = 1; Name = "Network Interface"; Success = $s1Success; Details = if ($s1Success) { "$($activeAdapter.Name) ($($activeAdapter.InterfaceDescription)) - Up" } else { "No active interface found" } })
     if (-not $s1Success) { $overallReady = $false }
 
-    # Stage 2: Gateway Connectivity
-    $gateway = (Get-NetRoute -DestinationPrefix '0.0.0.0/0' -ErrorAction SilentlyContinue | Select-Object -First 1).NextHop
+    # Stage 2: Gateway Connectivity (Multi-source dynamic detection + optional .env override)
+    $gateway = $env:DEFAULT_GATEWAY
+    if (-not $gateway) {
+        $gateway = (Get-NetRoute -DestinationPrefix '0.0.0.0/0' -ErrorAction SilentlyContinue | Where-Object { $_.NextHop -and $_.NextHop -ne '0.0.0.0' } | Select-Object -First 1).NextHop
+    }
+    if (-not $gateway) {
+        try {
+            $adapterConfigs = Get-CimInstance Win32_NetworkAdapterConfiguration -Filter "IPEnabled = True" -ErrorAction SilentlyContinue
+            foreach ($ac in $adapterConfigs) {
+                if ($ac.DefaultIPGateway) {
+                    $gateway = $ac.DefaultIPGateway | Select-Object -First 1
+                    if ($gateway) { break }
+                }
+            }
+        } catch { }
+    }
+    if (-not $gateway) {
+        $gateway = (Get-NetRoute -DestinationPrefix '::/0' -ErrorAction SilentlyContinue | Select-Object -First 1).NextHop
+    }
     $s2Success = $false
-    $s2Details = "No default gateway"
+    $s2Details = "No default gateway discovered"
     if ($gateway) {
         $s2Success = Test-Connection -ComputerName $gateway -Count 1 -Quiet -ErrorAction SilentlyContinue
-        $s2Details = if ($s2Success) { "Gateway $gateway reachable" } else { "Gateway $gateway unreachable" }
+        $s2Details = if ($s2Success) { "Gateway $gateway reachable" } else { "Gateway $gateway unreachable (ICMP ping blocked or no reply)" }
     }
     $stages.Add([PSCustomObject]@{ Stage = 2; Name = "Gateway Route"; Success = $s2Success; Details = $s2Details })
 
@@ -324,12 +505,14 @@ function Export-AutopilotCsv {
         }
     }
 
+    $encoding = Get-ScriptEncoding
     $line = "$($item.SerialNumber),$($item.WindowsProductId),$($item.HardwareHash),$($item.GroupTag),$($item.AssignedUser)"
 
     if (-not (Test-Path $targetPath)) {
-        Set-Content -Path $targetPath -Value $header -Encoding ASCII -Force
+        [System.IO.File]::WriteAllLines($targetPath, @($header, $line), $encoding)
+    } else {
+        [System.IO.File]::AppendAllLines($targetPath, @($line), $encoding)
     }
-    Add-Content -Path $targetPath -Value $line -Encoding ASCII -Force
 
     return [PSCustomObject]@{
         Path         = $targetPath
@@ -639,45 +822,8 @@ function Get-DellWarrantyInfo {
         return $null
     }
 
-    if (-not $EnvFile) {
-        $candidates = [System.Collections.Generic.List[string]]::new()
-        if (-not [string]::IsNullOrWhiteSpace($PSScriptRoot)) {
-            $candidates.Add((Join-Path -Path $PSScriptRoot -ChildPath '.env'))
-        }
-        try {
-            $cur = (Get-Location -ErrorAction SilentlyContinue).Path
-            if (-not [string]::IsNullOrWhiteSpace($cur)) {
-                $candidates.Add((Join-Path -Path $cur -ChildPath '.env'))
-            }
-        } catch { }
-        $userProfile = [Environment]::GetFolderPath('UserProfile')
-        if (-not [string]::IsNullOrWhiteSpace($userProfile)) {
-            $candidates.Add((Join-Path -Path $userProfile -ChildPath '.env'))
-        }
-        foreach ($c in $candidates) {
-            if (-not [string]::IsNullOrWhiteSpace($c)) {
-                try {
-                    if (Test-Path -LiteralPath $c -ErrorAction SilentlyContinue) {
-                        $EnvFile = $c
-                        break
-                    }
-                } catch { }
-            }
-        }
-    }
-    if ($EnvFile) {
-        try {
-            if (Test-Path -LiteralPath $EnvFile -ErrorAction SilentlyContinue) {
-                Get-Content -LiteralPath $EnvFile -ErrorAction SilentlyContinue | Where-Object { $_ -match '^\s*[^#=]+\s*=' } | ForEach-Object {
-                    $key, $val = $_ -split '=', 2
-                    $k = $key.Trim()
-                    $v = $val.Trim().Trim('"').Trim("'")
-                    if (-not [string]::IsNullOrWhiteSpace($k)) {
-                        [Environment]::SetEnvironmentVariable($k, $v, 'Process')
-                    }
-                }
-            }
-        } catch { }
+    if (-not $env:DELL_CLIENT_ID -or $EnvFile) {
+        Import-EnvConfig -Path $EnvFile | Out-Null
     }
 
     $effClientId = if ($ClientId) { $ClientId } elseif ($env:DELL_CLIENT_ID) { $env:DELL_CLIENT_ID } else { 'l71df1d39771064ce8a49569b4b56b67c5' }
@@ -1108,7 +1254,14 @@ function Start-AutopilotHubGui {
                                 <TextBox Name="TxtAssignedUser" Height="32" Margin="0,0,0,12"/>
 
                                 <!-- Computer Rename -->
-                                <TextBlock Text="Computer Name (Tokens: %SERIAL%, %RAND%):" FontSize="12" FontWeight="SemiBold" Foreground="#D0D0D0" Margin="0,0,0,4"/>
+                                <Grid Margin="0,0,0,4">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="Computer Name (Tokens: %SERIAL%, %RAND%):" FontSize="12" FontWeight="SemiBold" Foreground="#D0D0D0" VerticalAlignment="Center"/>
+                                    <CheckBox Name="ChkEnableRename" Grid.Column="1" Content="Enable" IsChecked="True" Foreground="#A0A0A0" FontSize="11" VerticalAlignment="Center"/>
+                                </Grid>
                                 <Grid Margin="0,0,0,14">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*"/>
@@ -1127,7 +1280,8 @@ function Start-AutopilotHubGui {
                                 <!-- Primary Actions -->
                                 <Button Name="BtnHarvestHash" Content="Harvest Hardware Hash" Style="{StaticResource AccentBtn}" Height="36" Margin="0,0,0,8"/>
                                 <Button Name="BtnExportCsv" Content="Export Intune CSV (USB Priority)" Height="34" Margin="0,0,0,8"/>
-                                <Button Name="BtnRegisterIntune" Content="Register Device with Intune (Graph)" Style="{StaticResource AccentBtn}" Height="36"/>
+                                <Button Name="BtnRegisterIntune" Content="Register Device with Intune (Graph)" Style="{StaticResource AccentBtn}" Height="36" Margin="0,0,0,8"/>
+                                <Button Name="BtnSaveEnvDefaults" Content="Save Current Settings to .env" Height="30"/>
                             </StackPanel>
                         </ScrollViewer>
                     </Border>
@@ -1544,14 +1698,16 @@ function Start-AutopilotHubGui {
     $txtNetwork        = $window.FindName('TxtNetwork')
     $cmbGroupTag       = $window.FindName('CmbGroupTag')
     $txtAssignedUser   = $window.FindName('TxtAssignedUser')
-    $txtComputerName   = $window.FindName('TxtComputerName')
-    $btnApplyRename    = $window.FindName('BtnApplyRename')
-    $chkWaitForSync    = $window.FindName('ChkWaitForSync')
-    $chkAutoDetectUsb  = $window.FindName('ChkAutoDetectUsb')
-    $chkAutoReboot     = $window.FindName('ChkAutoReboot')
-    $btnHarvestHash    = $window.FindName('BtnHarvestHash')
-    $btnExportCsv      = $window.FindName('BtnExportCsv')
-    $btnRegisterIntune = $window.FindName('BtnRegisterIntune')
+    $chkEnableRename    = $window.FindName('ChkEnableRename')
+    $txtComputerName    = $window.FindName('TxtComputerName')
+    $btnApplyRename     = $window.FindName('BtnApplyRename')
+    $chkWaitForSync     = $window.FindName('ChkWaitForSync')
+    $chkAutoDetectUsb   = $window.FindName('ChkAutoDetectUsb')
+    $chkAutoReboot      = $window.FindName('ChkAutoReboot')
+    $btnHarvestHash     = $window.FindName('BtnHarvestHash')
+    $btnExportCsv       = $window.FindName('BtnExportCsv')
+    $btnRegisterIntune  = $window.FindName('BtnRegisterIntune')
+    $btnSaveEnvDefaults = $window.FindName('BtnSaveEnvDefaults')
     $txtHashBox        = $window.FindName('TxtHashBox')
     $txtHashMeta       = $window.FindName('TxtHashMeta')
     $txtHashStatus     = $window.FindName('TxtHashStatus')
@@ -1728,6 +1884,65 @@ function Start-AutopilotHubGui {
             Write-HubLog "Dell enterprise hardware detected ($($cs.Manufacturer) $($cs.Model)). Dell Warranty & Refresh Lifecycle Engine is armed." "INFO"
         }
     } catch { }
+
+    # Apply Configured Defaults from .env
+    $renameEnabledVal = $env:AUTOPILOT_RENAME_ENABLED
+    if ($renameEnabledVal -match '^(false|0|no)$') {
+        $chkEnableRename.IsChecked = $false
+        $txtComputerName.IsEnabled = $false
+        $btnApplyRename.IsEnabled = $false
+    } else {
+        $chkEnableRename.IsChecked = $true
+        $txtComputerName.IsEnabled = $true
+        $btnApplyRename.IsEnabled = $true
+    }
+
+    $chkEnableRename.Add_Checked({
+        $txtComputerName.IsEnabled = $true
+        $btnApplyRename.IsEnabled = $true
+    })
+    $chkEnableRename.Add_Unchecked({
+        $txtComputerName.IsEnabled = $false
+        $btnApplyRename.IsEnabled = $false
+    })
+
+    $prefix = if ($env:AUTOPILOT_NAME_PREFIX) { $env:AUTOPILOT_NAME_PREFIX.Trim() } else { 'WS' }
+    $nameTemplate = if ($env:AUTOPILOT_NAME_TEMPLATE) { $env:AUTOPILOT_NAME_TEMPLATE.Trim() } else { "$prefix-%SERIAL%" }
+    $txtComputerName.Text = $nameTemplate
+
+    if ($env:AUTOPILOT_GROUP_TAG) {
+        $cmbGroupTag.Text = $env:AUTOPILOT_GROUP_TAG.Trim()
+    }
+    if ($env:AUTOPILOT_ASSIGNED_USER) {
+        $txtAssignedUser.Text = $env:AUTOPILOT_ASSIGNED_USER.Trim()
+    }
+    if ($env:AUTOPILOT_WAIT_FOR_SYNC -match '^(false|0|no)$') {
+        $chkWaitForSync.IsChecked = $false
+    }
+    if ($env:AUTOPILOT_AUTO_REBOOT -match '^(true|1|yes)$') {
+        $chkAutoReboot.IsChecked = $true
+    }
+    if ($env:AUTOPILOT_AUTO_DETECT_USB -match '^(false|0|no)$') {
+        $chkAutoDetectUsb.IsChecked = $false
+    }
+
+    $btnSaveEnvDefaults.Add_Click({
+        $prefixVal = if ($txtComputerName.Text -match '^([A-Za-z0-9]+)[-_]') { $Matches[1] } else { 'WS' }
+        $settingsToSave = @{
+            'AUTOPILOT_RENAME_ENABLED'  = if ($chkEnableRename.IsChecked) { 'true' } else { 'false' }
+            'AUTOPILOT_NAME_PREFIX'     = $prefixVal
+            'AUTOPILOT_NAME_TEMPLATE'   = $txtComputerName.Text.Trim()
+            'AUTOPILOT_GROUP_TAG'       = $cmbGroupTag.Text.Trim()
+            'AUTOPILOT_ASSIGNED_USER'   = $txtAssignedUser.Text.Trim()
+            'AUTOPILOT_WAIT_FOR_SYNC'   = if ($chkWaitForSync.IsChecked) { 'true' } else { 'false' }
+            'AUTOPILOT_AUTO_REBOOT'     = if ($chkAutoReboot.IsChecked) { 'true' } else { 'false' }
+            'AUTOPILOT_AUTO_DETECT_USB' = if ($chkAutoDetectUsb.IsChecked) { 'true' } else { 'false' }
+            'AUTOPILOT_CHARSET'         = if ($env:AUTOPILOT_CHARSET) { $env:AUTOPILOT_CHARSET } else { 'native' }
+        }
+        $savedPath = Save-EnvConfig -Settings $settingsToSave
+        Write-HubLog "Configuration defaults saved to $savedPath (charset: $(Get-ScriptEncodingName))." "SUCCESS"
+        [System.Windows.MessageBox]::Show("Configuration saved to:`n$savedPath`n`nCharset: $(Get-ScriptEncodingName)", "Settings Saved to .env", [System.Windows.MessageBoxButton]::OK, [System.Windows.MessageBoxImage]::Information)
+    })
 
     # --- ACTION: Harvest Hash ---
     $btnHarvestHash.Add_Click({
@@ -2187,6 +2402,20 @@ $($r.Entitlements | ForEach-Object { "| $($_.ServiceLevelDescription) | $($_.Ent
 # ==============================================================================
 # SECTION C: RUNTIME ENTRYPOINT & STA APARTMENT STATE GUARD
 # ==============================================================================
+
+if ($RenameComputer) {
+    try {
+        $serial = (Get-CimInstance Win32_BIOS -ErrorAction Stop).SerialNumber.Trim()
+        $rand = (Get-Random -Minimum 1000 -Maximum 9999).ToString()
+        $newName = $ComputerNameTemplate.Replace('%SERIAL%', $serial).Replace('%RAND%', $rand)
+        if ($newName.Length -gt 15) { $newName = $newName.Substring(0, 15) }
+        Write-Host "Renaming computer to '$newName'..." -ForegroundColor Cyan
+        Rename-Computer -NewName $newName -Force -ErrorAction Stop
+        Write-Host "Computer renamed to '$newName'. (Reboot required to take effect)" -ForegroundColor Green
+    } catch {
+        Write-Host "Computer rename failed: $($_.Exception.Message)" -ForegroundColor Red
+    }
+}
 
 if ($HarvestOnly) {
     Write-Host "`nAutopilotFast Hardware Hash Harvester" -ForegroundColor Cyan
