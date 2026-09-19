@@ -80,11 +80,11 @@ def test_autopilot_cli_dell_warranty():
 
 if __name__ == '__main__':
     print("==================================================================")
-    print(" 🏷️ DELL WARRANTY & REFRESH ENGINE AUTOMATED VERIFICATION SUITE")
+    print(" DELL WARRANTY & REFRESH ENGINE AUTOMATED VERIFICATION SUITE")
     print("==================================================================")
     test_xaml_validity()
     test_standalone_get_dell_warranty()
     test_autopilot_cli_dell_warranty()
     print("\n==================================================================")
-    print(" ✅ ALL 3 TEST SUITES PASSED CLEANLY (100% EMPIRICAL VERIFICATION)")
+    print(" ALL 3 TEST SUITES PASSED CLEANLY (100% EMPIRICAL VERIFICATION)")
     print("==================================================================")

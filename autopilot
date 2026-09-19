@@ -1,8 +1,8 @@
 <#
 .SYNOPSIS
-    ⚡ Autopilot OOBE Command Hub — Enterprise Provisioning & Endpoint Deployment Engine
+    Autopilot OOBE Command Hub — Enterprise Provisioning & Endpoint Deployment Engine
 .DESCRIPTION
-    Standalone Windows Autopilot OOBE bootstrap package with an interactive cyber-dark WPF GUI.
+    Standalone Windows Autopilot OOBE bootstrap package with an interactive Fluent dark WPF GUI.
     Engineered for rapid field-technician provisioning during Windows Setup (Shift + F10).
 
     Features:
@@ -640,24 +640,44 @@ function Get-DellWarrantyInfo {
     }
 
     if (-not $EnvFile) {
-        $candidates = @(
-            (Join-Path $PSScriptRoot '.env'),
-            '.\.env',
-            (Join-Path ([Environment]::GetFolderPath('UserProfile')) '.env')
-        )
-        foreach ($c in $candidates) {
-            if (Test-Path $c) { $EnvFile = $c; break }
+        $candidates = [System.Collections.Generic.List[string]]::new()
+        if (-not [string]::IsNullOrWhiteSpace($PSScriptRoot)) {
+            $candidates.Add((Join-Path -Path $PSScriptRoot -ChildPath '.env'))
         }
-    }
-    if ($EnvFile -and (Test-Path $EnvFile)) {
-        Get-Content $EnvFile | Where-Object { $_ -match '^\s*[^#=]+\s*=' } | ForEach-Object {
-            $key, $val = $_ -split '=', 2
-            $k = $key.Trim()
-            $v = $val.Trim().Trim('"').Trim("'")
-            if (-not [string]::IsNullOrWhiteSpace($k)) {
-                [Environment]::SetEnvironmentVariable($k, $v, 'Process')
+        try {
+            $cur = (Get-Location -ErrorAction SilentlyContinue).Path
+            if (-not [string]::IsNullOrWhiteSpace($cur)) {
+                $candidates.Add((Join-Path -Path $cur -ChildPath '.env'))
+            }
+        } catch { }
+        $userProfile = [Environment]::GetFolderPath('UserProfile')
+        if (-not [string]::IsNullOrWhiteSpace($userProfile)) {
+            $candidates.Add((Join-Path -Path $userProfile -ChildPath '.env'))
+        }
+        foreach ($c in $candidates) {
+            if (-not [string]::IsNullOrWhiteSpace($c)) {
+                try {
+                    if (Test-Path -LiteralPath $c -ErrorAction SilentlyContinue) {
+                        $EnvFile = $c
+                        break
+                    }
+                } catch { }
             }
         }
+    }
+    if ($EnvFile) {
+        try {
+            if (Test-Path -LiteralPath $EnvFile -ErrorAction SilentlyContinue) {
+                Get-Content -LiteralPath $EnvFile -ErrorAction SilentlyContinue | Where-Object { $_ -match '^\s*[^#=]+\s*=' } | ForEach-Object {
+                    $key, $val = $_ -split '=', 2
+                    $k = $key.Trim()
+                    $v = $val.Trim().Trim('"').Trim("'")
+                    if (-not [string]::IsNullOrWhiteSpace($k)) {
+                        [Environment]::SetEnvironmentVariable($k, $v, 'Process')
+                    }
+                }
+            }
+        } catch { }
     }
 
     $effClientId = if ($ClientId) { $ClientId } elseif ($env:DELL_CLIENT_ID) { $env:DELL_CLIENT_ID } else { 'l71df1d39771064ce8a49569b4b56b67c5' }
@@ -786,33 +806,71 @@ function Start-AutopilotHubGui {
     $xaml = @'
 <Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="⚡ AUTOPILOT OOBE HUB — Enterprise Provisioning &amp; Endpoint Deployment"
-        Height="780" Width="1100" MinHeight="680" MinWidth="950"
+        Title="Autopilot Provisioning Hub — Enterprise Endpoint Deployment"
+        Height="800" Width="1120" MinHeight="700" MinWidth="960"
         WindowStartupLocation="CenterScreen"
-        Background="#0B0F19" Foreground="#F8FAFC"
-        FontFamily="Segoe UI, Segoe UI Variable Display">
+        Background="#202020" Foreground="#FFFFFF"
+        FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif">
 
     <Window.Resources>
-        <!-- Modern Colors -->
-        <SolidColorBrush x:Key="BgDark" Color="#0B0F19"/>
-        <SolidColorBrush x:Key="CardBg" Color="#1E293B"/>
-        <SolidColorBrush x:Key="CardBgAlt" Color="#182234"/>
-        <SolidColorBrush x:Key="BorderColor" Color="#334155"/>
-        <SolidColorBrush x:Key="PrimaryCyan" Color="#06B6D4"/>
-        <SolidColorBrush x:Key="PrimaryBlue" Color="#3B82F6"/>
-        <SolidColorBrush x:Key="SuccessGreen" Color="#10B981"/>
-        <SolidColorBrush x:Key="WarningAmber" Color="#F59E0B"/>
-        <SolidColorBrush x:Key="DangerRed" Color="#EF4444"/>
-        <SolidColorBrush x:Key="TextMuted" Color="#94A3B8"/>
+        <!-- WinUI 3 Dark Neutral Palette -->
+        <SolidColorBrush x:Key="BgCanvas" Color="#202020"/>
+        <SolidColorBrush x:Key="CardBg" Color="#2B2B2B"/>
+        <SolidColorBrush x:Key="CardSubtle" Color="#242424"/>
+        <SolidColorBrush x:Key="BorderSubtle" Color="#383838"/>
+        <SolidColorBrush x:Key="BorderStrong" Color="#4D4D4D"/>
+        <SolidColorBrush x:Key="AccentBlue" Color="#0067C0"/>
+        <SolidColorBrush x:Key="AccentHover" Color="#1975C5"/>
+        <SolidColorBrush x:Key="AccentPressed" Color="#0054A4"/>
+        <SolidColorBrush x:Key="TextPrimary" Color="#FFFFFF"/>
+        <SolidColorBrush x:Key="TextSecondary" Color="#D0D0D0"/>
+        <SolidColorBrush x:Key="TextMuted" Color="#8A8A8A"/>
 
-        <!-- Custom Button Style -->
+        <!-- Standard Button Style (WinUI 3 Resting / Hover / Pressed) -->
         <Style TargetType="Button">
-            <Setter Property="Background" Value="#1E293B"/>
-            <Setter Property="Foreground" Value="#F8FAFC"/>
-            <Setter Property="BorderBrush" Value="#334155"/>
+            <Setter Property="Background" Value="#2D2D2D"/>
+            <Setter Property="Foreground" Value="#FFFFFF"/>
+            <Setter Property="BorderBrush" Value="#3E3E3E"/>
             <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="Padding" Value="14,8"/>
-            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="Padding" Value="12,6"/>
+            <Setter Property="FontSize" Value="12.5"/>
+            <Setter Property="FontWeight" Value="Normal"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="border" Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="4" SnapsToDevicePixels="True">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" Margin="{TemplateBinding Padding}"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Background" TargetName="border" Value="#383838"/>
+                                <Setter Property="BorderBrush" TargetName="border" Value="#4D4D4D"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter Property="Background" TargetName="border" Value="#242424"/>
+                                <Setter Property="BorderBrush" TargetName="border" Value="#333333"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Opacity" Value="0.35"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- WinUI 3 Accent Button Style -->
+        <Style x:Key="AccentBtn" TargetType="Button">
+            <Setter Property="Background" Value="#0067C0"/>
+            <Setter Property="Foreground" Value="#FFFFFF"/>
+            <Setter Property="BorderBrush" Value="#0067C0"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="14,7"/>
+            <Setter Property="FontSize" Value="12.5"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="Template">
@@ -821,16 +879,17 @@ function Start-AutopilotHubGui {
                         <Border x:Name="border" Background="{TemplateBinding Background}"
                                 BorderBrush="{TemplateBinding BorderBrush}"
                                 BorderThickness="{TemplateBinding BorderThickness}"
-                                CornerRadius="6" SnapsToDevicePixels="True">
+                                CornerRadius="4" SnapsToDevicePixels="True">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" Margin="{TemplateBinding Padding}"/>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter Property="Background" TargetName="border" Value="#334155"/>
-                                <Setter Property="BorderBrush" TargetName="border" Value="#06B6D4"/>
+                                <Setter Property="Background" TargetName="border" Value="#1975C5"/>
+                                <Setter Property="BorderBrush" TargetName="border" Value="#1975C5"/>
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter Property="Background" TargetName="border" Value="#0E7490"/>
+                                <Setter Property="Background" TargetName="border" Value="#0054A4"/>
+                                <Setter Property="BorderBrush" TargetName="border" Value="#0054A4"/>
                             </Trigger>
                             <Trigger Property="IsEnabled" Value="False">
                                 <Setter Property="Opacity" Value="0.4"/>
@@ -841,27 +900,63 @@ function Start-AutopilotHubGui {
             </Setter>
         </Style>
 
+        <!-- WinUI 3 Destructive Button Style -->
+        <Style x:Key="DestructiveBtn" TargetType="Button">
+            <Setter Property="Background" Value="#442726"/>
+            <Setter Property="Foreground" Value="#FF99A4"/>
+            <Setter Property="BorderBrush" Value="#5C3130"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="12,6"/>
+            <Setter Property="FontSize" Value="12.5"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="border" Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="4" SnapsToDevicePixels="True">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" Margin="{TemplateBinding Padding}"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Background" TargetName="border" Value="#5C3130"/>
+                                <Setter Property="BorderBrush" TargetName="border" Value="#7A3F3E"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter Property="Background" TargetName="border" Value="#381F1E"/>
+                                <Setter Property="BorderBrush" TargetName="border" Value="#442726"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Opacity" Value="0.35"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
         <!-- Custom TextBox Style -->
         <Style TargetType="TextBox">
-            <Setter Property="Background" Value="#0F172A"/>
-            <Setter Property="Foreground" Value="#F8FAFC"/>
-            <Setter Property="BorderBrush" Value="#334155"/>
+            <Setter Property="Background" Value="#1F1F1F"/>
+            <Setter Property="Foreground" Value="#FFFFFF"/>
+            <Setter Property="BorderBrush" Value="#383838"/>
             <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="Padding" Value="8,6"/>
-            <Setter Property="FontSize" Value="13"/>
-            <Setter Property="CaretBrush" Value="#06B6D4"/>
+            <Setter Property="Padding" Value="8,5"/>
+            <Setter Property="FontSize" Value="12.5"/>
+            <Setter Property="CaretBrush" Value="#0067C0"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="TextBox">
                         <Border x:Name="border" Background="{TemplateBinding Background}"
                                 BorderBrush="{TemplateBinding BorderBrush}"
                                 BorderThickness="{TemplateBinding BorderThickness}"
-                                CornerRadius="5">
+                                CornerRadius="4">
                             <ScrollViewer x:Name="PART_ContentHost" Focusable="False" HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Hidden"/>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsFocused" Value="True">
-                                <Setter Property="BorderBrush" TargetName="border" Value="#38BDF8"/>
+                                <Setter Property="BorderBrush" TargetName="border" Value="#0067C0"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -871,8 +966,8 @@ function Start-AutopilotHubGui {
 
         <!-- Custom CheckBox Style -->
         <Style TargetType="CheckBox">
-            <Setter Property="Foreground" Value="#F8FAFC"/>
-            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="Foreground" Value="#D0D0D0"/>
+            <Setter Property="FontSize" Value="12.5"/>
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="VerticalContentAlignment" Value="Center"/>
         </Style>
@@ -881,10 +976,10 @@ function Start-AutopilotHubGui {
     <Grid Margin="18">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/> <!-- Header -->
-            <RowDefinition Height="Auto"/> <!-- Quick Telemetry Pills -->
-            <RowDefinition Height="*"/>    <!-- Main Content Tabs -->
+            <RowDefinition Height="Auto"/> <!-- Telemetry Row -->
+            <RowDefinition Height="*"/>    <!-- TabControl -->
             <RowDefinition Height="Auto"/> <!-- Progress Bar -->
-            <RowDefinition Height="180"/>  <!-- Live Console Log Dock -->
+            <RowDefinition Height="170"/>  <!-- Console Log -->
         </Grid.RowDefinitions>
 
         <!-- HEADER BAR -->
@@ -896,27 +991,26 @@ function Start-AutopilotHubGui {
 
             <StackPanel Orientation="Vertical">
                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                    <TextBlock Text="⚡" FontSize="26" Margin="0,0,8,0" VerticalAlignment="Center" Foreground="#06B6D4"/>
-                    <TextBlock Text="AUTOPILOT OOBE HUB" FontSize="22" FontWeight="Bold" Foreground="#F8FAFC" VerticalAlignment="Center"/>
-                    <Border Background="#1E293B" CornerRadius="4" Padding="6,2" Margin="12,0,0,0" VerticalAlignment="Center" BorderBrush="#334155" BorderThickness="1">
-                        <TextBlock Text="OOBE PROVISIONING KERNEL" FontSize="11" FontWeight="Bold" Foreground="#38BDF8"/>
+                    <TextBlock Text="Autopilot Provisioning Hub" FontSize="20" FontWeight="Bold" Foreground="#FFFFFF" VerticalAlignment="Center"/>
+                    <Border Background="#262626" CornerRadius="3" Padding="6,2" Margin="12,0,0,0" VerticalAlignment="Center" BorderBrush="#383838" BorderThickness="1">
+                        <TextBlock Text="OOBE PROVISIONING" FontSize="10.5" FontWeight="SemiBold" Foreground="#B0B0B0"/>
                     </Border>
-                    <Border Background="#1E293B" CornerRadius="4" Padding="6,2" Margin="6,0,0,0" VerticalAlignment="Center" BorderBrush="#334155" BorderThickness="1">
-                        <TextBlock Text="ZERO LOCALPILOT CODE" FontSize="11" FontWeight="Bold" Foreground="#10B981"/>
+                    <Border Background="#1F2822" CornerRadius="3" Padding="6,2" Margin="6,0,0,0" VerticalAlignment="Center" BorderBrush="#2A5435" BorderThickness="1">
+                        <TextBlock Text="STANDALONE KERNEL" FontSize="10.5" FontWeight="SemiBold" Foreground="#6CCB5F"/>
                     </Border>
                 </StackPanel>
-                <TextBlock Text="thebubbsy / AutopilotFast • WingetBatch • WingetIntune • IntuneShared" FontSize="12" Foreground="#94A3B8" Margin="34,2,0,0"/>
+                <TextBlock Text="Microsoft Intune &amp; Windows Autopilot Automated Deployment Engine" FontSize="11.5" Foreground="#8A8A8A" Margin="0,2,0,0"/>
             </StackPanel>
 
-            <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,4,0">
-                <Button Name="BtnQuickCmd" Content="💻 Shift+F10 CMD" Background="#1E293B" Margin="0,0,8,0"/>
-                <Button Name="BtnTimeSync" Content="🕒 Sync Time" Background="#1E293B" Margin="0,0,8,0"/>
-                <Button Name="BtnReboot" Content="⚡ Reboot PC" Background="#991B1B" BorderBrush="#EF4444"/>
+            <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                <Button Name="BtnQuickCmd" Content="Command Prompt (Shift+F10)" Margin="0,0,8,0"/>
+                <Button Name="BtnTimeSync" Content="Sync Clock" Margin="0,0,8,0"/>
+                <Button Name="BtnReboot" Content="Restart System" Style="{StaticResource DestructiveBtn}"/>
             </StackPanel>
         </Grid>
 
-        <!-- HARDWARE & SECURITY TELEMETRY PILLS -->
-        <Border Grid.Row="1" Background="#131D2F" CornerRadius="8" BorderBrush="#253349" BorderThickness="1" Padding="12,8" Margin="0,0,0,12">
+        <!-- HARDWARE TELEMETRY CARDS -->
+        <Border Grid.Row="1" Background="#272727" CornerRadius="4" BorderBrush="#383838" BorderThickness="1" Padding="12,8" Margin="0,0,0,12">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
@@ -927,28 +1021,28 @@ function Start-AutopilotHubGui {
                 </Grid.ColumnDefinitions>
 
                 <StackPanel Grid.Column="0">
-                    <TextBlock Text="DEVICE SERIAL" FontSize="11" Foreground="#64748B" FontWeight="SemiBold"/>
-                    <TextBlock Name="TxtSerial" Text="Detecting..." FontSize="13" Foreground="#38BDF8" FontWeight="Bold" FontFamily="Consolas"/>
+                    <TextBlock Text="SERIAL NUMBER" FontSize="10" Foreground="#8A8A8A" FontWeight="SemiBold"/>
+                    <TextBlock Name="TxtSerial" Text="Detecting..." FontSize="12.5" Foreground="#FFFFFF" FontWeight="Bold" FontFamily="Consolas" Margin="0,2,0,0"/>
                 </StackPanel>
 
                 <StackPanel Grid.Column="1">
-                    <TextBlock Text="MAKE &amp; MODEL" FontSize="11" Foreground="#64748B" FontWeight="SemiBold"/>
-                    <TextBlock Name="TxtModel" Text="Detecting..." FontSize="13" Foreground="#F8FAFC" FontWeight="SemiBold"/>
+                    <TextBlock Text="MAKE &amp; MODEL" FontSize="10" Foreground="#8A8A8A" FontWeight="SemiBold"/>
+                    <TextBlock Name="TxtModel" Text="Detecting..." FontSize="12.5" Foreground="#FFFFFF" FontWeight="SemiBold" Margin="0,2,0,0"/>
                 </StackPanel>
 
                 <StackPanel Grid.Column="2">
-                    <TextBlock Text="TPM 2.0 SECURITY" FontSize="11" Foreground="#64748B" FontWeight="SemiBold"/>
-                    <TextBlock Name="TxtTpm" Text="Probing..." FontSize="13" Foreground="#10B981" FontWeight="Bold"/>
+                    <TextBlock Text="TPM 2.0 STATUS" FontSize="10" Foreground="#8A8A8A" FontWeight="SemiBold"/>
+                    <TextBlock Name="TxtTpm" Text="Probing..." FontSize="12.5" Foreground="#6CCB5F" FontWeight="Bold" Margin="0,2,0,0"/>
                 </StackPanel>
 
                 <StackPanel Grid.Column="3">
-                    <TextBlock Text="SECURE BOOT / UEFI" FontSize="11" Foreground="#64748B" FontWeight="SemiBold"/>
-                    <TextBlock Name="TxtSecureBoot" Text="Probing..." FontSize="13" Foreground="#F59E0B" FontWeight="Bold"/>
+                    <TextBlock Text="SECURE BOOT" FontSize="10" Foreground="#8A8A8A" FontWeight="SemiBold"/>
+                    <TextBlock Name="TxtSecureBoot" Text="Probing..." FontSize="12.5" Foreground="#EAA300" FontWeight="Bold" Margin="0,2,0,0"/>
                 </StackPanel>
 
                 <StackPanel Grid.Column="4">
-                    <TextBlock Text="NETWORK ATTITUDE" FontSize="11" Foreground="#64748B" FontWeight="SemiBold"/>
-                    <TextBlock Name="TxtNetwork" Text="Checking..." FontSize="13" Foreground="#38BDF8" FontWeight="Bold"/>
+                    <TextBlock Text="NETWORK STATUS" FontSize="10" Foreground="#8A8A8A" FontWeight="SemiBold"/>
+                    <TextBlock Name="TxtNetwork" Text="Checking..." FontSize="12.5" Foreground="#60CDFF" FontWeight="Bold" Margin="0,2,0,0"/>
                 </StackPanel>
             </Grid>
         </Border>
@@ -960,17 +1054,22 @@ function Start-AutopilotHubGui {
                     <Setter Property="Template">
                         <Setter.Value>
                             <ControlTemplate TargetType="TabItem">
-                                <Border x:Name="border" Background="#1E293B" CornerRadius="6,6,0,0" Margin="0,0,6,0" Padding="16,10" BorderBrush="#334155" BorderThickness="1,1,1,0">
+                                <Border x:Name="border" Background="#242424" CornerRadius="4,4,0,0" Margin="0,0,4,0" Padding="14,8" BorderBrush="#333333" BorderThickness="1,1,1,0">
                                     <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" ContentSource="Header"/>
                                 </Border>
                                 <ControlTemplate.Triggers>
                                     <Trigger Property="IsSelected" Value="True">
-                                        <Setter TargetName="border" Property="Background" Value="#0F172A"/>
-                                        <Setter TargetName="border" Property="BorderBrush" Value="#06B6D4"/>
-                                        <Setter Property="Foreground" Value="#38BDF8"/>
+                                        <Setter TargetName="border" Property="Background" Value="#2B2B2B"/>
+                                        <Setter TargetName="border" Property="BorderBrush" Value="#383838"/>
+                                        <Setter Property="Foreground" Value="#FFFFFF"/>
+                                        <Setter Property="FontWeight" Value="SemiBold"/>
                                     </Trigger>
                                     <Trigger Property="IsSelected" Value="False">
-                                        <Setter Property="Foreground" Value="#94A3B8"/>
+                                        <Setter Property="Foreground" Value="#9E9E9E"/>
+                                    </Trigger>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter TargetName="border" Property="Background" Value="#282828"/>
+                                        <Setter Property="Foreground" Value="#E0E0E0"/>
                                     </Trigger>
                                 </ControlTemplate.Triggers>
                             </ControlTemplate>
@@ -980,7 +1079,7 @@ function Start-AutopilotHubGui {
             </TabControl.Resources>
 
             <!-- TAB 1: AUTOPILOT & CLOUD REGISTRATION -->
-            <TabItem Header="🛡️ Autopilot &amp; Cloud Registration">
+            <TabItem Header="Autopilot &amp; Cloud Registration">
                 <Grid Margin="0,12,0,0">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="420"/>
@@ -988,14 +1087,14 @@ function Start-AutopilotHubGui {
                     </Grid.ColumnDefinitions>
 
                     <!-- Left: Configuration Controls -->
-                    <Border Grid.Column="0" Background="#1E293B" CornerRadius="8" BorderBrush="#334155" BorderThickness="1" Padding="16" Margin="0,0,12,0">
+                    <Border Grid.Column="0" Background="#2B2B2B" CornerRadius="4" BorderBrush="#383838" BorderThickness="1" Padding="16" Margin="0,0,12,0">
                         <ScrollViewer VerticalScrollBarVisibility="Auto">
                             <StackPanel>
-                                <TextBlock Text="PROVISIONING METADATA" FontSize="12" FontWeight="Bold" Foreground="#06B6D4" Margin="0,0,0,14"/>
+                                <TextBlock Text="PROVISIONING CONFIGURATION" FontSize="11" FontWeight="SemiBold" Foreground="#B0B0B0" Margin="0,0,0,14"/>
 
                                 <!-- Group Tag Selection -->
-                                <TextBlock Text="Autopilot Group Tag:" FontSize="12" FontWeight="SemiBold" Foreground="#CBD5E1" Margin="0,0,0,4"/>
-                                <ComboBox Name="CmbGroupTag" IsEditable="True" Height="34" Margin="0,0,0,12" Background="#0F172A" Foreground="#F8FAFC">
+                                <TextBlock Text="Autopilot Group Tag:" FontSize="12" FontWeight="SemiBold" Foreground="#D0D0D0" Margin="0,0,0,4"/>
+                                <ComboBox Name="CmbGroupTag" IsEditable="True" Height="32" Margin="0,0,0,12" Background="#1F1F1F" Foreground="#FFFFFF">
                                     <ComboBoxItem Content="Corporate-Laptops" IsSelected="True"/>
                                     <ComboBoxItem Content="Standard-Workstations"/>
                                     <ComboBoxItem Content="DevOps-Engineering"/>
@@ -1005,36 +1104,36 @@ function Start-AutopilotHubGui {
                                 </ComboBox>
 
                                 <!-- Assigned User -->
-                                <TextBlock Text="Assigned User UPN (Optional):" FontSize="12" FontWeight="SemiBold" Foreground="#CBD5E1" Margin="0,0,0,4"/>
-                                <TextBox Name="TxtAssignedUser" Height="34" Margin="0,0,0,12"/>
+                                <TextBlock Text="Assigned User UPN (Optional):" FontSize="12" FontWeight="SemiBold" Foreground="#D0D0D0" Margin="0,0,0,4"/>
+                                <TextBox Name="TxtAssignedUser" Height="32" Margin="0,0,0,12"/>
 
                                 <!-- Computer Rename -->
-                                <TextBlock Text="Computer Name (Tokens: %SERIAL%, %RAND%):" FontSize="12" FontWeight="SemiBold" Foreground="#CBD5E1" Margin="0,0,0,4"/>
+                                <TextBlock Text="Computer Name (Tokens: %SERIAL%, %RAND%):" FontSize="12" FontWeight="SemiBold" Foreground="#D0D0D0" Margin="0,0,0,4"/>
                                 <Grid Margin="0,0,0,14">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*"/>
                                         <ColumnDefinition Width="Auto"/>
                                     </Grid.ColumnDefinitions>
-                                    <TextBox Name="TxtComputerName" Height="34" Text="WS-%SERIAL%"/>
-                                    <Button Name="BtnApplyRename" Grid.Column="1" Content="Rename" Margin="6,0,0,0" Padding="10,6"/>
+                                    <TextBox Name="TxtComputerName" Height="32" Text="WS-%SERIAL%"/>
+                                    <Button Name="BtnApplyRename" Grid.Column="1" Content="Apply Name" Margin="6,0,0,0" Padding="10,5"/>
                                 </Grid>
 
                                 <!-- Options -->
-                                <TextBlock Text="PROVISIONING PIPELINE GATES" FontSize="12" FontWeight="Bold" Foreground="#06B6D4" Margin="0,6,0,10"/>
+                                <TextBlock Text="PROVISIONING GATES" FontSize="11" FontWeight="SemiBold" Foreground="#B0B0B0" Margin="0,6,0,10"/>
                                 <CheckBox Name="ChkWaitForSync" Content="Wait for Profile Assignment (-WaitForSync)" IsChecked="True" Margin="0,0,0,8"/>
                                 <CheckBox Name="ChkAutoDetectUsb" Content="Auto-Detect USB for CSV Export Fallback" IsChecked="True" Margin="0,0,0,8"/>
                                 <CheckBox Name="ChkAutoReboot" Content="Reboot into ESP upon Successful Profile Assignment" IsChecked="False" Margin="0,0,0,16"/>
 
                                 <!-- Primary Actions -->
-                                <Button Name="BtnHarvestHash" Content="⚡ Harvest Hardware Hash" Background="#0284C7" BorderBrush="#38BDF8" Height="38" Margin="0,0,0,8"/>
-                                <Button Name="BtnExportCsv" Content="💾 Export Intune CSV (USB Priority)" Background="#1E293B" Height="36" Margin="0,0,0,8"/>
-                                <Button Name="BtnRegisterIntune" Content="☁️ Register Directly to Intune (Graph)" Background="#059669" BorderBrush="#10B981" Height="38"/>
+                                <Button Name="BtnHarvestHash" Content="Harvest Hardware Hash" Style="{StaticResource AccentBtn}" Height="36" Margin="0,0,0,8"/>
+                                <Button Name="BtnExportCsv" Content="Export Intune CSV (USB Priority)" Height="34" Margin="0,0,0,8"/>
+                                <Button Name="BtnRegisterIntune" Content="Register Device with Intune (Graph)" Style="{StaticResource AccentBtn}" Height="36"/>
                             </StackPanel>
                         </ScrollViewer>
                     </Border>
 
                     <!-- Right: Hash Preview & Registration Status -->
-                    <Border Grid.Column="1" Background="#1E293B" CornerRadius="8" BorderBrush="#334155" BorderThickness="1" Padding="16">
+                    <Border Grid.Column="1" Background="#2B2B2B" CornerRadius="4" BorderBrush="#383838" BorderThickness="1" Padding="16">
                         <Grid>
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto"/>
@@ -1047,30 +1146,30 @@ function Start-AutopilotHubGui {
                                     <ColumnDefinition Width="*"/>
                                     <ColumnDefinition Width="Auto"/>
                                 </Grid.ColumnDefinitions>
-                                <StackPanel Orientation="Horizontal">
-                                    <TextBlock Text="HARDWARE HASH BUFFER" FontSize="12" FontWeight="Bold" Foreground="#06B6D4" VerticalAlignment="Center"/>
-                                    <Border Name="BadgeHashStatus" Background="#334155" CornerRadius="4" Padding="6,2" Margin="10,0,0,0">
-                                        <TextBlock Name="TxtHashStatus" Text="NOT HARVESTED" FontSize="11" FontWeight="Bold" Foreground="#94A3B8"/>
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                    <TextBlock Text="HARDWARE HASH BUFFER" FontSize="11" FontWeight="SemiBold" Foreground="#B0B0B0" VerticalAlignment="Center"/>
+                                    <Border Name="BadgeHashStatus" Background="#242424" BorderBrush="#383838" BorderThickness="1" CornerRadius="3" Padding="6,2" Margin="10,0,0,0">
+                                        <TextBlock Name="TxtHashStatus" Text="NOT HARVESTED" FontSize="10.5" FontWeight="SemiBold" Foreground="#8A8A8A"/>
                                     </Border>
                                 </StackPanel>
-                                <Button Name="BtnCopyHash" Grid.Column="1" Content="📋 Copy Hash" Padding="10,4" FontSize="12"/>
+                                <Button Name="BtnCopyHash" Grid.Column="1" Content="Copy Hash" Padding="10,4" FontSize="12"/>
                             </Grid>
 
                             <TextBox Name="TxtHashBox" Grid.Row="1" TextWrapping="Wrap" AcceptsReturn="True" IsReadOnly="True"
-                                     Background="#0F172A" Foreground="#38BDF8" FontFamily="Consolas" FontSize="11" Padding="10"
-                                     VerticalScrollBarVisibility="Auto" BorderBrush="#334155"/>
+                                     Background="#1F1F1F" Foreground="#D0D0D0" FontFamily="Consolas" FontSize="11" Padding="10"
+                                     VerticalScrollBarVisibility="Auto" BorderBrush="#383838"/>
 
-                            <Border Grid.Row="2" Background="#131D2F" CornerRadius="6" Padding="10" Margin="0,10,0,0">
-                                <TextBlock Name="TxtHashMeta" Text="Hardware hash not captured yet. Click 'Harvest Hardware Hash' to initialize MDM provider."
-                                           FontSize="12" Foreground="#94A3B8"/>
+                            <Border Grid.Row="2" Background="#242424" BorderBrush="#383838" BorderThickness="1" CornerRadius="4" Padding="10" Margin="0,10,0,0">
+                                <TextBlock Name="TxtHashMeta" Text="Hardware hash buffer empty. Click 'Harvest Hardware Hash' to query local WMI provider."
+                                           FontSize="11.5" Foreground="#8A8A8A"/>
                             </Border>
                         </Grid>
                     </Border>
                 </Grid>
             </TabItem>
 
-            <!-- TAB 2: APP INSTALLATION HUB (WingetBatch) -->
-            <TabItem Header="📦 App Installation Hub (WingetBatch)">
+            <!-- TAB 2: APP DEPLOYMENT (WingetBatch) -->
+            <TabItem Header="App Deployment">
                 <Grid Margin="0,12,0,0">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
@@ -1079,23 +1178,23 @@ function Start-AutopilotHubGui {
                     </Grid.RowDefinitions>
 
                     <!-- Top Preset Bar -->
-                    <Border Grid.Row="0" Background="#1E293B" CornerRadius="6" BorderBrush="#334155" BorderThickness="1" Padding="12,8" Margin="0,0,0,10">
+                    <Border Grid.Row="0" Background="#2B2B2B" CornerRadius="4" BorderBrush="#383838" BorderThickness="1" Padding="12,8" Margin="0,0,0,10">
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
                             <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                <TextBlock Text="PRESETS:" FontSize="11" FontWeight="Bold" Foreground="#06B6D4" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                                <Button Name="BtnPresetWorkstation" Content="⭐ Recommended Workstation" Margin="0,0,6,0" Padding="10,4" FontSize="12"/>
-                                <Button Name="BtnPresetBrowsers" Content="🌐 All Browsers" Margin="0,0,6,0" Padding="10,4" FontSize="12"/>
-                                <Button Name="BtnPresetDev" Content="💻 All Dev Tools" Margin="0,0,6,0" Padding="10,4" FontSize="12"/>
+                                <TextBlock Text="PRESETS:" FontSize="10.5" FontWeight="SemiBold" Foreground="#8A8A8A" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                <Button Name="BtnPresetWorkstation" Content="Standard Workstation" Margin="0,0,6,0" Padding="8,4" FontSize="12"/>
+                                <Button Name="BtnPresetBrowsers" Content="Web Browsers" Margin="0,0,6,0" Padding="8,4" FontSize="12"/>
+                                <Button Name="BtnPresetDev" Content="Developer Suite" Margin="0,0,6,0" Padding="8,4" FontSize="12"/>
                                 <Button Name="BtnSelectAllApps" Content="Select All" Margin="0,0,6,0" Padding="8,4" FontSize="12"/>
                                 <Button Name="BtnClearApps" Content="Clear All" Padding="8,4" FontSize="12"/>
                             </StackPanel>
 
                             <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
-                                <CheckBox Name="ChkSilentInstall" Content="Silent Mode (--silent)" IsChecked="True" Margin="0,0,12,0"/>
+                                <CheckBox Name="ChkSilentInstall" Content="Silent Installation (--silent)" IsChecked="True" Margin="0,0,12,0"/>
                                 <CheckBox Name="ChkMachineScope" Content="Machine Scope" IsChecked="True"/>
                             </StackPanel>
                         </Grid>
@@ -1111,9 +1210,9 @@ function Start-AutopilotHubGui {
                         </Grid.ColumnDefinitions>
 
                         <!-- Browsers -->
-                        <Border Grid.Column="0" Background="#1E293B" CornerRadius="6" BorderBrush="#334155" BorderThickness="1" Padding="12" Margin="0,0,6,0">
+                        <Border Grid.Column="0" Background="#2B2B2B" CornerRadius="4" BorderBrush="#383838" BorderThickness="1" Padding="12" Margin="0,0,6,0">
                             <StackPanel>
-                                <TextBlock Text="🌐 BROWSERS" FontSize="12" FontWeight="Bold" Foreground="#38BDF8" Margin="0,0,0,10"/>
+                                <TextBlock Text="BROWSERS" FontSize="11" FontWeight="SemiBold" Foreground="#60CDFF" Margin="0,0,0,10"/>
                                 <CheckBox Name="AppChrome" Tag="Google.Chrome" Content="Google Chrome" IsChecked="True" Margin="0,0,0,8"/>
                                 <CheckBox Name="AppFirefox" Tag="Mozilla.Firefox" Content="Mozilla Firefox" Margin="0,0,0,8"/>
                                 <CheckBox Name="AppBrave" Tag="Brave.Brave" Content="Brave Browser" Margin="0,0,0,8"/>
@@ -1122,9 +1221,9 @@ function Start-AutopilotHubGui {
                         </Border>
 
                         <!-- Developer Tools -->
-                        <Border Grid.Column="1" Background="#1E293B" CornerRadius="6" BorderBrush="#334155" BorderThickness="1" Padding="12" Margin="0,0,6,0">
+                        <Border Grid.Column="1" Background="#2B2B2B" CornerRadius="4" BorderBrush="#383838" BorderThickness="1" Padding="12" Margin="0,0,6,0">
                             <StackPanel>
-                                <TextBlock Text="💻 DEVELOPER TOOLS" FontSize="12" FontWeight="Bold" Foreground="#10B981" Margin="0,0,0,10"/>
+                                <TextBlock Text="DEVELOPER TOOLS" FontSize="11" FontWeight="SemiBold" Foreground="#6CCB5F" Margin="0,0,0,10"/>
                                 <CheckBox Name="AppVSCode" Tag="Microsoft.VisualStudioCode" Content="VS Code" IsChecked="True" Margin="0,0,0,8"/>
                                 <CheckBox Name="AppGit" Tag="Git.Git" Content="Git for Windows" IsChecked="True" Margin="0,0,0,8"/>
                                 <CheckBox Name="AppTerminal" Tag="Microsoft.WindowsTerminal" Content="Windows Terminal" IsChecked="True" Margin="0,0,0,8"/>
@@ -1136,9 +1235,9 @@ function Start-AutopilotHubGui {
                         </Border>
 
                         <!-- Productivity -->
-                        <Border Grid.Column="2" Background="#1E293B" CornerRadius="6" BorderBrush="#334155" BorderThickness="1" Padding="12" Margin="0,0,6,0">
+                        <Border Grid.Column="2" Background="#2B2B2B" CornerRadius="4" BorderBrush="#383838" BorderThickness="1" Padding="12" Margin="0,0,6,0">
                             <StackPanel>
-                                <TextBlock Text="📊 PRODUCTIVITY" FontSize="12" FontWeight="Bold" Foreground="#F59E0B" Margin="0,0,0,10"/>
+                                <TextBlock Text="PRODUCTIVITY" FontSize="11" FontWeight="SemiBold" Foreground="#EAA300" Margin="0,0,0,10"/>
                                 <CheckBox Name="AppOffice" Tag="Microsoft.Office" Content="Microsoft 365" Margin="0,0,0,8"/>
                                 <CheckBox Name="AppSlack" Tag="SlackTechnologies.Slack" Content="Slack" Margin="0,0,0,8"/>
                                 <CheckBox Name="AppZoom" Tag="Zoom.Zoom" Content="Zoom Workplace" Margin="0,0,0,8"/>
@@ -1150,9 +1249,9 @@ function Start-AutopilotHubGui {
                         </Border>
 
                         <!-- Utilities -->
-                        <Border Grid.Column="3" Background="#1E293B" CornerRadius="6" BorderBrush="#334155" BorderThickness="1" Padding="12">
+                        <Border Grid.Column="3" Background="#2B2B2B" CornerRadius="4" BorderBrush="#383838" BorderThickness="1" Padding="12">
                             <StackPanel>
-                                <TextBlock Text="🛠️ SYSTEM UTILITIES" FontSize="12" FontWeight="Bold" Foreground="#8B5CF6" Margin="0,0,0,10"/>
+                                <TextBlock Text="SYSTEM UTILITIES" FontSize="11" FontWeight="SemiBold" Foreground="#A78BFA" Margin="0,0,0,10"/>
                                 <CheckBox Name="AppPowerToys" Tag="Microsoft.PowerToys" Content="PowerToys" IsChecked="True" Margin="0,0,0,8"/>
                                 <CheckBox Name="AppSysinternals" Tag="Microsoft.Sysinternals.Suite" Content="Sysinternals" Margin="0,0,0,8"/>
                                 <CheckBox Name="AppSysInformer" Tag="SystemInformer.SystemInformer" Content="System Informer" Margin="0,0,0,8"/>
@@ -1165,23 +1264,23 @@ function Start-AutopilotHubGui {
                     </Grid>
 
                     <!-- Custom Winget ID & Action -->
-                    <Border Grid.Row="2" Background="#1E293B" CornerRadius="6" BorderBrush="#334155" BorderThickness="1" Padding="12,8" Margin="0,10,0,0">
+                    <Border Grid.Row="2" Background="#2B2B2B" CornerRadius="4" BorderBrush="#383838" BorderThickness="1" Padding="12,8" Margin="0,10,0,0">
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto"/>
                                 <ColumnDefinition Width="*"/>
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
-                            <TextBlock Text="Custom Winget ID:" VerticalAlignment="Center" Margin="0,0,8,0" FontSize="12" FontWeight="SemiBold"/>
-                            <TextBox Name="TxtCustomPkg" Grid.Column="1" Height="32" Margin="0,0,8,0"/>
-                            <Button Name="BtnInstallBatch" Grid.Column="2" Content="🚀 Install Selected Apps (WingetBatch)" Background="#0284C7" BorderBrush="#38BDF8" Height="34" Padding="16,6"/>
+                            <TextBlock Text="Custom Winget ID:" VerticalAlignment="Center" Margin="0,0,8,0" FontSize="12" FontWeight="SemiBold" Foreground="#D0D0D0"/>
+                            <TextBox Name="TxtCustomPkg" Grid.Column="1" Height="30" Margin="0,0,8,0"/>
+                            <Button Name="BtnInstallBatch" Grid.Column="2" Content="Install Selected Applications" Style="{StaticResource AccentBtn}" Height="32" Padding="14,4"/>
                         </Grid>
                     </Border>
                 </Grid>
             </TabItem>
 
-            <!-- TAB 3: WIN32 PACKAGING & INTUNE PUBLISHER (WingetIntune) -->
-            <TabItem Header="🚀 Win32 Packaging (WingetIntune)">
+            <!-- TAB 3: WIN32 PACKAGING (WingetIntune) -->
+            <TabItem Header="Win32 Packaging">
                 <Grid Margin="0,12,0,0">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
@@ -1189,55 +1288,55 @@ function Start-AutopilotHubGui {
                     </Grid.ColumnDefinitions>
 
                     <!-- Left: Package Builder -->
-                    <Border Grid.Column="0" Background="#1E293B" CornerRadius="8" BorderBrush="#334155" BorderThickness="1" Padding="16" Margin="0,0,6,0">
+                    <Border Grid.Column="0" Background="#2B2B2B" CornerRadius="4" BorderBrush="#383838" BorderThickness="1" Padding="16" Margin="0,0,6,0">
                         <StackPanel>
-                            <TextBlock Text="WIN32 PACKAGE BUILDER (.INTUNEWIN)" FontSize="12" FontWeight="Bold" Foreground="#06B6D4" Margin="0,0,0,14"/>
+                            <TextBlock Text="WIN32 PACKAGE BUILDER (.INTUNEWIN)" FontSize="11" FontWeight="SemiBold" Foreground="#B0B0B0" Margin="0,0,0,14"/>
 
-                            <TextBlock Text="Winget Package ID / Source:" FontSize="12" FontWeight="SemiBold" Foreground="#CBD5E1" Margin="0,0,0,4"/>
+                            <TextBlock Text="Winget Package ID / Source:" FontSize="12" FontWeight="SemiBold" Foreground="#D0D0D0" Margin="0,0,0,4"/>
                             <TextBox Name="TxtPkgId" Height="32" Text="Mozilla.Firefox" Margin="0,0,0,10"/>
 
-                            <TextBlock Text="Display Name:" FontSize="12" FontWeight="SemiBold" Foreground="#CBD5E1" Margin="0,0,0,4"/>
+                            <TextBlock Text="Display Name:" FontSize="12" FontWeight="SemiBold" Foreground="#D0D0D0" Margin="0,0,0,4"/>
                             <TextBox Name="TxtPkgDisplayName" Height="32" Text="Mozilla Firefox Enterprise" Margin="0,0,0,10"/>
 
-                            <TextBlock Text="Output Folder:" FontSize="12" FontWeight="SemiBold" Foreground="#CBD5E1" Margin="0,0,0,4"/>
+                            <TextBlock Text="Output Folder:" FontSize="12" FontWeight="SemiBold" Foreground="#D0D0D0" Margin="0,0,0,4"/>
                             <TextBox Name="TxtPkgOutputDir" Height="32" Text="C:\temp\WingetIntune\Output" Margin="0,0,0,10"/>
 
-                            <TextBlock Text="Silent Install Arguments:" FontSize="12" FontWeight="SemiBold" Foreground="#CBD5E1" Margin="0,0,0,4"/>
+                            <TextBlock Text="Silent Install Arguments:" FontSize="12" FontWeight="SemiBold" Foreground="#D0D0D0" Margin="0,0,0,4"/>
                             <TextBox Name="TxtPkgInstallArgs" Height="32" Text="/S" Margin="0,0,0,16"/>
 
-                            <Button Name="BtnBuildPackage" Content="📦 Build .intunewin Package" Background="#0284C7" Height="38"/>
+                            <Button Name="BtnBuildPackage" Content="Build Package (.intunewin)" Style="{StaticResource AccentBtn}" Height="34"/>
                         </StackPanel>
                     </Border>
 
                     <!-- Right: Cloud Publisher -->
-                    <Border Grid.Column="1" Background="#1E293B" CornerRadius="8" BorderBrush="#334155" BorderThickness="1" Padding="16" Margin="6,0,0,0">
+                    <Border Grid.Column="1" Background="#2B2B2B" CornerRadius="4" BorderBrush="#383838" BorderThickness="1" Padding="16" Margin="6,0,0,0">
                         <StackPanel>
-                            <TextBlock Text="MICROSOFT GRAPH INTUNE CLOUD PUBLISHER" FontSize="12" FontWeight="Bold" Foreground="#06B6D4" Margin="0,0,0,14"/>
+                            <TextBlock Text="MICROSOFT GRAPH INTUNE CLOUD PUBLISHER" FontSize="11" FontWeight="SemiBold" Foreground="#B0B0B0" Margin="0,0,0,14"/>
 
-                            <TextBlock Text="Target Assignment Intent:" FontSize="12" FontWeight="SemiBold" Foreground="#CBD5E1" Margin="0,0,0,4"/>
-                            <ComboBox Name="CmbAssignmentIntent" Height="32" Margin="0,0,0,10" Background="#0F172A" Foreground="#F8FAFC">
+                            <TextBlock Text="Target Assignment Intent:" FontSize="12" FontWeight="SemiBold" Foreground="#D0D0D0" Margin="0,0,0,4"/>
+                            <ComboBox Name="CmbAssignmentIntent" Height="32" Margin="0,0,0,10" Background="#1F1F1F" Foreground="#FFFFFF">
                                 <ComboBoxItem Content="Available (Self-Service in Company Portal)" IsSelected="True"/>
                                 <ComboBoxItem Content="Required (Mandatory Push)"/>
                                 <ComboBoxItem Content="Uninstall"/>
                             </ComboBox>
 
-                            <TextBlock Text="Target Entra ID Group / Audience:" FontSize="12" FontWeight="SemiBold" Foreground="#CBD5E1" Margin="0,0,0,4"/>
+                            <TextBlock Text="Target Entra ID Group / Audience:" FontSize="12" FontWeight="SemiBold" Foreground="#D0D0D0" Margin="0,0,0,4"/>
                             <TextBox Name="TxtAssignGroup" Height="32" Text="All Devices" Margin="0,0,0,16"/>
 
-                            <Border Background="#131D2F" CornerRadius="6" Padding="12" Margin="0,0,0,16">
-                                <TextBlock Text="Direct Graph publishing utilizes resilient chunked Azure SAS storage upload and generates automated detection rules."
-                                           FontSize="12" Foreground="#94A3B8" TextWrapping="Wrap"/>
+                            <Border Background="#242424" BorderBrush="#383838" BorderThickness="1" CornerRadius="4" Padding="12" Margin="0,0,0,16">
+                                <TextBlock Text="Direct Graph publishing utilizes chunked Azure SAS storage upload and generates automated Win32 detection rules."
+                                           FontSize="11.5" Foreground="#8A8A8A" TextWrapping="Wrap"/>
                             </Border>
 
-                            <Button Name="BtnPublishIntune" Content="☁️ Publish Package to Intune" Background="#059669" BorderBrush="#10B981" Height="38"/>
+                            <Button Name="BtnPublishIntune" Content="Publish to Intune Cloud" Style="{StaticResource AccentBtn}" Height="34"/>
                         </StackPanel>
                     </Border>
                 </Grid>
             </TabItem>
 
             <!-- TAB 4: PRE-FLIGHT DIAGNOSTICS (IntuneShared) -->
-            <TabItem Header="🔍 Pre-Flight Diagnostics">
-                <Border Background="#1E293B" CornerRadius="8" BorderBrush="#334155" BorderThickness="1" Padding="16" Margin="0,12,0,0">
+            <TabItem Header="Pre-Flight Diagnostics">
+                <Border Background="#2B2B2B" CornerRadius="4" BorderBrush="#383838" BorderThickness="1" Padding="16" Margin="0,12,0,0">
                     <Grid>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>
@@ -1249,23 +1348,23 @@ function Start-AutopilotHubGui {
                                 <ColumnDefinition Width="*"/>
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
-                            <TextBlock Text="7-STAGE ENTERPRISE PRE-FLIGHT DIAGNOSTIC LADDER" FontSize="12" FontWeight="Bold" Foreground="#06B6D4" VerticalAlignment="Center"/>
-                            <Button Name="BtnRunDiag" Grid.Column="1" Content="🔄 Re-Run Diagnostics" Padding="12,6"/>
+                            <TextBlock Text="7-STAGE ENTERPRISE PRE-FLIGHT DIAGNOSTIC LADDER" FontSize="11" FontWeight="SemiBold" Foreground="#B0B0B0" VerticalAlignment="Center"/>
+                            <Button Name="BtnRunDiag" Grid.Column="1" Content="Run Diagnostics" Padding="12,5"/>
                         </Grid>
 
-                        <ListBox Name="LstDiagStages" Grid.Row="1" Background="#0F172A" BorderBrush="#334155">
+                        <ListBox Name="LstDiagStages" Grid.Row="1" Background="#1F1F1F" BorderBrush="#383838">
                             <ListBox.ItemTemplate>
                                 <DataTemplate>
-                                    <Border Padding="10,6" BorderBrush="#253349" BorderThickness="0,0,0,1">
+                                    <Border Padding="10,6" BorderBrush="#2E2E2E" BorderThickness="0,0,0,1">
                                         <Grid>
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="35"/>
                                                 <ColumnDefinition Width="180"/>
                                                 <ColumnDefinition Width="*"/>
                                             </Grid.ColumnDefinitions>
-                                            <TextBlock Text="{Binding Stage}" FontWeight="Bold" Foreground="#38BDF8"/>
-                                            <TextBlock Grid.Column="1" Text="{Binding Name}" FontWeight="SemiBold" Foreground="#F8FAFC"/>
-                                            <TextBlock Grid.Column="2" Text="{Binding Details}" Foreground="#94A3B8"/>
+                                            <TextBlock Text="{Binding Stage}" FontWeight="Bold" Foreground="#60CDFF"/>
+                                            <TextBlock Grid.Column="1" Text="{Binding Name}" FontWeight="SemiBold" Foreground="#FFFFFF"/>
+                                            <TextBlock Grid.Column="2" Text="{Binding Details}" Foreground="#8A8A8A"/>
                                         </Grid>
                                     </Border>
                                 </DataTemplate>
@@ -1276,8 +1375,8 @@ function Start-AutopilotHubGui {
             </TabItem>
 
             <!-- TAB 5: DELL ASSET WARRANTY & REFRESH ASSESSMENT -->
-            <TabItem Header="🏷️ Dell Warranty &amp; Refresh">
-                <Border Background="#1E293B" CornerRadius="8" BorderBrush="#334155" BorderThickness="1" Padding="16" Margin="0,12,0,0">
+            <TabItem Header="Dell Warranty &amp; Refresh">
+                <Border Background="#2B2B2B" CornerRadius="4" BorderBrush="#383838" BorderThickness="1" Padding="16" Margin="0,12,0,0">
                     <Grid>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>
@@ -1296,26 +1395,28 @@ function Start-AutopilotHubGui {
                                 <ColumnDefinition Width="Auto"/>
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
-                            <TextBlock Text="Service Tag:" FontWeight="SemiBold" VerticalAlignment="Center" Margin="0,0,10,0" Foreground="#F8FAFC"/>
-                            <TextBox Name="TxtDellServiceTag" Grid.Column="1" VerticalAlignment="Center" CharacterCasing="Upper" FontFamily="Consolas" FontWeight="Bold" FontSize="14" Margin="0,0,8,0"/>
-                            <Button Name="BtnDetectDellTag" Grid.Column="2" Content="🏷️ Detect BIOS Tag" Margin="0,0,8,0"/>
-                            <Button Name="BtnCheckDellWarranty" Grid.Column="3" HorizontalAlignment="Left" Content="🔍 Check Warranty &amp; Refresh Eligibility" Background="#0E7490" BorderBrush="#06B6D4" Margin="0,0,8,0"/>
-                            <Button Name="BtnCopyDellReport" Grid.Column="4" Content="📋 Copy Report" Margin="0,0,6,0"/>
-                            <Button Name="BtnExportDellCsv" Grid.Column="5" Content="💾 Export CSV"/>
+                            <TextBlock Text="Service Tag:" FontWeight="SemiBold" VerticalAlignment="Center" Margin="0,0,10,0" Foreground="#FFFFFF"/>
+                            <TextBox Name="TxtDellServiceTag" Grid.Column="1" VerticalAlignment="Center" CharacterCasing="Upper" FontFamily="Consolas" FontWeight="Bold" FontSize="13" Margin="0,0,8,0"/>
+                            <Button Name="BtnDetectDellTag" Grid.Column="2" Content="Detect BIOS Tag" Margin="0,0,8,0"/>
+                            <Button Name="BtnCheckDellWarranty" Grid.Column="3" HorizontalAlignment="Left" Content="Assess Lifecycle &amp; Warranty" Style="{StaticResource AccentBtn}" Margin="0,0,8,0"/>
+                            <Button Name="BtnCopyDellReport" Grid.Column="4" Content="Copy Report" Margin="0,0,6,0"/>
+                            <Button Name="BtnExportDellCsv" Grid.Column="5" Content="Export CSV"/>
                         </Grid>
 
-                        <!-- Row 1: Hero Banner Refresh Verdict -->
-                        <Border Name="BorderRefreshVerdict" Grid.Row="1" Background="#1E293B" CornerRadius="8" BorderBrush="#475569" BorderThickness="2" Padding="14,10" Margin="0,0,0,12">
+                        <!-- Row 1: Hero Refresh Verdict Banner -->
+                        <Border Name="BorderRefreshVerdict" Grid.Row="1" Background="#242424" CornerRadius="4" BorderBrush="#383838" BorderThickness="1" Padding="14,10" Margin="0,0,0,12">
                             <Grid>
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="Auto"/>
                                     <RowDefinition Height="Auto"/>
                                 </Grid.RowDefinitions>
                                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                    <TextBlock Name="TxtVerdictIcon" Text="🏷️" FontSize="18" Margin="0,0,10,0"/>
-                                    <TextBlock Name="TxtVerdictTitle" Text="DELL ASSET WARRANTY &amp; REFRESH LIFECYCLE ENGINE" FontSize="14" FontWeight="Bold" Foreground="#F8FAFC" VerticalAlignment="Center"/>
+                                    <Border Name="BorderVerdictBadge" Background="#333333" CornerRadius="3" Padding="6,2" Margin="0,0,10,0">
+                                        <TextBlock Name="TxtVerdictBadge" Text="PENDING ASSESSMENT" FontSize="10.5" FontWeight="Bold" Foreground="#B0B0B0"/>
+                                    </Border>
+                                    <TextBlock Name="TxtVerdictTitle" Text="DELL ASSET WARRANTY &amp; REFRESH ASSESSMENT" FontSize="13" FontWeight="SemiBold" Foreground="#FFFFFF" VerticalAlignment="Center"/>
                                 </StackPanel>
-                                <TextBlock Name="TxtVerdictDesc" Grid.Row="1" Text="Click 'Check Warranty &amp; Refresh Eligibility' to query Dell Technologies Enterprise Warranty API (eAPI v5) and compute hardware refresh determination." FontSize="11" Foreground="#94A3B8" TextWrapping="Wrap" Margin="28,4,0,0"/>
+                                <TextBlock Name="TxtVerdictDesc" Grid.Row="1" Text="Click 'Assess Lifecycle &amp; Warranty' to query vendor contract records and evaluate hardware refresh eligibility." FontSize="11.5" Foreground="#A0A0A0" TextWrapping="Wrap" Margin="0,6,0,0"/>
                             </Grid>
                         </Border>
 
@@ -1328,35 +1429,35 @@ function Start-AutopilotHubGui {
                                 <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
 
-                            <Border Grid.Column="0" Background="#0F172A" CornerRadius="6" BorderBrush="#334155" BorderThickness="1" Padding="10,8" Margin="0,0,6,0">
+                            <Border Grid.Column="0" Background="#242424" CornerRadius="4" BorderBrush="#383838" BorderThickness="1" Padding="10,8" Margin="0,0,6,0">
                                 <StackPanel>
-                                    <TextBlock Text="SYSTEM MODEL" FontSize="10" FontWeight="Bold" Foreground="#06B6D4"/>
-                                    <TextBlock Name="TxtDellModel" Text="Unknown" FontSize="12" FontWeight="SemiBold" Foreground="#F8FAFC" TextTrimming="CharacterEllipsis" Margin="0,2,0,0"/>
-                                    <TextBlock Name="TxtDellProductLine" Text="Line: -" FontSize="10" Foreground="#94A3B8" TextTrimming="CharacterEllipsis"/>
+                                    <TextBlock Text="SYSTEM MODEL" FontSize="10" FontWeight="SemiBold" Foreground="#8A8A8A"/>
+                                    <TextBlock Name="TxtDellModel" Text="Unknown" FontSize="12" FontWeight="SemiBold" Foreground="#FFFFFF" TextTrimming="CharacterEllipsis" Margin="0,2,0,0"/>
+                                    <TextBlock Name="TxtDellProductLine" Text="Line: -" FontSize="10" Foreground="#8A8A8A" TextTrimming="CharacterEllipsis"/>
                                 </StackPanel>
                             </Border>
 
-                            <Border Grid.Column="1" Background="#0F172A" CornerRadius="6" BorderBrush="#334155" BorderThickness="1" Padding="10,8" Margin="0,0,6,0">
+                            <Border Grid.Column="1" Background="#242424" CornerRadius="4" BorderBrush="#383838" BorderThickness="1" Padding="10,8" Margin="0,0,6,0">
                                 <StackPanel>
-                                    <TextBlock Text="FACTORY SHIP DATE / AGE" FontSize="10" FontWeight="Bold" Foreground="#06B6D4"/>
-                                    <TextBlock Name="TxtDellShipDate" Text="-" FontSize="12" FontWeight="SemiBold" Foreground="#F8FAFC" Margin="0,2,0,0"/>
-                                    <TextBlock Name="TxtDellAge" Text="Age: -" FontSize="10" Foreground="#94A3B8"/>
+                                    <TextBlock Text="FACTORY SHIP DATE / AGE" FontSize="10" FontWeight="SemiBold" Foreground="#8A8A8A"/>
+                                    <TextBlock Name="TxtDellShipDate" Text="-" FontSize="12" FontWeight="SemiBold" Foreground="#FFFFFF" Margin="0,2,0,0"/>
+                                    <TextBlock Name="TxtDellAge" Text="Age: -" FontSize="10" Foreground="#8A8A8A"/>
                                 </StackPanel>
                             </Border>
 
-                            <Border Grid.Column="2" Background="#0F172A" CornerRadius="6" BorderBrush="#334155" BorderThickness="1" Padding="10,8" Margin="0,0,6,0">
+                            <Border Grid.Column="2" Background="#242424" CornerRadius="4" BorderBrush="#383838" BorderThickness="1" Padding="10,8" Margin="0,0,6,0">
                                 <StackPanel>
-                                    <TextBlock Text="PRIMARY SERVICE CONTRACT" FontSize="10" FontWeight="Bold" Foreground="#06B6D4"/>
-                                    <TextBlock Name="TxtDellContract" Text="-" FontSize="12" FontWeight="SemiBold" Foreground="#F8FAFC" TextTrimming="CharacterEllipsis" Margin="0,2,0,0"/>
-                                    <TextBlock Name="TxtDellRegion" Text="Region: -" FontSize="10" Foreground="#94A3B8"/>
+                                    <TextBlock Text="PRIMARY SERVICE CONTRACT" FontSize="10" FontWeight="SemiBold" Foreground="#8A8A8A"/>
+                                    <TextBlock Name="TxtDellContract" Text="-" FontSize="12" FontWeight="SemiBold" Foreground="#FFFFFF" TextTrimming="CharacterEllipsis" Margin="0,2,0,0"/>
+                                    <TextBlock Name="TxtDellRegion" Text="Region: -" FontSize="10" Foreground="#8A8A8A"/>
                                 </StackPanel>
                             </Border>
 
-                            <Border Grid.Column="3" Background="#0F172A" CornerRadius="6" BorderBrush="#334155" BorderThickness="1" Padding="10,8">
+                            <Border Grid.Column="3" Background="#242424" CornerRadius="4" BorderBrush="#383838" BorderThickness="1" Padding="10,8">
                                 <StackPanel>
-                                    <TextBlock Text="EXPIRATION &amp; STATUS" FontSize="10" FontWeight="Bold" Foreground="#06B6D4"/>
-                                    <TextBlock Name="TxtDellEndDate" Text="-" FontSize="12" FontWeight="SemiBold" Foreground="#F8FAFC" Margin="0,2,0,0"/>
-                                    <TextBlock Name="TxtDellDaysRemaining" Text="Status: -" FontSize="10" FontWeight="SemiBold" Foreground="#94A3B8"/>
+                                    <TextBlock Text="EXPIRATION &amp; STATUS" FontSize="10" FontWeight="SemiBold" Foreground="#8A8A8A"/>
+                                    <TextBlock Name="TxtDellEndDate" Text="-" FontSize="12" FontWeight="SemiBold" Foreground="#FFFFFF" Margin="0,2,0,0"/>
+                                    <TextBlock Name="TxtDellDaysRemaining" Text="Status: -" FontSize="10" FontWeight="SemiBold" Foreground="#8A8A8A"/>
                                 </StackPanel>
                             </Border>
                         </Grid>
@@ -1367,8 +1468,8 @@ function Start-AutopilotHubGui {
                                 <RowDefinition Height="Auto"/>
                                 <RowDefinition Height="*"/>
                             </Grid.RowDefinitions>
-                            <TextBlock Text="CONTRACT ENTITLEMENTS &amp; SERVICE HISTORY" FontSize="11" FontWeight="Bold" Foreground="#64748B" Margin="0,0,0,6"/>
-                            <ListView Name="LstDellEntitlements" Grid.Row="1" Background="#0F172A" BorderBrush="#334155" Foreground="#F8FAFC">
+                            <TextBlock Text="CONTRACT ENTITLEMENTS &amp; SERVICE HISTORY" FontSize="10.5" FontWeight="SemiBold" Foreground="#8A8A8A" Margin="0,0,0,6"/>
+                            <ListView Name="LstDellEntitlements" Grid.Row="1" Background="#1F1F1F" BorderBrush="#383838" Foreground="#FFFFFF">
                                 <ListView.View>
                                     <GridView>
                                         <GridViewColumn Header="Service Level Description" Width="260" DisplayMemberBinding="{Binding ServiceLevelDescription}"/>
@@ -1393,13 +1494,13 @@ function Start-AutopilotHubGui {
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
-            <ProgressBar Name="HubProgressBar" Height="8" Minimum="0" Maximum="100" Value="0"
-                         Background="#1E293B" Foreground="#06B6D4" BorderThickness="0"/>
-            <TextBlock Name="TxtProgressStatus" Grid.Column="1" Text="Ready" FontSize="11" Foreground="#94A3B8" Margin="8,0,0,0"/>
+            <ProgressBar Name="HubProgressBar" Height="4" Minimum="0" Maximum="100" Value="0"
+                         Background="#242424" Foreground="#0067C0" BorderThickness="0"/>
+            <TextBlock Name="TxtProgressStatus" Grid.Column="1" Text="Ready" FontSize="10.5" Foreground="#8A8A8A" Margin="8,0,0,0"/>
         </Grid>
 
         <!-- LIVE LOG OUTPUT CONSOLE -->
-        <Border Grid.Row="4" Background="#030712" CornerRadius="6" BorderBrush="#1F2937" BorderThickness="1" Padding="8">
+        <Border Grid.Row="4" Background="#181818" CornerRadius="4" BorderBrush="#2B2B2B" BorderThickness="1" Padding="8">
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
@@ -1412,7 +1513,7 @@ function Start-AutopilotHubGui {
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
                     <StackPanel Orientation="Horizontal">
-                        <TextBlock Text="LIVE CONSOLE AUDIT LOG" FontSize="11" FontWeight="Bold" Foreground="#64748B"/>
+                        <TextBlock Text="SYSTEM AUDIT LOG" FontSize="10" FontWeight="SemiBold" Foreground="#777777"/>
                     </StackPanel>
                     <StackPanel Grid.Column="1" Orientation="Horizontal">
                         <Button Name="BtnCopyLog" Content="Copy Log" FontSize="10" Padding="6,2" Margin="0,0,4,0"/>
@@ -1421,8 +1522,8 @@ function Start-AutopilotHubGui {
                     </StackPanel>
                 </Grid>
 
-                <TextBox Name="TxtHubLog" Grid.Row="1" Background="Transparent" Foreground="#38BDF8"
-                         BorderThickness="0" FontFamily="Consolas" FontSize="11"
+                <TextBox Name="TxtHubLog" Grid.Row="1" Background="Transparent" Foreground="#D0D0D0"
+                         BorderThickness="0" FontFamily="Cascadia Code, Consolas" FontSize="11"
                          IsReadOnly="True" AcceptsReturn="True" TextWrapping="Wrap"
                          VerticalScrollBarVisibility="Auto"/>
             </Grid>
@@ -1523,7 +1624,8 @@ function Start-AutopilotHubGui {
     $btnCopyDellReport     = $window.FindName('BtnCopyDellReport')
     $btnExportDellCsv      = $window.FindName('BtnExportDellCsv')
     $borderRefreshVerdict  = $window.FindName('BorderRefreshVerdict')
-    $txtVerdictIcon        = $window.FindName('TxtVerdictIcon')
+    $borderVerdictBadge    = $window.FindName('BorderVerdictBadge')
+    $txtVerdictBadge       = $window.FindName('TxtVerdictBadge')
     $txtVerdictTitle       = $window.FindName('TxtVerdictTitle')
     $txtVerdictDesc        = $window.FindName('TxtVerdictDesc')
     $txtDellModel          = $window.FindName('TxtDellModel')
@@ -1941,27 +2043,39 @@ function Start-AutopilotHubGui {
             $brushConv = [System.Windows.Media.BrushConverter]::new()
             if ($w.IsUnderWarranty) {
                 if ($w.DaysRemaining -le 90) {
-                    $borderRefreshVerdict.Background = $brushConv.ConvertFromString("#78350F")
-                    $borderRefreshVerdict.BorderBrush = $brushConv.ConvertFromString("#F59E0B")
-                    $txtVerdictIcon.Text = "⚠️"
+                    $borderRefreshVerdict.Background = $brushConv.ConvertFromString("#292621")
+                    $borderRefreshVerdict.BorderBrush = $brushConv.ConvertFromString("#5C4A29")
+                    if ($borderVerdictBadge) { $borderVerdictBadge.Background = $brushConv.ConvertFromString("#443B26") }
+                    if ($txtVerdictBadge) {
+                        $txtVerdictBadge.Text = "EXPIRING SOON"
+                        $txtVerdictBadge.Foreground = $brushConv.ConvertFromString("#FCE100")
+                    }
                     $txtVerdictTitle.Text = $w.RefreshVerdict
-                    $txtVerdictTitle.Foreground = $brushConv.ConvertFromString("#FEF3C7")
-                    $txtDellDaysRemaining.Foreground = [System.Windows.Media.Brushes]::Orange
+                    $txtVerdictTitle.Foreground = $brushConv.ConvertFromString("#FFFFFF")
+                    $txtDellDaysRemaining.Foreground = $brushConv.ConvertFromString("#FCE100")
                 } else {
-                    $borderRefreshVerdict.Background = $brushConv.ConvertFromString("#064E3B")
-                    $borderRefreshVerdict.BorderBrush = $brushConv.ConvertFromString("#10B981")
-                    $txtVerdictIcon.Text = "✅"
+                    $borderRefreshVerdict.Background = $brushConv.ConvertFromString("#212923")
+                    $borderRefreshVerdict.BorderBrush = $brushConv.ConvertFromString("#295C33")
+                    if ($borderVerdictBadge) { $borderVerdictBadge.Background = $brushConv.ConvertFromString("#213B26") }
+                    if ($txtVerdictBadge) {
+                        $txtVerdictBadge.Text = "ACTIVE WARRANTY"
+                        $txtVerdictBadge.Foreground = $brushConv.ConvertFromString("#6CCB5F")
+                    }
                     $txtVerdictTitle.Text = $w.RefreshVerdict
-                    $txtVerdictTitle.Foreground = $brushConv.ConvertFromString("#D1FAE5")
-                    $txtDellDaysRemaining.Foreground = [System.Windows.Media.Brushes]::LimeGreen
+                    $txtVerdictTitle.Foreground = $brushConv.ConvertFromString("#FFFFFF")
+                    $txtDellDaysRemaining.Foreground = $brushConv.ConvertFromString("#6CCB5F")
                 }
             } else {
-                $borderRefreshVerdict.Background = $brushConv.ConvertFromString("#7F1D1D")
-                $borderRefreshVerdict.BorderBrush = $brushConv.ConvertFromString("#EF4444")
-                $txtVerdictIcon.Text = "❌"
+                $borderRefreshVerdict.Background = $brushConv.ConvertFromString("#292121")
+                $borderRefreshVerdict.BorderBrush = $brushConv.ConvertFromString("#5C2B29")
+                if ($borderVerdictBadge) { $borderVerdictBadge.Background = $brushConv.ConvertFromString("#442726") }
+                if ($txtVerdictBadge) {
+                    $txtVerdictBadge.Text = "OUT OF WARRANTY"
+                    $txtVerdictBadge.Foreground = $brushConv.ConvertFromString("#FF99A4")
+                }
                 $txtVerdictTitle.Text = $w.RefreshVerdict
-                $txtVerdictTitle.Foreground = $brushConv.ConvertFromString("#FEE2E2")
-                $txtDellDaysRemaining.Foreground = [System.Windows.Media.Brushes]::OrangeRed
+                $txtVerdictTitle.Foreground = $brushConv.ConvertFromString("#FFFFFF")
+                $txtDellDaysRemaining.Foreground = $brushConv.ConvertFromString("#FF99A4")
             }
             $txtVerdictDesc.Text = $w.RefreshRecommendation
 
@@ -1999,7 +2113,7 @@ function Start-AutopilotHubGui {
         }
         $r = $script:CurrentDellReport
         $md = @"
-# 🏷️ Dell Asset Warranty & Hardware Refresh Assessment: $($r.ServiceTag)
+# Dell Asset Warranty & Hardware Refresh Assessment: $($r.ServiceTag)
 
 > **Model:** $($r.SystemModel)  
 > **Service Tag:** ``$($r.ServiceTag)``  
@@ -2010,22 +2124,22 @@ function Start-AutopilotHubGui {
 
 ---
 
-## ⚡ Hardware Refresh Determination
+## Hardware Refresh Determination
 $($r.RefreshRecommendation)
 
 ---
 
-## 📋 Entitlements & Service Contracts Breakdown
+## Entitlements & Service Contracts Breakdown
 | Service Level Description | Type | Start Date | End Date | Status |
 | :--- | :--- | :--- | :--- | :--- |
 $($r.Entitlements | ForEach-Object { "| $($_.ServiceLevelDescription) | $($_.EntitlementType) | $($_.StartDate) | $($_.EndDate) | $($_.Status) |" } | Out-String).TrimEnd()
 
 ---
-*Generated autonomously via Dell Technologies Enterprise Warranty API (v5)*
+*Generated via Dell Technologies Enterprise Warranty API (v5)*
 "@
         [System.Windows.Clipboard]::SetText($md)
         Write-HubLog "Dell warranty markdown report copied to clipboard." "SUCCESS"
-        [System.Windows.MessageBox]::Show("Assessment report copied to clipboard in Markdown format!", "Copied", [System.Windows.MessageBoxButton]::OK, [System.Windows.MessageBoxImage]::Information)
+        [System.Windows.MessageBox]::Show("Assessment report copied to clipboard in Markdown format.", "Copied", [System.Windows.MessageBoxButton]::OK, [System.Windows.MessageBoxImage]::Information)
     })
 
     $btnExportDellCsv.Add_Click({
@@ -2039,7 +2153,7 @@ $($r.Entitlements | ForEach-Object { "| $($_.ServiceLevelDescription) | $($_.Ent
         $usbDrives = Get-CimInstance Win32_Volume -ErrorAction SilentlyContinue | Where-Object { $_.DriveType -eq 2 -and $_.DriveLetter }
         if ($usbDrives) {
             $usb = $usbDrives | Select-Object -First 1
-            $destPath = Join-Path $usb.DriveLetter "DellWarranty-$($r.ServiceTag).csv"
+            $destPath = Join-Path "$($usb.DriveLetter)\" "DellWarranty-$($r.ServiceTag).csv"
             Write-HubLog "USB Flash Drive detected at $($usb.DriveLetter). Exporting CSV directly to USB..."
         }
 
@@ -2075,18 +2189,18 @@ $($r.Entitlements | ForEach-Object { "| $($_.ServiceLevelDescription) | $($_.Ent
 # ==============================================================================
 
 if ($HarvestOnly) {
-    Write-Host "`n⚡ AutopilotFast Hardware Hash Harvester" -ForegroundColor Cyan
+    Write-Host "`nAutopilotFast Hardware Hash Harvester" -ForegroundColor Cyan
     $hash = Get-AutopilotHash -GroupTag $GroupTag -AssignedUser $AssignedUser
     $hash | Format-List
     return
 }
 
 if ($DellWarranty) {
-    Write-Host "`n🏷️ Dell Technologies Enterprise Warranty & Refresh Lifecycle Engine" -ForegroundColor Cyan
+    Write-Host "`nDell Technologies Enterprise Warranty & Refresh Lifecycle Engine" -ForegroundColor Cyan
     $tag = if ($DellServiceTag) { $DellServiceTag } else { '' }
     $w = Get-DellWarrantyInfo -ServiceTag $tag
     Write-Host "`n==========================================================================" -ForegroundColor Cyan
-    Write-Host " 🏷️ DELL ASSET WARRANTY & REFRESH ASSESSMENT: $($w.ServiceTag)" -ForegroundColor Cyan
+    Write-Host " DELL ASSET WARRANTY & REFRESH ASSESSMENT: $($w.ServiceTag)" -ForegroundColor Cyan
     Write-Host "==========================================================================" -ForegroundColor Cyan
     Write-Host " Machine Model         : $($w.SystemModel)" -ForegroundColor White
     Write-Host " Product Line          : $($w.ProductLineDescription)" -ForegroundColor White
@@ -2101,15 +2215,15 @@ if ($DellWarranty) {
         Write-Host $w.WarrantyStatus -ForegroundColor Red
     }
     Write-Host "--------------------------------------------------------------------------" -ForegroundColor DarkGray
-    Write-Host " 🎯 REFRESH VERDICT    : " -NoNewline
+    Write-Host " REFRESH VERDICT       : " -NoNewline
     if ($w.IsUnderWarranty) {
         Write-Host $w.RefreshVerdict -ForegroundColor Green
     } else {
         Write-Host $w.RefreshVerdict -ForegroundColor Red
     }
-    Write-Host " ℹ️ Details            : $($w.RefreshRecommendation)" -ForegroundColor Gray
+    Write-Host " Details               : $($w.RefreshRecommendation)" -ForegroundColor Gray
     Write-Host "--------------------------------------------------------------------------" -ForegroundColor DarkGray
-    Write-Host " 📋 Contract Entitlements ($($w.Entitlements.Count) Total):" -ForegroundColor Cyan
+    Write-Host " Contract Entitlements ($($w.Entitlements.Count) Total):" -ForegroundColor Cyan
     $w.Entitlements | Format-Table ServiceLevelDescription, EntitlementType, StartDate, EndDate, Status -AutoSize
 
     if ($ExportCsv) {
@@ -2135,7 +2249,7 @@ if ($DellWarranty) {
 }
 
 if ($ExportCsv) {
-    Write-Host "`n⚡ AutopilotFast CSV Exporter" -ForegroundColor Cyan
+    Write-Host "`nAutopilotFast CSV Exporter" -ForegroundColor Cyan
     $res = Export-AutopilotCsv -Path $CsvPath -AutoDetectUsb -GroupTag $GroupTag -AssignedUser $AssignedUser
     Write-Host "Exported to: $($res.Path)" -ForegroundColor Green
     return
