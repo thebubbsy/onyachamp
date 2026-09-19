@@ -529,18 +529,59 @@ function Export-AutopilotCsv {
     }
 }
 
+# --- Helper: Get-GraphErrorMessage ---
+function Get-GraphErrorMessage {
+    param([Parameter(Mandatory=$true)]$ErrorRecord)
+    if ($ErrorRecord.ErrorDetails -and $ErrorRecord.ErrorDetails.Message) {
+        try {
+            $j = $ErrorRecord.ErrorDetails.Message | ConvertFrom-Json
+            if ($j.error -and $j.error_description) { return "$($j.error): $($j.error_description)" }
+            if ($j.error_description) { return $j.error_description }
+            if ($j.error) { return $j.error }
+            if ($j.message) { return $j.message }
+        } catch { }
+        return $ErrorRecord.ErrorDetails.Message
+    }
+    if ($ErrorRecord.Exception -and $ErrorRecord.Exception.Response) {
+        try {
+            $resp = $ErrorRecord.Exception.Response
+            if ($resp.GetType().GetMethod('GetResponseStream')) {
+                $stream = $resp.GetResponseStream()
+                if ($stream) {
+                    $reader = [System.IO.StreamReader]::new($stream)
+                    $text = $reader.ReadToEnd()
+                    $j = $text | ConvertFrom-Json
+                    if ($j.error -and $j.error_description) { return "$($j.error): $($j.error_description)" }
+                    if ($j.error_description) { return $j.error_description }
+                    if ($j.error) { return $j.error }
+                    return $text
+                }
+            }
+            if ($resp.Content) {
+                $text = $resp.Content.ReadAsStringAsync().Result
+                $j = $text | ConvertFrom-Json
+                if ($j.error -and $j.error_description) { return "$($j.error): $($j.error_description)" }
+                if ($j.error_description) { return $j.error_description }
+                if ($j.error) { return $j.error }
+                return $text
+            }
+        } catch { }
+    }
+    return $ErrorRecord.Exception.Message
+}
+
 # --- Function: Connect-GraphToken (IntuneShared Core) ---
 function Connect-GraphToken {
     [CmdletBinding()]
     param(
         [string]$TenantId = 'organizations',
-        [string]$ClientId = 'd1ddf0e6-50e1-4fb8-8182-76f584d73f3e', # Microsoft Intune PowerShell official client
+        [string]$ClientId = '1950a258-227b-4e31-a9cf-717495945fc2', # Microsoft Azure PowerShell universal client ID
         [string]$ClientSecret = '',
         [switch]$InteractiveDeviceCode
     )
 
     # Return cached token if valid
-    if ($script:GraphAuthContext -and $script:GraphAuthContext.ExpiresOn -gt [datetime]::UtcNow.AddMinutes(2)) {
+    if ($script:GraphAuthContext -and $script:GraphAuthContext.AccessToken -and $script:GraphAuthContext.ExpiresOn -gt [datetime]::UtcNow.AddMinutes(2)) {
         return $script:GraphAuthContext.AccessToken
     }
 
@@ -553,28 +594,39 @@ function Connect-GraphToken {
             scope         = 'https://graph.microsoft.com/.default'
             grant_type    = 'client_credentials'
         }
-        $res = Invoke-RestMethod -Uri $tokenEndpoint -Method POST -Body $body -ContentType 'application/x-www-form-urlencoded' -ErrorAction Stop
-        $script:GraphAuthContext = [PSCustomObject]@{
-            AccessToken = $res.access_token
-            ExpiresOn   = [datetime]::UtcNow.AddSeconds($res.expires_in)
-            TenantId    = $TenantId
+        try {
+            $res = Invoke-RestMethod -Uri $tokenEndpoint -Method POST -Body $body -ContentType 'application/x-www-form-urlencoded' -ErrorAction Stop
+            $script:GraphAuthContext = [PSCustomObject]@{
+                AccessToken = $res.access_token
+                ExpiresOn   = [datetime]::UtcNow.AddSeconds($res.expires_in)
+                TenantId    = $TenantId
+                ClientId    = $ClientId
+            }
+            return $res.access_token
+        } catch {
+            $errMsg = Get-GraphErrorMessage $_
+            throw "App Secret authentication failed: $errMsg"
         }
-        return $res.access_token
     }
 
     # 2. Device Code Flow (OOBE Shift+F10 standard)
     $dcEndpoint = "https://login.microsoftonline.com/$TenantId/oauth2/v2.0/devicecode"
     $dcBody = @{
         client_id = $ClientId
-        scope     = 'DeviceManagementServiceConfig.ReadWrite.All openid offline_access'
+        scope     = 'DeviceManagementServiceConfig.ReadWrite.All DeviceManagementManagedDevices.ReadWrite.All openid offline_access'
     }
 
-    $dcResponse = Invoke-RestMethod -Uri $dcEndpoint -Method POST -Body $dcBody -ContentType 'application/x-www-form-urlencoded' -ErrorAction Stop
+    try {
+        $dcResponse = Invoke-RestMethod -Uri $dcEndpoint -Method POST -Body $dcBody -ContentType 'application/x-www-form-urlencoded' -ErrorAction Stop
+    } catch {
+        $errMsg = Get-GraphErrorMessage $_
+        throw "Device code request failed: $errMsg"
+    }
 
     return [PSCustomObject]@{
         UserCode        = $dcResponse.user_code
         DeviceCode      = $dcResponse.device_code
-        VerificationUrl = $dcResponse.verification_uri
+        VerificationUrl = if ($dcResponse.verification_uri) { $dcResponse.verification_uri } else { 'https://microsoft.com/devicelogin' }
         Message         = $dcResponse.message
         ExpiresIn       = $dcResponse.expires_in
         Interval        = if ($dcResponse.interval) { [int]$dcResponse.interval } else { 5 }
@@ -601,28 +653,25 @@ function Poll-GraphDeviceCodeToken {
         $res = Invoke-RestMethod -Uri $tokenEndpoint -Method POST -Body $body -ContentType 'application/x-www-form-urlencoded' -ErrorAction Stop
         if ($res.access_token) {
             $script:GraphAuthContext = [PSCustomObject]@{
-                AccessToken = $res.access_token
-                ExpiresOn   = [datetime]::UtcNow.AddSeconds($res.expires_in)
-                TenantId    = $DeviceCodeContext.TenantId
+                AccessToken  = $res.access_token
+                RefreshToken = $res.refresh_token
+                ExpiresOn    = [datetime]::UtcNow.AddSeconds($res.expires_in)
+                TenantId     = $DeviceCodeContext.TenantId
+                ClientId     = $DeviceCodeContext.ClientId
             }
             return $res.access_token
         }
     } catch {
-        $errBody = $null
-        try {
-            if ($_.Exception.Response) {
-                $stream = $_.Exception.Response.GetResponseStream()
-                $reader = [System.IO.StreamReader]::new($stream)
-                $errBody = $reader.ReadToEnd()
-            }
-        } catch { }
-        if (-not $errBody -and $_.ErrorDetails) { $errBody = $_.ErrorDetails.Message }
-        if (-not $errBody) { $errBody = $_.Exception.Message }
+        $errBody = Get-GraphErrorMessage $_
 
-        if ($errBody -match 'authorization_pending') {
+        if ($errBody -match 'authorization_pending|Authorization is pending|AADSTS70016' -or $errBody -match 'slow_down|AADSTS70019') {
             return $null
-        } elseif ($errBody -match 'code_expired') {
-            throw "Device login code has expired."
+        } elseif ($errBody -match 'code_expired|expired_token|AADSTS70020') {
+            throw "Device authorization code has expired. Please click 'Start Device Login' to request a new code."
+        } elseif ($errBody -match 'authorization_declined|access_denied|AADSTS70018') {
+            throw "Authorization was declined or cancelled."
+        } else {
+            throw $errBody
         }
     }
     return $null
@@ -772,9 +821,11 @@ function Start-GraphAuthDialog {
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>
                                 <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
-                            <TextBox Name="TxtDeviceUrl" Text="https://microsoft.com/devicelogin" IsReadOnly="True" Height="28"/>
+                            <TextBox Name="TxtDeviceUrl" Text="https://login.microsoft.com/device" IsReadOnly="True" Height="28"/>
                             <Button Name="BtnCopyUrl" Grid.Column="1" Content="Copy URL" Margin="6,0,0,0" Padding="10,3"/>
+                            <Button Name="BtnOpenUrl" Grid.Column="2" Content="Open Browser" Margin="6,0,0,0" Padding="10,3"/>
                         </Grid>
 
                         <!-- Step 2: Code -->
@@ -794,7 +845,7 @@ function Start-GraphAuthDialog {
                                     <TextBlock Name="TxtDeviceCode" Text="CLICK START TO GENERATE" FontSize="18" FontWeight="Bold" FontFamily="Consolas" Foreground="#60CDFF" VerticalAlignment="Center"/>
                                     <Button Name="BtnCopyCode" Grid.Column="1" Content="Copy Code" Padding="10,4" Visibility="Collapsed"/>
                                 </Grid>
-                                <TextBlock Name="TxtDeviceMsg" Grid.Row="1" Text="Click 'Start Device Login' to request a code from Microsoft Graph." FontSize="11" Foreground="#8A8A8A" Margin="0,8,0,8" TextWrapping="Wrap"/>
+                                <TextBlock Name="TxtDeviceMsg" Grid.Row="1" Text="Click 'Start Device Login' to request an authorization code from Microsoft Graph." FontSize="11" Foreground="#8A8A8A" Margin="0,8,0,8" TextWrapping="Wrap"/>
                                 <ProgressBar Name="PrgDevicePoll" Grid.Row="2" Height="4" IsIndeterminate="False" Background="#1A1A1A" Foreground="#0067C0" Visibility="Collapsed" VerticalAlignment="Bottom"/>
                             </Grid>
                         </Border>
@@ -806,11 +857,11 @@ function Start-GraphAuthDialog {
             <TabItem Header="App Secret (.env / Automated)">
                 <Border Background="#2B2B2B" CornerRadius="0,4,4,4" BorderBrush="#383838" BorderThickness="1" Padding="14">
                     <StackPanel>
-                        <TextBlock Text="Tenant ID (Directory ID):" FontSize="11.5" Foreground="#B0B0B0" Margin="0,0,0,4"/>
-                        <TextBox Name="TxtAuthTenant" Height="28" Margin="0,0,0,8"/>
+                        <TextBlock Text="Tenant ID (Directory ID, or 'organizations'):" FontSize="11.5" Foreground="#B0B0B0" Margin="0,0,0,4"/>
+                        <TextBox Name="TxtAuthTenant" Text="organizations" Height="28" Margin="0,0,0,8"/>
 
                         <TextBlock Text="Client ID (Application ID):" FontSize="11.5" Foreground="#B0B0B0" Margin="0,0,0,4"/>
-                        <TextBox Name="TxtAuthClientId" Text="d1ddf0e6-50e1-4fb8-8182-76f584d73f3e" Height="28" Margin="0,0,0,8"/>
+                        <TextBox Name="TxtAuthClientId" Text="1950a258-227b-4e31-a9cf-717495945fc2" Height="28" Margin="0,0,0,8"/>
 
                         <TextBlock Text="Client Secret:" FontSize="11.5" Foreground="#B0B0B0" Margin="0,0,0,4"/>
                         <TextBox Name="TxtAuthSecret" Height="28" Margin="0,0,0,12"/>
@@ -829,7 +880,7 @@ function Start-GraphAuthDialog {
                 <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
             <Button Name="BtnStartDeviceFlow" Grid.Column="0" Content="Start Device Login" Style="{StaticResource AccentBtn}"/>
-            <TextBlock Name="TxtAuthStatus" Grid.Column="1" Text="" Foreground="#EAA300" FontSize="11.5" VerticalAlignment="Center" Margin="12,0,0,0"/>
+            <TextBlock Name="TxtAuthStatus" Grid.Column="1" Text="" Foreground="#EAA300" FontSize="11.5" VerticalAlignment="Center" Margin="12,0,0,0" TextTrimming="CharacterEllipsis"/>
             <Button Name="BtnCloseDialog" Grid.Column="2" Content="Cancel" Padding="14,6"/>
         </Grid>
     </Grid>
@@ -842,6 +893,7 @@ function Start-GraphAuthDialog {
 
     $txtDeviceUrl       = $dialog.FindName('TxtDeviceUrl')
     $btnCopyUrl         = $dialog.FindName('BtnCopyUrl')
+    $btnOpenUrl         = $dialog.FindName('BtnOpenUrl')
     $txtDeviceCode      = $dialog.FindName('TxtDeviceCode')
     $btnCopyCode        = $dialog.FindName('BtnCopyCode')
     $txtDeviceMsg       = $dialog.FindName('TxtDeviceMsg')
@@ -872,6 +924,16 @@ function Start-GraphAuthDialog {
         $txtAuthStatus.Text = "URL copied to clipboard."
     })
 
+    $btnOpenUrl.Add_Click({
+        $u = if ($script:ActiveDeviceCode -and $script:ActiveDeviceCode.VerificationUrl) { $script:ActiveDeviceCode.VerificationUrl } else { $txtDeviceUrl.Text }
+        if (-not $u) { $u = "https://login.microsoft.com/device" }
+        try {
+            Start-Process $u
+        } catch {
+            $txtAuthStatus.Text = "Could not launch browser automatically."
+        }
+    })
+
     $btnCopyCode.Add_Click({
         if ($script:ActiveDeviceCode -and $script:ActiveDeviceCode.UserCode) {
             [System.Windows.Clipboard]::SetText($script:ActiveDeviceCode.UserCode)
@@ -883,11 +945,16 @@ function Start-GraphAuthDialog {
         $btnStartDeviceFlow.IsEnabled = $false
         $txtAuthStatus.Text = "Requesting code from Microsoft..."
         $txtAuthStatus.Foreground = [System.Windows.Media.BrushConverter]::new().ConvertFromString("#60CDFF")
+        $txtDeviceMsg.Text = "Connecting to Microsoft Identity service..."
 
         try {
-            $dc = Connect-GraphToken -InteractiveDeviceCode
+            $t = if ($txtAuthTenant -and -not [string]::IsNullOrWhiteSpace($txtAuthTenant.Text)) { $txtAuthTenant.Text.Trim() } else { 'organizations' }
+            $c = if ($txtAuthClientId -and -not [string]::IsNullOrWhiteSpace($txtAuthClientId.Text)) { $txtAuthClientId.Text.Trim() } else { '1950a258-227b-4e31-a9cf-717495945fc2' }
+
+            $dc = Connect-GraphToken -TenantId $t -ClientId $c -InteractiveDeviceCode
             if ($dc -is [PSCustomObject] -and $dc.UserCode) {
                 $script:ActiveDeviceCode = $dc
+                $txtDeviceUrl.Text = $dc.VerificationUrl
                 $txtDeviceCode.Text = $dc.UserCode
                 $btnCopyCode.Visibility = [System.Windows.Visibility]::Visible
                 [System.Windows.Clipboard]::SetText($dc.UserCode)
@@ -899,15 +966,16 @@ function Start-GraphAuthDialog {
                 $txtAuthStatus.Foreground = [System.Windows.Media.BrushConverter]::new().ConvertFromString("#EAA300")
 
                 $script:PollAttempts = 0
-                $intervalSec = if ($dc.Interval) { [Math]::Max(3, [int]$dc.Interval) } else { 4 }
+                $intervalSec = if ($dc.Interval) { [Math]::Max(3, [int]$dc.Interval) } else { 5 }
                 $script:PollTimer = [System.Windows.Threading.DispatcherTimer]::new()
                 $script:PollTimer.Interval = [TimeSpan]::FromSeconds($intervalSec)
                 $script:PollTimer.Add_Tick({
                     $script:PollAttempts++
-                    if ($script:PollAttempts -gt 75) {
+                    if ($script:PollAttempts -gt 90) {
                         $script:PollTimer.Stop()
                         $txtAuthStatus.Text = "Device code polling timed out."
                         $txtAuthStatus.Foreground = [System.Windows.Media.BrushConverter]::new().ConvertFromString("#FFAA99")
+                        $txtDeviceMsg.Text = "Session timed out waiting for approval. Please click 'Start Device Login' to try again."
                         $prgDevicePoll.Visibility = [System.Windows.Visibility]::Collapsed
                         $btnStartDeviceFlow.IsEnabled = $true
                         return
@@ -933,8 +1001,9 @@ function Start-GraphAuthDialog {
                         }
                     } catch {
                         $script:PollTimer.Stop()
-                        $txtAuthStatus.Text = "Auth error: $($_.Exception.Message)"
+                        $txtAuthStatus.Text = "Auth error."
                         $txtAuthStatus.Foreground = [System.Windows.Media.BrushConverter]::new().ConvertFromString("#FFAA99")
+                        $txtDeviceMsg.Text = "Authentication error: $($_.Exception.Message)"
                         $prgDevicePoll.Visibility = [System.Windows.Visibility]::Collapsed
                         $btnStartDeviceFlow.IsEnabled = $true
                     }
@@ -942,8 +1011,9 @@ function Start-GraphAuthDialog {
                 $script:PollTimer.Start()
             }
         } catch {
-            $txtAuthStatus.Text = "Failed: $($_.Exception.Message)"
+            $txtAuthStatus.Text = "Request failed."
             $txtAuthStatus.Foreground = [System.Windows.Media.BrushConverter]::new().ConvertFromString("#FFAA99")
+            $txtDeviceMsg.Text = "Failed to start device login: $($_.Exception.Message)"
             $btnStartDeviceFlow.IsEnabled = $true
         }
     })
@@ -1006,7 +1076,7 @@ function Get-CurrentGraphToken {
     $tenant = if ($env:AZURE_TENANT_ID) { $env:AZURE_TENANT_ID } else { $env:INTUNE_TENANT_ID }
     $secret = if ($env:AZURE_CLIENT_SECRET) { $env:AZURE_CLIENT_SECRET } else { $env:INTUNE_CLIENT_SECRET }
     $client = if ($env:AZURE_CLIENT_ID) { $env:AZURE_CLIENT_ID } else { $env:INTUNE_CLIENT_ID }
-    if (-not $client) { $client = 'd1ddf0e6-50e1-4fb8-8182-76f584d73f3e' }
+    if (-not $client) { $client = '1950a258-227b-4e31-a9cf-717495945fc2' }
 
     if ($tenant -and $secret) {
         try {
