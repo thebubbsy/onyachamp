@@ -315,6 +315,21 @@ img, video, svg, canvas {
   transform: translateY(-1px);
 }
 
+.btn-coffee {
+  background: linear-gradient(135deg, #FFDD00 0%, #FBBF24 100%);
+  color: #0f172a !important;
+  font-weight: 700;
+  border: 1px solid #e5c700;
+  box-shadow: 0 0 20px rgba(255, 221, 0, 0.35);
+}
+
+.btn-coffee:hover {
+  background: linear-gradient(135deg, #FFE033 0%, #F59E0B 100%);
+  color: #000000 !important;
+  box-shadow: 0 0 25px rgba(255, 221, 0, 0.55);
+  transform: translateY(-1px);
+}
+
 .btn-sm { padding: 0.4rem 0.85rem; font-size: 0.85rem; }
 .btn-lg { padding: 0.85rem 1.75rem; font-size: 1.05rem; }
 
