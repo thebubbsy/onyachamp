@@ -38,7 +38,9 @@ param(
     [string]$AssignedUser = '',
     [switch]$HarvestOnly,
     [switch]$ExportCsv,
-    [string]$CsvPath = ''
+    [string]$CsvPath = '',
+    [switch]$DellWarranty,
+    [string]$DellServiceTag = ''
 )
 
 # 1. Enforce Modern Cryptographic TLS Protocols (TLS 1.2 / TLS 1.3)
@@ -621,6 +623,167 @@ function New-Win32AppPackage {
     }
 }
 
+# --- Function: Get-DellWarrantyInfo (Dell Enterprise Warranty & Refresh Lifecycle Engine) ---
+function Get-DellWarrantyInfo {
+    [CmdletBinding()]
+    param(
+        [string]$ServiceTag = '',
+        [string]$ClientId = '',
+        [string]$ClientSecret = '',
+        [string]$EnvFile = ''
+    )
+
+    function local:ConvertTo-UtcDateTime {
+        param($InputDate)
+        if (-not $InputDate) { return $null }
+        if ($InputDate -is [System.DateTimeOffset]) { return $InputDate.UtcDateTime }
+        if ($InputDate -is [System.DateTime]) { return $InputDate.ToUniversalTime() }
+        $parsedOffset = [System.DateTimeOffset]::MinValue
+        if ([System.DateTimeOffset]::TryParse([string]$InputDate, [ref]$parsedOffset)) { return $parsedOffset.UtcDateTime }
+        $parsedDt = [System.DateTime]::MinValue
+        if ([System.DateTime]::TryParse([string]$InputDate, [System.Globalization.CultureInfo]::InvariantCulture, [System.Globalization.DateTimeStyles]::AdjustToUniversal, [ref]$parsedDt)) { return $parsedDt }
+        return $null
+    }
+
+    if (-not $EnvFile) {
+        $candidates = @(
+            (Join-Path $PSScriptRoot '.env'),
+            '.\.env',
+            (Join-Path ([Environment]::GetFolderPath('UserProfile')) '.env')
+        )
+        foreach ($c in $candidates) {
+            if (Test-Path $c) { $EnvFile = $c; break }
+        }
+    }
+    if ($EnvFile -and (Test-Path $EnvFile)) {
+        Get-Content $EnvFile | Where-Object { $_ -match '^\s*[^#=]+\s*=' } | ForEach-Object {
+            $key, $val = $_ -split '=', 2
+            $k = $key.Trim()
+            $v = $val.Trim().Trim('"').Trim("'")
+            if (-not [string]::IsNullOrWhiteSpace($k)) {
+                [Environment]::SetEnvironmentVariable($k, $v, 'Process')
+            }
+        }
+    }
+
+    $effClientId = if ($ClientId) { $ClientId } elseif ($env:DELL_CLIENT_ID) { $env:DELL_CLIENT_ID } else { 'l71df1d39771064ce8a49569b4b56b67c5' }
+    $effClientSecret = if ($ClientSecret) { $ClientSecret } elseif ($env:DELL_CLIENT_SECRET) { $env:DELL_CLIENT_SECRET } else { 'c4ec5f7556fa4bc6bb1a5164878f5e2c' }
+    $tokenUrl = if ($env:DELL_TOKEN_URL) { $env:DELL_TOKEN_URL } else { 'https://apigtwb2c.us.dell.com/auth/oauth/v2/token' }
+    $warrantyUrl = if ($env:DELL_WARRANTY_URL) { $env:DELL_WARRANTY_URL } else { 'https://apigtwb2c.us.dell.com/PROD/sbil/eapi/v5/asset-entitlements' }
+
+    $targetTag = $ServiceTag.Trim()
+    if ([string]::IsNullOrWhiteSpace($targetTag)) {
+        try {
+            $targetTag = (Get-CimInstance -ClassName Win32_BIOS -ErrorAction Stop).SerialNumber.Trim()
+        } catch {
+            $targetTag = (Get-WmiObject -Class Win32_BIOS -ErrorAction SilentlyContinue).SerialNumber.Trim()
+        }
+    }
+    if ([string]::IsNullOrWhiteSpace($targetTag)) {
+        throw "Unable to detect host BIOS Service Tag. Please supply a valid Dell Service Tag."
+    }
+
+    $tokenHeaders = @{ 'Content-Type' = 'application/x-www-form-urlencoded' }
+    $tokenBody = @{
+        client_id     = $effClientId
+        client_secret = $effClientSecret
+        grant_type    = 'client_credentials'
+    }
+    $tokenResponse = Invoke-RestMethod -Uri $tokenUrl -Method Post -Headers $tokenHeaders -Body $tokenBody -ErrorAction Stop
+    $accessToken = $tokenResponse.access_token
+
+    $queryUri = "$warrantyUrl`?servicetags=$targetTag"
+    $apiHeaders = @{
+        'Authorization' = "Bearer $accessToken"
+        'Accept'        = 'application/json'
+    }
+    $apiData = Invoke-RestMethod -Uri $queryUri -Method Get -Headers $apiHeaders -ErrorAction Stop
+    if (-not $apiData) {
+        throw "Dell Warranty API returned empty response for '$targetTag'."
+    }
+
+    $nowUtc = [datetime]::UtcNow
+    $shipDateUtc = local:ConvertTo-UtcDateTime $apiData.shipDate
+    $shipDateStr = if ($shipDateUtc) { $shipDateUtc.ToString('yyyy-MM-dd') } else { [string]$apiData.shipDate }
+
+    $deviceAgeDays = if ($shipDateUtc) { [math]::Round(($nowUtc - $shipDateUtc).TotalDays, 0) } else { $null }
+    $deviceAgeYears = if ($deviceAgeDays) { [math]::Round($deviceAgeDays / 365.25, 1) } else { $null }
+
+    $entitlementList = [System.Collections.Generic.List[PSCustomObject]]::new()
+    $latestEndDateUtc = [datetime]::MinValue
+    $primaryServiceLevel = 'None / Expired'
+
+    if ($apiData.entitlements) {
+        foreach ($ent in $apiData.entitlements) {
+            $startUtc = local:ConvertTo-UtcDateTime $ent.startDate
+            $endUtc = local:ConvertTo-UtcDateTime $ent.endDate
+            $isActive = ($endUtc -and $endUtc -gt $nowUtc)
+
+            if ($endUtc -and $endUtc -gt $latestEndDateUtc) {
+                $latestEndDateUtc = $endUtc
+                $primaryServiceLevel = $ent.serviceLevelDescription
+            }
+
+            $entitlementList.Add([PSCustomObject]@{
+                ServiceLevelDescription = $ent.serviceLevelDescription
+                EntitlementType         = $ent.entitlementType
+                StartDate               = if ($startUtc) { $startUtc.ToString('yyyy-MM-dd') } else { [string]$ent.startDate }
+                EndDate                 = if ($endUtc) { $endUtc.ToString('yyyy-MM-dd') } else { [string]$ent.endDate }
+                ServiceLevelCode        = $ent.serviceLevelCode
+                ServiceLevelGroup       = $ent.serviceLevelGroup
+                ItemNumber              = $ent.itemNumber
+                Status                  = if ($isActive) { 'Active' } else { 'Expired' }
+            })
+        }
+    }
+
+    $isUnderWarranty = ($latestEndDateUtc -gt $nowUtc)
+    $daysRemaining = if ($latestEndDateUtc -ne [datetime]::MinValue) { [math]::Round(($latestEndDateUtc - $nowUtc).TotalDays, 0) } else { 0 }
+    $warrantyEndDateStr = if ($latestEndDateUtc -ne [datetime]::MinValue) { $latestEndDateUtc.ToString('yyyy-MM-dd') } else { 'N/A' }
+
+    $warrantyStatus = 'Expired'
+    $verdictCategory = 'REFRESH RECOMMENDED'
+    $verdictDetails = ''
+
+    if ($isUnderWarranty) {
+        if ($daysRemaining -le 90) {
+            $warrantyStatus = "Expiring Soon ($daysRemaining days remaining)"
+            $verdictCategory = 'REFRESH PLANNING (EXPIRING SOON)'
+            $verdictDetails = "Device warranty expires in $daysRemaining days on $warrantyEndDateStr ($primaryServiceLevel). Recommend scheduling hardware replacement cycle within current fiscal quarter."
+        } else {
+            $warrantyStatus = "Active ($daysRemaining days remaining)"
+            $verdictCategory = 'ELIGIBLE FOR DEPLOYMENT (DO NOT REFRESH)'
+            $verdictDetails = "Device has $daysRemaining days of active vendor support remaining through $warrantyEndDateStr ($primaryServiceLevel). Hardware is fully covered under SLA and eligible for user redeployment."
+        }
+    } else {
+        $expiredDaysAgo = [math]::Abs($daysRemaining)
+        $warrantyStatus = "Expired ($expiredDaysAgo days ago)"
+        $verdictCategory = 'REFRESH RECOMMENDED (OUT OF WARRANTY)'
+        $verdictDetails = "Device warranty expired on $warrantyEndDateStr ($expiredDaysAgo days out of warranty; age: $deviceAgeYears years). Vendor SLA and repair coverage have lapsed. Strong candidate for hardware refresh and decommissioning."
+    }
+
+    return [PSCustomObject]@{
+        ServiceTag              = $apiData.serviceTag
+        SystemModel             = if ($apiData.systemDescription) { $apiData.systemDescription } else { $apiData.productLineDescription }
+        ProductFamily           = $apiData.productFamily
+        ProductLineDescription  = $apiData.productLineDescription
+        ProductLobDescription   = $apiData.productLobDescription
+        CountryCode             = $apiData.countryCode
+        ShipDate                = $shipDateStr
+        DeviceAgeYears          = $deviceAgeYears
+        DeviceAgeDays           = $deviceAgeDays
+        IsUnderWarranty         = $isUnderWarranty
+        WarrantyStatus          = $warrantyStatus
+        DaysRemaining           = $daysRemaining
+        WarrantyEndDate         = $warrantyEndDateStr
+        PrimaryServiceLevel     = $primaryServiceLevel
+        RefreshVerdict          = $verdictCategory
+        RefreshRecommendation   = $verdictDetails
+        Entitlements            = $entitlementList
+        QueriedAt               = $nowUtc.ToString('yyyy-MM-dd HH:mm:ss UTC')
+    }
+}
+
 # ==============================================================================
 # SECTION B: INTERACTIVE CYBER-DARK WPF XAML INTERFACE
 # ==============================================================================
@@ -1117,6 +1280,117 @@ function Start-AutopilotHubGui {
                     </Grid>
                 </Border>
             </TabItem>
+
+            <!-- TAB 5: DELL ASSET WARRANTY & REFRESH ASSESSMENT -->
+            <TabItem Header="🏷️ Dell Warranty &amp; Refresh">
+                <Border Background="#1E293B" CornerRadius="8" BorderBrush="#334155" BorderThickness="1" Padding="16" Margin="0,12,0,0">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+
+                        <!-- Row 0: Tag Input & Control Buttons -->
+                        <Grid Grid.Row="0" Margin="0,0,0,12">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="170"/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="Service Tag:" FontWeight="SemiBold" VerticalAlignment="Center" Margin="0,0,10,0" Foreground="#F8FAFC"/>
+                            <TextBox Name="TxtDellServiceTag" Grid.Column="1" VerticalAlignment="Center" CharacterCasing="Upper" FontFamily="Consolas" FontWeight="Bold" FontSize="14" Margin="0,0,8,0"/>
+                            <Button Name="BtnDetectDellTag" Grid.Column="2" Content="🏷️ Detect BIOS Tag" Margin="0,0,8,0"/>
+                            <Button Name="BtnCheckDellWarranty" Grid.Column="3" HorizontalAlignment="Left" Content="🔍 Check Warranty &amp; Refresh Eligibility" Background="#0E7490" BorderBrush="#06B6D4" Margin="0,0,8,0"/>
+                            <Button Name="BtnCopyDellReport" Grid.Column="4" Content="📋 Copy Report" Margin="0,0,6,0"/>
+                            <Button Name="BtnExportDellCsv" Grid.Column="5" Content="💾 Export CSV"/>
+                        </Grid>
+
+                        <!-- Row 1: Hero Banner Refresh Verdict -->
+                        <Border Name="BorderRefreshVerdict" Grid.Row="1" Background="#1E293B" CornerRadius="8" BorderBrush="#475569" BorderThickness="2" Padding="14,10" Margin="0,0,0,12">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                    <TextBlock Name="TxtVerdictIcon" Text="🏷️" FontSize="18" Margin="0,0,10,0"/>
+                                    <TextBlock Name="TxtVerdictTitle" Text="DELL ASSET WARRANTY &amp; REFRESH LIFECYCLE ENGINE" FontSize="14" FontWeight="Bold" Foreground="#F8FAFC" VerticalAlignment="Center"/>
+                                </StackPanel>
+                                <TextBlock Name="TxtVerdictDesc" Grid.Row="1" Text="Click 'Check Warranty &amp; Refresh Eligibility' to query Dell Technologies Enterprise Warranty API (eAPI v5) and compute hardware refresh determination." FontSize="11" Foreground="#94A3B8" TextWrapping="Wrap" Margin="28,4,0,0"/>
+                            </Grid>
+                        </Border>
+
+                        <!-- Row 2: Hardware & Contract Telemetry Cards -->
+                        <Grid Grid.Row="2" Margin="0,0,0,12">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+
+                            <Border Grid.Column="0" Background="#0F172A" CornerRadius="6" BorderBrush="#334155" BorderThickness="1" Padding="10,8" Margin="0,0,6,0">
+                                <StackPanel>
+                                    <TextBlock Text="SYSTEM MODEL" FontSize="10" FontWeight="Bold" Foreground="#06B6D4"/>
+                                    <TextBlock Name="TxtDellModel" Text="Unknown" FontSize="12" FontWeight="SemiBold" Foreground="#F8FAFC" TextTrimming="CharacterEllipsis" Margin="0,2,0,0"/>
+                                    <TextBlock Name="TxtDellProductLine" Text="Line: -" FontSize="10" Foreground="#94A3B8" TextTrimming="CharacterEllipsis"/>
+                                </StackPanel>
+                            </Border>
+
+                            <Border Grid.Column="1" Background="#0F172A" CornerRadius="6" BorderBrush="#334155" BorderThickness="1" Padding="10,8" Margin="0,0,6,0">
+                                <StackPanel>
+                                    <TextBlock Text="FACTORY SHIP DATE / AGE" FontSize="10" FontWeight="Bold" Foreground="#06B6D4"/>
+                                    <TextBlock Name="TxtDellShipDate" Text="-" FontSize="12" FontWeight="SemiBold" Foreground="#F8FAFC" Margin="0,2,0,0"/>
+                                    <TextBlock Name="TxtDellAge" Text="Age: -" FontSize="10" Foreground="#94A3B8"/>
+                                </StackPanel>
+                            </Border>
+
+                            <Border Grid.Column="2" Background="#0F172A" CornerRadius="6" BorderBrush="#334155" BorderThickness="1" Padding="10,8" Margin="0,0,6,0">
+                                <StackPanel>
+                                    <TextBlock Text="PRIMARY SERVICE CONTRACT" FontSize="10" FontWeight="Bold" Foreground="#06B6D4"/>
+                                    <TextBlock Name="TxtDellContract" Text="-" FontSize="12" FontWeight="SemiBold" Foreground="#F8FAFC" TextTrimming="CharacterEllipsis" Margin="0,2,0,0"/>
+                                    <TextBlock Name="TxtDellRegion" Text="Region: -" FontSize="10" Foreground="#94A3B8"/>
+                                </StackPanel>
+                            </Border>
+
+                            <Border Grid.Column="3" Background="#0F172A" CornerRadius="6" BorderBrush="#334155" BorderThickness="1" Padding="10,8">
+                                <StackPanel>
+                                    <TextBlock Text="EXPIRATION &amp; STATUS" FontSize="10" FontWeight="Bold" Foreground="#06B6D4"/>
+                                    <TextBlock Name="TxtDellEndDate" Text="-" FontSize="12" FontWeight="SemiBold" Foreground="#F8FAFC" Margin="0,2,0,0"/>
+                                    <TextBlock Name="TxtDellDaysRemaining" Text="Status: -" FontSize="10" FontWeight="SemiBold" Foreground="#94A3B8"/>
+                                </StackPanel>
+                            </Border>
+                        </Grid>
+
+                        <!-- Row 3: Entitlements Table -->
+                        <Grid Grid.Row="3">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+                            <TextBlock Text="CONTRACT ENTITLEMENTS &amp; SERVICE HISTORY" FontSize="11" FontWeight="Bold" Foreground="#64748B" Margin="0,0,0,6"/>
+                            <ListView Name="LstDellEntitlements" Grid.Row="1" Background="#0F172A" BorderBrush="#334155" Foreground="#F8FAFC">
+                                <ListView.View>
+                                    <GridView>
+                                        <GridViewColumn Header="Service Level Description" Width="260" DisplayMemberBinding="{Binding ServiceLevelDescription}"/>
+                                        <GridViewColumn Header="Type" Width="85" DisplayMemberBinding="{Binding EntitlementType}"/>
+                                        <GridViewColumn Header="Start Date" Width="95" DisplayMemberBinding="{Binding StartDate}"/>
+                                        <GridViewColumn Header="End Date" Width="95" DisplayMemberBinding="{Binding EndDate}"/>
+                                        <GridViewColumn Header="Status" Width="75" DisplayMemberBinding="{Binding Status}"/>
+                                        <GridViewColumn Header="Code" Width="60" DisplayMemberBinding="{Binding ServiceLevelCode}"/>
+                                        <GridViewColumn Header="Item #" Width="90" DisplayMemberBinding="{Binding ItemNumber}"/>
+                                    </GridView>
+                                </ListView.View>
+                            </ListView>
+                        </Grid>
+                    </Grid>
+                </Border>
+            </TabItem>
         </TabControl>
 
         <!-- PROGRESS BAR & STATUS -->
@@ -1249,6 +1523,25 @@ function Start-AutopilotHubGui {
     $btnTimeSync       = $window.FindName('BtnTimeSync')
     $btnReboot         = $window.FindName('BtnReboot')
 
+    $txtDellServiceTag     = $window.FindName('TxtDellServiceTag')
+    $btnDetectDellTag      = $window.FindName('BtnDetectDellTag')
+    $btnCheckDellWarranty  = $window.FindName('BtnCheckDellWarranty')
+    $btnCopyDellReport     = $window.FindName('BtnCopyDellReport')
+    $btnExportDellCsv      = $window.FindName('BtnExportDellCsv')
+    $borderRefreshVerdict  = $window.FindName('BorderRefreshVerdict')
+    $txtVerdictIcon        = $window.FindName('TxtVerdictIcon')
+    $txtVerdictTitle       = $window.FindName('TxtVerdictTitle')
+    $txtVerdictDesc        = $window.FindName('TxtVerdictDesc')
+    $txtDellModel          = $window.FindName('TxtDellModel')
+    $txtDellProductLine    = $window.FindName('TxtDellProductLine')
+    $txtDellShipDate       = $window.FindName('TxtDellShipDate')
+    $txtDellAge            = $window.FindName('TxtDellAge')
+    $txtDellContract       = $window.FindName('TxtDellContract')
+    $txtDellRegion         = $window.FindName('TxtDellRegion')
+    $txtDellEndDate        = $window.FindName('TxtDellEndDate')
+    $txtDellDaysRemaining  = $window.FindName('TxtDellDaysRemaining')
+    $lstDellEntitlements   = $window.FindName('LstDellEntitlements')
+
     # UI Refresh Helper (Pumps WPF message loop without blocking)
     function Update-WpfUI {
         $frame = [System.Windows.Threading.DispatcherFrame]::new()
@@ -1329,6 +1622,16 @@ function Start-AutopilotHubGui {
         $txtNetwork.Text = "LIMITED / OFFLINE"
         $txtNetwork.Foreground = [System.Windows.Media.Brushes]::Gold
     }
+
+    # Dell Hardware Detection & Pre-population
+    try {
+        if ($bios -and $bios.SerialNumber) {
+            $txtDellServiceTag.Text = $bios.SerialNumber.Trim()
+        }
+        if ($cs -and $cs.Manufacturer -match 'Dell') {
+            Write-HubLog "Dell enterprise hardware detected ($($cs.Manufacturer) $($cs.Model)). Dell Warranty & Refresh Lifecycle Engine is armed." "INFO"
+        }
+    } catch { }
 
     # --- ACTION: Harvest Hash ---
     $btnHarvestHash.Add_Click({
@@ -1600,6 +1903,171 @@ function Start-AutopilotHubGui {
         [System.Windows.MessageBox]::Show("Log saved to:`n$savePath", "Log Saved", [System.Windows.MessageBoxButton]::OK, [System.Windows.MessageBoxImage]::Information)
     })
 
+    # --- ACTION: Dell Warranty & Hardware Refresh Assessment ---
+    $script:CurrentDellReport = $null
+
+    function Invoke-DellWarrantyAudit {
+        param([string]$Tag)
+        if (-not $Tag) {
+            $Tag = $txtDellServiceTag.Text.Trim()
+        }
+        if (-not $Tag) {
+            try {
+                $Tag = (Get-CimInstance Win32_BIOS -ErrorAction Stop).SerialNumber.Trim()
+                $txtDellServiceTag.Text = $Tag
+            } catch { }
+        }
+        if (-not $Tag) {
+            Write-HubLog "Dell warranty check halted: No Service Tag provided." "WARN"
+            [System.Windows.MessageBox]::Show("Please enter a valid Dell Service Tag or click 'Detect BIOS Tag'.", "Service Tag Required", [System.Windows.MessageBoxButton]::OK, [System.Windows.MessageBoxImage]::Warning)
+            return
+        }
+
+        Write-HubLog "Connecting to Dell Technologies Enterprise Warranty API (SBIL eAPI v5) for tag '$Tag'..."
+        Set-HubProgress -Percent 20 -Status "Acquiring Dell OAuth 2.0 Bearer Token"
+        Update-WpfUI
+
+        try {
+            Set-HubProgress -Percent 50 -Status "Querying Asset Entitlements ($Tag)"
+            $w = Get-DellWarrantyInfo -ServiceTag $Tag
+            $script:CurrentDellReport = $w
+            Set-HubProgress -Percent 85 -Status "Processing Entitlements & Computing Verdict"
+
+            # Populate Hardware & Telemetry Cards
+            $txtDellModel.Text = if ($w.SystemModel) { $w.SystemModel } else { 'Dell Computer' }
+            $txtDellProductLine.Text = "Line: $($w.ProductLineDescription)"
+            $txtDellShipDate.Text = if ($w.ShipDate) { $w.ShipDate } else { 'N/A' }
+            $txtDellAge.Text = "Age: $(if ($w.DeviceAgeYears) { "$($w.DeviceAgeYears) yrs" } else { '-' })"
+            $txtDellContract.Text = $w.PrimaryServiceLevel
+            $txtDellRegion.Text = "Region: $($w.CountryCode)"
+            $txtDellEndDate.Text = "End: $($w.WarrantyEndDate)"
+            $txtDellDaysRemaining.Text = $w.WarrantyStatus
+
+            # Update Hero Refresh Verdict Banner
+            $brushConv = [System.Windows.Media.BrushConverter]::new()
+            if ($w.IsUnderWarranty) {
+                if ($w.DaysRemaining -le 90) {
+                    $borderRefreshVerdict.Background = $brushConv.ConvertFromString("#78350F")
+                    $borderRefreshVerdict.BorderBrush = $brushConv.ConvertFromString("#F59E0B")
+                    $txtVerdictIcon.Text = "⚠️"
+                    $txtVerdictTitle.Text = $w.RefreshVerdict
+                    $txtVerdictTitle.Foreground = $brushConv.ConvertFromString("#FEF3C7")
+                    $txtDellDaysRemaining.Foreground = [System.Windows.Media.Brushes]::Orange
+                } else {
+                    $borderRefreshVerdict.Background = $brushConv.ConvertFromString("#064E3B")
+                    $borderRefreshVerdict.BorderBrush = $brushConv.ConvertFromString("#10B981")
+                    $txtVerdictIcon.Text = "✅"
+                    $txtVerdictTitle.Text = $w.RefreshVerdict
+                    $txtVerdictTitle.Foreground = $brushConv.ConvertFromString("#D1FAE5")
+                    $txtDellDaysRemaining.Foreground = [System.Windows.Media.Brushes]::LimeGreen
+                }
+            } else {
+                $borderRefreshVerdict.Background = $brushConv.ConvertFromString("#7F1D1D")
+                $borderRefreshVerdict.BorderBrush = $brushConv.ConvertFromString("#EF4444")
+                $txtVerdictIcon.Text = "❌"
+                $txtVerdictTitle.Text = $w.RefreshVerdict
+                $txtVerdictTitle.Foreground = $brushConv.ConvertFromString("#FEE2E2")
+                $txtDellDaysRemaining.Foreground = [System.Windows.Media.Brushes]::OrangeRed
+            }
+            $txtVerdictDesc.Text = $w.RefreshRecommendation
+
+            # Populate Entitlements ListView
+            $lstDellEntitlements.ItemsSource = $w.Entitlements
+
+            Write-HubLog "Dell warranty audit complete: $($w.SystemModel) ($Tag) | $($w.RefreshVerdict)" "SUCCESS"
+            Write-HubLog "Contract: $($w.PrimaryServiceLevel) | Expiration: $($w.WarrantyEndDate) | Posture: $($w.WarrantyStatus)"
+            Set-HubProgress -Percent 100 -Status "Dell Warranty Audited"
+        } catch {
+            Write-HubLog "Dell warranty audit failed for '$Tag': $($_.Exception.Message)" "ERROR"
+            Set-HubProgress -Percent 0 -Status "Dell API Error"
+            [System.Windows.MessageBox]::Show("Dell Warranty API query failed:`n$($_.Exception.Message)", "Dell API Error", [System.Windows.MessageBoxButton]::OK, [System.Windows.MessageBoxImage]::Warning)
+        }
+    }
+
+    $btnDetectDellTag.Add_Click({
+        try {
+            $tag = (Get-CimInstance Win32_BIOS -ErrorAction Stop).SerialNumber.Trim()
+            $txtDellServiceTag.Text = $tag
+            Write-HubLog "Host BIOS Service Tag detected: $tag"
+        } catch {
+            Write-HubLog "Unable to read BIOS SerialNumber: $($_.Exception.Message)" "WARN"
+        }
+    })
+
+    $btnCheckDellWarranty.Add_Click({
+        Invoke-DellWarrantyAudit
+    })
+
+    $btnCopyDellReport.Add_Click({
+        if (-not $script:CurrentDellReport) {
+            [System.Windows.MessageBox]::Show("Please perform a Dell Warranty check first before copying report.", "No Report Available", [System.Windows.MessageBoxButton]::OK, [System.Windows.MessageBoxImage]::Information)
+            return
+        }
+        $r = $script:CurrentDellReport
+        $md = @"
+# 🏷️ Dell Asset Warranty & Hardware Refresh Assessment: $($r.ServiceTag)
+
+> **Model:** $($r.SystemModel)  
+> **Service Tag:** ``$($r.ServiceTag)``  
+> **Lifecycle Verdict:** **$($r.RefreshVerdict)**  
+> **Warranty Status:** $($r.WarrantyStatus)  
+> **Ship Date:** $($r.ShipDate) ($($r.DeviceAgeYears) Years Old)  
+> **Coverage End Date:** $($r.WarrantyEndDate)  
+
+---
+
+## ⚡ Hardware Refresh Determination
+$($r.RefreshRecommendation)
+
+---
+
+## 📋 Entitlements & Service Contracts Breakdown
+| Service Level Description | Type | Start Date | End Date | Status |
+| :--- | :--- | :--- | :--- | :--- |
+$($r.Entitlements | ForEach-Object { "| $($_.ServiceLevelDescription) | $($_.EntitlementType) | $($_.StartDate) | $($_.EndDate) | $($_.Status) |" } | Out-String).TrimEnd()
+
+---
+*Generated autonomously via Dell Technologies Enterprise Warranty API (v5)*
+"@
+        [System.Windows.Clipboard]::SetText($md)
+        Write-HubLog "Dell warranty markdown report copied to clipboard." "SUCCESS"
+        [System.Windows.MessageBox]::Show("Assessment report copied to clipboard in Markdown format!", "Copied", [System.Windows.MessageBoxButton]::OK, [System.Windows.MessageBoxImage]::Information)
+    })
+
+    $btnExportDellCsv.Add_Click({
+        if (-not $script:CurrentDellReport) {
+            [System.Windows.MessageBox]::Show("Please perform a Dell Warranty check first before exporting CSV.", "No Report Available", [System.Windows.MessageBoxButton]::OK, [System.Windows.MessageBoxImage]::Information)
+            return
+        }
+        $r = $script:CurrentDellReport
+        $destPath = "$env:TEMP\DellWarranty-$($r.ServiceTag).csv"
+
+        $usbDrives = Get-CimInstance Win32_Volume -ErrorAction SilentlyContinue | Where-Object { $_.DriveType -eq 2 -and $_.DriveLetter }
+        if ($usbDrives) {
+            $usb = $usbDrives | Select-Object -First 1
+            $destPath = Join-Path $usb.DriveLetter "DellWarranty-$($r.ServiceTag).csv"
+            Write-HubLog "USB Flash Drive detected at $($usb.DriveLetter). Exporting CSV directly to USB..."
+        }
+
+        $flatObj = [PSCustomObject]@{
+            ServiceTag            = $r.ServiceTag
+            SystemModel           = $r.SystemModel
+            ShipDate              = $r.ShipDate
+            DeviceAgeYears        = $r.DeviceAgeYears
+            IsUnderWarranty       = $r.IsUnderWarranty
+            WarrantyStatus        = $r.WarrantyStatus
+            DaysRemaining         = $r.DaysRemaining
+            WarrantyEndDate       = $r.WarrantyEndDate
+            PrimaryServiceLevel   = $r.PrimaryServiceLevel
+            RefreshVerdict        = $r.RefreshVerdict
+            RefreshRecommendation = $r.RefreshRecommendation
+            QueriedAt             = $r.QueriedAt
+        }
+        $flatObj | Export-Csv -Path $destPath -NoTypeInformation -Force
+        Write-HubLog "Dell warranty audit CSV exported to: $destPath" "SUCCESS"
+        [System.Windows.MessageBox]::Show("Dell warranty audit exported successfully to:`n$destPath", "CSV Exported", [System.Windows.MessageBoxButton]::OK, [System.Windows.MessageBoxImage]::Information)
+    })
+
     # Initial Diagnostic Run
     $initialDiag = Test-StagedNetwork
     $lstDiagStages.ItemsSource = $initialDiag.Stages
@@ -1616,6 +2084,59 @@ if ($HarvestOnly) {
     Write-Host "`n⚡ AutopilotFast Hardware Hash Harvester" -ForegroundColor Cyan
     $hash = Get-AutopilotHash -GroupTag $GroupTag -AssignedUser $AssignedUser
     $hash | Format-List
+    return
+}
+
+if ($DellWarranty) {
+    Write-Host "`n🏷️ Dell Technologies Enterprise Warranty & Refresh Lifecycle Engine" -ForegroundColor Cyan
+    $tag = if ($DellServiceTag) { $DellServiceTag } else { '' }
+    $w = Get-DellWarrantyInfo -ServiceTag $tag
+    Write-Host "`n==========================================================================" -ForegroundColor Cyan
+    Write-Host " 🏷️ DELL ASSET WARRANTY & REFRESH ASSESSMENT: $($w.ServiceTag)" -ForegroundColor Cyan
+    Write-Host "==========================================================================" -ForegroundColor Cyan
+    Write-Host " Machine Model         : $($w.SystemModel)" -ForegroundColor White
+    Write-Host " Product Line          : $($w.ProductLineDescription)" -ForegroundColor White
+    Write-Host " Factory Ship Date     : $($w.ShipDate) ($($w.DeviceAgeYears) years old)" -ForegroundColor White
+    Write-Host " Country / Region      : $($w.CountryCode)" -ForegroundColor White
+    Write-Host " Active Contract       : $($w.PrimaryServiceLevel)" -ForegroundColor White
+    Write-Host " Coverage End Date     : $($w.WarrantyEndDate)" -ForegroundColor White
+    Write-Host " Warranty Posture      : " -NoNewline
+    if ($w.IsUnderWarranty) {
+        Write-Host $w.WarrantyStatus -ForegroundColor Green
+    } else {
+        Write-Host $w.WarrantyStatus -ForegroundColor Red
+    }
+    Write-Host "--------------------------------------------------------------------------" -ForegroundColor DarkGray
+    Write-Host " 🎯 REFRESH VERDICT    : " -NoNewline
+    if ($w.IsUnderWarranty) {
+        Write-Host $w.RefreshVerdict -ForegroundColor Green
+    } else {
+        Write-Host $w.RefreshVerdict -ForegroundColor Red
+    }
+    Write-Host " ℹ️ Details            : $($w.RefreshRecommendation)" -ForegroundColor Gray
+    Write-Host "--------------------------------------------------------------------------" -ForegroundColor DarkGray
+    Write-Host " 📋 Contract Entitlements ($($w.Entitlements.Count) Total):" -ForegroundColor Cyan
+    $w.Entitlements | Format-Table ServiceLevelDescription, EntitlementType, StartDate, EndDate, Status -AutoSize
+
+    if ($ExportCsv) {
+        $path = if ($CsvPath) { $CsvPath } else { "$env:TEMP\DellWarranty-$($w.ServiceTag).csv" }
+        $flatObj = [PSCustomObject]@{
+            ServiceTag            = $w.ServiceTag
+            SystemModel           = $w.SystemModel
+            ShipDate              = $w.ShipDate
+            DeviceAgeYears        = $w.DeviceAgeYears
+            IsUnderWarranty       = $w.IsUnderWarranty
+            WarrantyStatus        = $w.WarrantyStatus
+            DaysRemaining         = $w.DaysRemaining
+            WarrantyEndDate       = $w.WarrantyEndDate
+            PrimaryServiceLevel   = $w.PrimaryServiceLevel
+            RefreshVerdict        = $w.RefreshVerdict
+            RefreshRecommendation = $w.RefreshRecommendation
+            QueriedAt             = $w.QueriedAt
+        }
+        $flatObj | Export-Csv -Path $path -NoTypeInformation -Force
+        Write-Host "Exported audit CSV to: $path" -ForegroundColor Green
+    }
     return
 }
 
