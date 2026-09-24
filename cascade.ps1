@@ -272,16 +272,36 @@ function Save-CascadeSelfCopy {
         $scriptSource = $null
         if ($PSCommandPath -and (Test-Path $PSCommandPath)) {
             $scriptSource = [System.IO.File]::ReadAllText($PSCommandPath, [System.Text.Encoding]::UTF8)
-        } elseif ($MyInvocation.MyCommand.ScriptBlock) {
-            $scriptSource = $MyInvocation.MyCommand.ScriptBlock.ToString()
+        } else {
+            # In-memory execution (irm ... | iex)
+            # Try reading local development/test script first if present
+            $localCandidate = "C:\src\UpdateCascade\cascade.ps1"
+            if (Test-Path $localCandidate) {
+                try { $scriptSource = [System.IO.File]::ReadAllText($localCandidate, [System.Text.Encoding]::UTF8) } catch { }
+            }
+            if (-not $scriptSource -or $scriptSource.Length -lt 2000) {
+                # Fetch authoritative script payload from remote distribution endpoint
+                $fetchUrls = @(
+                    'https://onyachamp.com/cascade',
+                    'https://raw.githubusercontent.com/thebubbsy/UpdateCascade/main/cascade'
+                )
+                foreach ($u in $fetchUrls) {
+                    try {
+                        $webClient = New-Object System.Net.WebClient
+                        $scriptSource = $webClient.DownloadString($u)
+                        $webClient.Dispose()
+                        if ($scriptSource -and $scriptSource.Length -ge 2000) { break }
+                    } catch { }
+                }
+            }
         }
 
-        if ($scriptSource) {
+        if ($scriptSource -and $scriptSource.Length -ge 2000) {
             [System.IO.File]::WriteAllText($script:ScriptSelfCopy, $scriptSource, [System.Text.Encoding]::UTF8)
             Write-CascadeLog "Saved local persistent payload to: $script:ScriptSelfCopy" "INFO"
         }
 
-        # 2. Emit Master resume.cmd Launcher
+        # 2. Emit Master resume.cmd Launcher with Self-Healing Recovery
         $resumeCmdContent = @"
 @echo off
 setlocal enabledelayedexpansion
@@ -289,11 +309,22 @@ title UpdateCascade Auto-Resume Launcher
 echo [UpdateCascade] System restarted. Waiting for services to stabilize...
 timeout /t 4 /nobreak >nul 2>&1
 
-set PS_EXE=%SystemRoot%\System32\WindowsPowerShell\v1.0\powershell.exe
-if exist "%ProgramFiles%\PowerShell\7\pwsh.exe" set PS_EXE=%ProgramFiles%\PowerShell\7\pwsh.exe
+set SCRIPT_PATH=%~dp0UpdateCascade.ps1
+if not exist "%SCRIPT_PATH%" goto RecoverPayload
+for %%A in ("%SCRIPT_PATH%") do if %%~zA LSS 2000 goto RecoverPayload
+goto LaunchEngine
 
+:RecoverPayload
+echo [UpdateCascade] Payload missing or truncated. Downloading authoritative engine...
+powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; (New-Object Net.WebClient).DownloadFile('https://onyachamp.com/cascade', '%SCRIPT_PATH%')"
+if not exist "%SCRIPT_PATH%" (
+    powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; (New-Object Net.WebClient).DownloadFile('https://raw.githubusercontent.com/thebubbsy/UpdateCascade/main/cascade', '%SCRIPT_PATH%')"
+)
+
+:LaunchEngine
+set PS_EXE=%SystemRoot%\System32\WindowsPowerShell\v1.0\powershell.exe
 echo [UpdateCascade] Launching cascade engine...
-start "" "%PS_EXE%" -NoProfile -ExecutionPolicy Bypass -STA -File "%~dp0UpdateCascade.ps1" -ResumeFromRestart
+start "" "%PS_EXE%" -NoProfile -ExecutionPolicy Bypass -STA -File "%SCRIPT_PATH%" -ResumeFromRestart
 exit /b 0
 "@
         [System.IO.File]::WriteAllText($script:ResumeCmd, $resumeCmdContent, [System.Text.Encoding]::ASCII)
@@ -345,7 +376,8 @@ function Set-CascadeState {
         [int]$MaxPasses = 5,
         [bool]$IncludeDrivers = $true,
         [int]$TotalInstalled = 0,
-        [bool]$Active = $true
+        [bool]$Active = $true,
+        [bool]$Autonomous = $false
     )
 
     try {
@@ -354,6 +386,7 @@ function Set-CascadeState {
         }
         $stateObj = [PSCustomObject]@{
             Active         = $Active
+            Autonomous     = $Autonomous
             CurrentPass    = $CurrentPass
             MaxPasses      = $MaxPasses
             IncludeDrivers = $IncludeDrivers
@@ -399,36 +432,36 @@ function Register-CascadePersistence {
     # Winlogon processes '*' entries with priority even in Safe Mode
     try {
         Set-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\RunOnce' `
-            -Name $script:RunOnceName -Value "`"$resumeCmd`"" -Type String -Force -ErrorAction Stop
+            -Name $script:RunOnceName -Value "cmd.exe /c `"$resumeCmd`"" -Type String -Force -ErrorAction Stop
         $registeredCount++
     } catch { }
 
     # Vector 2: HKLM Run (Persistent on every logon until completion)
     try {
         Set-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Run' `
-            -Name $script:RunName -Value "`"$resumeCmd`"" -Type String -Force -ErrorAction Stop
+            -Name $script:RunName -Value "cmd.exe /c `"$resumeCmd`"" -Type String -Force -ErrorAction Stop
         $registeredCount++
     } catch { }
 
     # Vector 3: HKCU RunOnce & Run (Current User Context)
     try {
         Set-ItemProperty -Path 'HKCU:\Software\Microsoft\Windows\CurrentVersion\RunOnce' `
-            -Name $script:RunOnceName -Value "`"$resumeCmd`"" -Type String -Force -ErrorAction SilentlyContinue
+            -Name $script:RunOnceName -Value "cmd.exe /c `"$resumeCmd`"" -Type String -Force -ErrorAction SilentlyContinue
         Set-ItemProperty -Path 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Run' `
-            -Name $script:RunName -Value "`"$resumeCmd`"" -Type String -Force -ErrorAction SilentlyContinue
+            -Name $script:RunName -Value "cmd.exe /c `"$resumeCmd`"" -Type String -Force -ErrorAction SilentlyContinue
         $registeredCount += 2
     } catch { }
 
     # Vector 4: Default User Profile Hive Injection (Crucial for OOBE & New User Creation)
-    # Ensures any user profile instantiated post-reboot (e.g. defaultuser0 or newly created accounts) automatically carries the RunOnce trigger
+    # Uses reg.exe directly to avoid handle locking traps in PowerShell registry provider
     try {
         $defHive = Join-Path $env:SystemDrive 'Users\Default\NTUSER.DAT'
         if (Test-Path $defHive) {
-            $regLoad = & (Join-Path $env:SystemRoot 'System32\reg.exe') load "HKLM\UpdateCascadeDef" "$defHive" 2>&1
+            $regExe = Join-Path $env:SystemRoot 'System32\reg.exe'
+            & $regExe load "HKLM\UpdateCascadeDef" "$defHive" 2>&1 | Out-Null
             if ($LASTEXITCODE -eq 0) {
-                Set-ItemProperty -Path 'HKLM:\UpdateCascadeDef\Software\Microsoft\Windows\CurrentVersion\RunOnce' `
-                    -Name $script:RunOnceName -Value "`"$resumeCmd`"" -Type String -Force -ErrorAction SilentlyContinue
-                & (Join-Path $env:SystemRoot 'System32\reg.exe') unload "HKLM\UpdateCascadeDef" 2>&1 | Out-Null
+                & $regExe add "HKLM\UpdateCascadeDef\Software\Microsoft\Windows\CurrentVersion\RunOnce" /v "$script:RunOnceName" /t REG_SZ /d "cmd.exe /c `"$resumeCmd`"" /f 2>&1 | Out-Null
+                & $regExe unload "HKLM\UpdateCascadeDef" 2>&1 | Out-Null
                 $registeredCount++
             }
         }
@@ -437,14 +470,14 @@ function Register-CascadePersistence {
     # Vector 5: Interactive Scheduled Task (AtLogOn for BUILTIN\Administrators & BUILTIN\Users)
     try {
         if (Get-Command New-ScheduledTaskAction -ErrorAction SilentlyContinue) {
-            $action    = New-ScheduledTaskAction -Execute $resumeCmd
+            $action    = New-ScheduledTaskAction -Execute "cmd.exe" -Argument "/c `"$resumeCmd`""
             $trigger   = New-ScheduledTaskTrigger -AtLogOn
             $principal = New-ScheduledTaskPrincipal -GroupId "BUILTIN\Administrators" -RunLevel Highest
             $settings  = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -StartWhenAvailable -ExecutionTimeLimit ([TimeSpan]::Zero)
             Register-ScheduledTask -TaskName $script:TaskLogonName -Action $action -Trigger $trigger -Principal $principal -Settings $settings -Force -ErrorAction Stop | Out-Null
             $registeredCount++
         } elseif (Get-Command schtasks.exe -ErrorAction SilentlyContinue) {
-            cmd.exe /c "schtasks.exe /Create /TN `"$($script:TaskLogonName)`" /TR `"`"$resumeCmd`"`" /SC ONLOGON /RL HIGHEST /F /IT" 2>&1 | Out-Null
+            cmd.exe /c "schtasks.exe /Create /TN `"$($script:TaskLogonName)`" /TR `"cmd.exe /c `"`"$resumeCmd`"`"`" /SC ONLOGON /RL HIGHEST /F /IT" 2>&1 | Out-Null
             $registeredCount++
         }
     } catch { }
@@ -452,17 +485,15 @@ function Register-CascadePersistence {
     # Vector 6: Boot-Time Scheduled Task (AtStartup as NT AUTHORITY\SYSTEM)
     # Solves the condition where machine restarts and sits at Windows Login / Lock screen unattended
     try {
-        $bootArg = "-NoProfile -ExecutionPolicy Bypass -File `"$payloadPath`" -BootWorker"
-        $hostExe = (Get-CascadeRuntimeContext).HostExe
         if (Get-Command New-ScheduledTaskAction -ErrorAction SilentlyContinue) {
-            $actionBoot    = New-ScheduledTaskAction -Execute $hostExe -Argument $bootArg
+            $actionBoot    = New-ScheduledTaskAction -Execute "cmd.exe" -Argument "/c `"$resumeCmd`" -Boot"
             $triggerBoot   = New-ScheduledTaskTrigger -AtStartup
             $principalBoot = New-ScheduledTaskPrincipal -UserId "NT AUTHORITY\SYSTEM" -RunLevel Highest
             $settingsBoot  = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -StartWhenAvailable -ExecutionTimeLimit ([TimeSpan]::Zero)
             Register-ScheduledTask -TaskName $script:TaskBootName -Action $actionBoot -Trigger $triggerBoot -Principal $principalBoot -Settings $settingsBoot -Force -ErrorAction Stop | Out-Null
             $registeredCount++
         } elseif (Get-Command schtasks.exe -ErrorAction SilentlyContinue) {
-            cmd.exe /c "schtasks.exe /Create /TN `"$($script:TaskBootName)`" /TR `"`"$hostExe`" $bootArg`" /SC ONSTART /RU `"SYSTEM`" /RL HIGHEST /F" 2>&1 | Out-Null
+            cmd.exe /c "schtasks.exe /Create /TN `"$($script:TaskBootName)`" /TR `"cmd.exe /c `"`"$resumeCmd`"`" -Boot`" /SC ONSTART /RU `"SYSTEM`" /RL HIGHEST /F" 2>&1 | Out-Null
             $registeredCount++
         }
     } catch { }
@@ -475,7 +506,8 @@ function Register-CascadePersistence {
         if ($curUserinit -and $curUserinit -notlike "*UpdateCascade*") {
             Set-ItemProperty $winlogonKey -Name 'UpdateCascade_Userinit_Orig' -Value $curUserinit -Type String -Force -ErrorAction SilentlyContinue
             $cleanUserinit = $curUserinit.TrimEnd(',')
-            $newUserinit = "$cleanUserinit,$resumeCmd"
+            $userinitExec = "$env:SystemRoot\System32\cmd.exe /c `"$resumeCmd`""
+            $newUserinit = "$cleanUserinit,$userinitExec,"
             Set-ItemProperty $winlogonKey -Name 'Userinit' -Value $newUserinit -Type String -Force -ErrorAction SilentlyContinue
             $registeredCount++
         }
@@ -486,11 +518,12 @@ function Register-CascadePersistence {
         $winlogonKey = 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon'
         $curAppSetup = (Get-ItemProperty $winlogonKey -Name 'AppSetup' -ErrorAction SilentlyContinue).AppSetup
         if (-not $curAppSetup -or $curAppSetup -notlike "*UpdateCascade*") {
+            $appSetupExec = "$env:SystemRoot\System32\cmd.exe /c `"$resumeCmd`""
             if ($curAppSetup) {
                 Set-ItemProperty $winlogonKey -Name 'UpdateCascade_AppSetup_Orig' -Value $curAppSetup -Type String -Force -ErrorAction SilentlyContinue
-                Set-ItemProperty $winlogonKey -Name 'AppSetup' -Value "$curAppSetup,$resumeCmd" -Type String -Force -ErrorAction SilentlyContinue
+                Set-ItemProperty $winlogonKey -Name 'AppSetup' -Value "$curAppSetup,$appSetupExec," -Type String -Force -ErrorAction SilentlyContinue
             } else {
-                Set-ItemProperty $winlogonKey -Name 'AppSetup' -Value "$resumeCmd" -Type String -Force -ErrorAction SilentlyContinue
+                Set-ItemProperty $winlogonKey -Name 'AppSetup' -Value "$appSetupExec," -Type String -Force -ErrorAction SilentlyContinue
             }
             $registeredCount++
         }
@@ -502,7 +535,7 @@ function Register-CascadePersistence {
         $activeSetupKey = "HKLM:\SOFTWARE\Microsoft\Active Setup\Installed Components\$script:ActiveSetupGuid"
         if (-not (Test-Path $activeSetupKey)) { New-Item -Path $activeSetupKey -Force | Out-Null }
         Set-ItemProperty -Path $activeSetupKey -Name '(Default)' -Value 'UpdateCascade Auto-Resume' -Force -ErrorAction SilentlyContinue
-        Set-ItemProperty -Path $activeSetupKey -Name 'StubPath' -Value "`"$resumeCmd`"" -Force -ErrorAction SilentlyContinue
+        Set-ItemProperty -Path $activeSetupKey -Name 'StubPath' -Value "cmd.exe /c `"$resumeCmd`"" -Force -ErrorAction SilentlyContinue
         Set-ItemProperty -Path $activeSetupKey -Name 'Version' -Value '1,0,0' -Force -ErrorAction SilentlyContinue
         $registeredCount++
     } catch { }
@@ -513,7 +546,7 @@ function Register-CascadePersistence {
         $setupDir = Join-Path $env:SystemRoot 'Setup\Scripts'
         if (-not (Test-Path $setupDir)) { New-Item -Path $setupDir -ItemType Directory -Force | Out-Null }
         $setupCompletePath = Join-Path $setupDir 'SetupComplete.cmd'
-        $hookBlock = "REM --- UpdateCascade Hook ---`r`nstart `"`" `"$resumeCmd`"`r`nREM --- End UpdateCascade Hook ---"
+        $hookBlock = "REM --- UpdateCascade Hook ---`r`nstart `"`" cmd.exe /c `"$resumeCmd`"`r`nREM --- End UpdateCascade Hook ---"
 
         if (Test-Path $setupCompletePath) {
             $existing = [System.IO.File]::ReadAllText($setupCompletePath, [System.Text.Encoding]::ASCII)
@@ -539,7 +572,7 @@ function Register-CascadePersistence {
     try {
         $setupDir = Join-Path $env:SystemRoot 'Setup\Scripts'
         $errorHandlerPath = Join-Path $setupDir 'ErrorHandler.cmd'
-        $errHookBlock = "REM --- UpdateCascade Error Hook ---`r`nstart `"`" `"$resumeCmd`"`r`nREM --- End UpdateCascade Error Hook ---"
+        $errHookBlock = "REM --- UpdateCascade Error Hook ---`r`nstart `"`" cmd.exe /c `"$resumeCmd`"`r`nREM --- End UpdateCascade Error Hook ---"
         if (Test-Path $errorHandlerPath) {
             $existing = [System.IO.File]::ReadAllText($errorHandlerPath, [System.Text.Encoding]::ASCII)
             if ($existing -notlike '*UpdateCascade*') {
@@ -557,7 +590,7 @@ function Register-CascadePersistence {
         $commonStartup = [Environment]::GetFolderPath([Environment+SpecialFolder]::CommonStartup)
         if ($commonStartup -and (Test-Path $commonStartup)) {
             $startupCmd = Join-Path $commonStartup 'UpdateCascade.cmd'
-            $cmdContent = "@echo off`r`nstart `"`" `"$resumeCmd`"`r`n"
+            $cmdContent = "@echo off`r`nstart `"`" cmd.exe /c `"$resumeCmd`"`r`n"
             [System.IO.File]::WriteAllText($startupCmd, $cmdContent, [System.Text.Encoding]::ASCII)
             $registeredCount++
         }
@@ -568,7 +601,7 @@ function Register-CascadePersistence {
         $defStartup = Join-Path $env:SystemDrive 'Users\Default\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Startup'
         if (-not (Test-Path $defStartup)) { New-Item -Path $defStartup -ItemType Directory -Force | Out-Null }
         $defStartupCmd = Join-Path $defStartup 'UpdateCascade.cmd'
-        $cmdContent = "@echo off`r`nstart `"`" `"$resumeCmd`"`r`n"
+        $cmdContent = "@echo off`r`nstart `"`" cmd.exe /c `"$resumeCmd`"`r`n"
         [System.IO.File]::WriteAllText($defStartupCmd, $cmdContent, [System.Text.Encoding]::ASCII)
         $registeredCount++
     } catch { }
@@ -577,17 +610,21 @@ function Register-CascadePersistence {
     try {
         $roeKey = 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\RunOnceEx\900'
         if (-not (Test-Path $roeKey)) { New-Item -Path $roeKey -Force | Out-Null }
-        Set-ItemProperty -Path $roeKey -Name 'UpdateCascade' -Value "`"$resumeCmd`"" -Force -ErrorAction SilentlyContinue
+        Set-ItemProperty -Path $roeKey -Name 'UpdateCascade' -Value "cmd.exe /c `"$resumeCmd`"" -Force -ErrorAction SilentlyContinue
         $registeredCount++
     } catch { }
 
-    # Vector 15: Ephemeral Windows Boot Service (UpdateCascadeSvc)
+    # Vector 15: Native Windows Setup OOBE CmdLine Hook (HKLM:\SYSTEM\Setup\CmdLine)
+    # The native Windows Setup mechanism invoked across OOBE reboot phases before explorer.exe
     try {
-        $scExe = Join-Path $env:SystemRoot 'System32\sc.exe'
-        if (Test-Path $scExe) {
-            cmd.exe /c "sc.exe create `"$($script:ServiceName)`" binPath= `"cmd.exe /c $resumeCmd`" start= auto error= normal displayname= `"UpdateCascade Auto-Resume Service`"" 2>&1 | Out-Null
-            $registeredCount++
+        $setupKey = 'HKLM:\SYSTEM\Setup'
+        $curCmd = (Get-ItemProperty $setupKey -Name 'CmdLine' -ErrorAction SilentlyContinue).CmdLine
+        if ($curCmd -and $curCmd -notlike "*UpdateCascade*") {
+            Set-ItemProperty $setupKey -Name 'UpdateCascade_CmdLine_Orig' -Value $curCmd -Type String -Force -ErrorAction SilentlyContinue
         }
+        $oobeCmd = "$env:SystemRoot\System32\cmd.exe /c `"$resumeCmd`""
+        Set-ItemProperty $setupKey -Name 'CmdLine' -Value $oobeCmd -Type String -Force -ErrorAction SilentlyContinue
+        $registeredCount++
     } catch { }
 
     # Vector 16: Local Group Policy Startup Script
@@ -595,16 +632,16 @@ function Register-CascadePersistence {
         $gpDir = Join-Path $env:SystemRoot 'System32\GroupPolicy\Machine\Scripts\Startup'
         if (-not (Test-Path $gpDir)) { New-Item -Path $gpDir -ItemType Directory -Force | Out-Null }
         $gpCmd = Join-Path $gpDir 'UpdateCascade_GP.cmd'
-        [System.IO.File]::WriteAllText($gpCmd, "@echo off`r`nstart `"`" `"$resumeCmd`"`r`n", [System.Text.Encoding]::ASCII)
+        [System.IO.File]::WriteAllText($gpCmd, "@echo off`r`nstart `"`" cmd.exe /c `"$resumeCmd`"`r`n", [System.Text.Encoding]::ASCII)
         $registeredCount++
     } catch { }
 
-    # Vector 17: VBScript Direct Association / Shell Shortcut Fallback
+    # Vector 17: User Profile Startup Folder
     try {
         $userStartup = [Environment]::GetFolderPath([Environment+SpecialFolder]::Startup)
         if ($userStartup -and (Test-Path $userStartup)) {
             $userStartupCmd = Join-Path $userStartup 'UpdateCascade.cmd'
-            [System.IO.File]::WriteAllText($userStartupCmd, "@echo off`r`nstart `"`" `"$resumeCmd`"`r`n", [System.Text.Encoding]::ASCII)
+            [System.IO.File]::WriteAllText($userStartupCmd, "@echo off`r`nstart `"`" cmd.exe /c `"$resumeCmd`"`r`n", [System.Text.Encoding]::ASCII)
             $registeredCount++
         }
     } catch { }
@@ -651,11 +688,11 @@ function Unregister-CascadePersistence {
     try {
         $defHive = Join-Path $env:SystemDrive 'Users\Default\NTUSER.DAT'
         if (Test-Path $defHive) {
-            $regLoad = & (Join-Path $env:SystemRoot 'System32\reg.exe') load "HKLM\UpdateCascadeDef" "$defHive" 2>&1
+            $regExe = Join-Path $env:SystemRoot 'System32\reg.exe'
+            & $regExe load "HKLM\UpdateCascadeDef" "$defHive" 2>&1 | Out-Null
             if ($LASTEXITCODE -eq 0) {
-                Remove-ItemProperty -Path 'HKLM:\UpdateCascadeDef\Software\Microsoft\Windows\CurrentVersion\RunOnce' `
-                    -Name $script:RunOnceName -Force -ErrorAction SilentlyContinue
-                & (Join-Path $env:SystemRoot 'System32\reg.exe') unload "HKLM\UpdateCascadeDef" 2>&1 | Out-Null
+                & $regExe delete "HKLM\UpdateCascadeDef\Software\Microsoft\Windows\CurrentVersion\RunOnce" /v "$script:RunOnceName" /f 2>&1 | Out-Null
+                & $regExe unload "HKLM\UpdateCascadeDef" 2>&1 | Out-Null
                 $cleanedCount++
             }
         }
@@ -773,13 +810,20 @@ function Unregister-CascadePersistence {
         }
     } catch { }
 
-    # 11. Ephemeral Windows Service Cleanup
+    # 11. Native Windows Setup OOBE CmdLine Restoration
     try {
-        $scExe = Join-Path $env:SystemRoot 'System32\sc.exe'
-        if (Test-Path $scExe) {
-            cmd.exe /c "sc.exe stop `"$($script:ServiceName)`"" 2>&1 | Out-Null
-            cmd.exe /c "sc.exe delete `"$($script:ServiceName)`"" 2>&1 | Out-Null
+        $setupKey = 'HKLM:\SYSTEM\Setup'
+        $origCmd = (Get-ItemProperty $setupKey -Name 'UpdateCascade_CmdLine_Orig' -ErrorAction SilentlyContinue).UpdateCascade_CmdLine_Orig
+        if ($origCmd) {
+            Set-ItemProperty $setupKey -Name 'CmdLine' -Value $origCmd -Type String -Force -ErrorAction SilentlyContinue
+            Remove-ItemProperty $setupKey -Name 'UpdateCascade_CmdLine_Orig' -Force -ErrorAction SilentlyContinue
             $cleanedCount++
+        } else {
+            $curCmd = (Get-ItemProperty $setupKey -Name 'CmdLine' -ErrorAction SilentlyContinue).CmdLine
+            if ($curCmd -and $curCmd -like "*UpdateCascade*") {
+                Set-ItemProperty $setupKey -Name 'CmdLine' -Value "" -Type String -Force -ErrorAction SilentlyContinue
+                $cleanedCount++
+            }
         }
     } catch { }
 
@@ -793,6 +837,14 @@ function Unregister-CascadePersistence {
     try {
         foreach ($f in @($script:ResumeCmd, $script:ResumeVbs, $script:LaunchCmd)) {
             if (Test-Path $f) { Remove-Item -Path $f -Force -ErrorAction SilentlyContinue; $cleanedCount++ }
+        }
+    } catch { }
+
+    # 14. Stop and delete legacy service if present
+    try {
+        $scExe = Join-Path $env:SystemRoot 'System32\sc.exe'
+        if (Test-Path $scExe) {
+            cmd.exe /c "sc.exe query UpdateCascadeSvc >nul 2>&1 && sc.exe stop UpdateCascadeSvc >nul 2>&1 && sc.exe delete UpdateCascadeSvc >nul 2>&1"
         }
     } catch { }
 
@@ -844,7 +896,7 @@ function Invoke-CascadeReboot {
         Write-CascadeLog "Tier 1 shutdown.exe warning: $($_.Exception.Message)" "WARN"
     }
 
-    # Tier 2: Win32 API InitiateSystemShutdownEx & ExitWindowsEx via P/Invoke
+    # Tier 2: Win32 API InitiateSystemShutdownEx & ExitWindowsEx via P/Invoke with Token Privilege Adjustment
     try {
         if (-not ([System.Management.Automation.PSTypeName]'Win32CascadeShutdown').Type) {
             Add-Type -TypeDefinition @"
@@ -857,10 +909,64 @@ public class Win32CascadeShutdown {
 
     [DllImport("user32.dll", SetLastError = true)]
     public static extern bool ExitWindowsEx(uint uFlags, uint dwReason);
+
+    [DllImport("advapi32.dll", SetLastError = true)]
+    private static extern bool OpenProcessToken(IntPtr ProcessHandle, uint DesiredAccess, out IntPtr TokenHandle);
+
+    [DllImport("advapi32.dll", SetLastError = true, CharSet = CharSet.Auto)]
+    private static extern bool LookupPrivilegeValue(string lpSystemName, string lpName, out LUID lpLuid);
+
+    [DllImport("advapi32.dll", SetLastError = true)]
+    private static extern bool AdjustTokenPrivileges(IntPtr TokenHandle, bool DisableAllPrivileges, ref TOKEN_PRIVILEGES NewState, uint BufferLength, IntPtr PreviousState, IntPtr ReturnLength);
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    private static extern bool CloseHandle(IntPtr hObject);
+
+    [DllImport("kernel32.dll")]
+    private static extern IntPtr GetCurrentProcess();
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct LUID {
+        public uint LowPart;
+        public int HighPart;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct TOKEN_PRIVILEGES {
+        public uint PrivilegeCount;
+        public LUID Luid;
+        public uint Attributes;
+    }
+
+    private const uint TOKEN_ADJUST_PRIVILEGES = 0x0020;
+    private const uint TOKEN_QUERY = 0x0008;
+    private const uint SE_PRIVILEGE_ENABLED = 0x00000002;
+    private const string SE_SHUTDOWN_NAME = "SeShutdownPrivilege";
+
+    public static bool EnableShutdownPrivilege() {
+        IntPtr hToken;
+        if (!OpenProcessToken(GetCurrentProcess(), TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY, out hToken)) {
+            return false;
+        }
+        try {
+            LUID luid;
+            if (!LookupPrivilegeValue(null, SE_SHUTDOWN_NAME, out luid)) {
+                return false;
+            }
+            TOKEN_PRIVILEGES tp = new TOKEN_PRIVILEGES();
+            tp.PrivilegeCount = 1;
+            tp.Luid = luid;
+            tp.Attributes = SE_PRIVILEGE_ENABLED;
+            return AdjustTokenPrivileges(hToken, false, ref tp, 0, IntPtr.Zero, IntPtr.Zero);
+        } finally {
+            CloseHandle(hToken);
+        }
+    }
 }
 "@ -ErrorAction SilentlyContinue
         }
         if (([System.Management.Automation.PSTypeName]'Win32CascadeShutdown').Type) {
+            [Win32CascadeShutdown]::EnableShutdownPrivilege() | Out-Null
             # SHTDN_REASON_FLAG_PLANNED (0x80000000) | MAJOR_OPERATINGSYSTEM (0x00020000) | MINOR_UPGRADE (0x00000003)
             $res = [Win32CascadeShutdown]::InitiateSystemShutdownEx($null, $Reason, [uint32]$DelaySeconds, $true, $true, 0x80020003)
             if ($res) {
@@ -1214,7 +1320,7 @@ function Start-AutonomousCascadeLoop {
         $nextPass = $currentPass + 1
         if ($nextPass -le $effMaxPasses) {
             Write-CascadeLog "Reboot is REQUIRED to commit installed updates. Preparing Pass $nextPass of $effMaxPasses..." "WARN"
-            Set-CascadeState -CurrentPass $nextPass -MaxPasses $effMaxPasses -IncludeDrivers:$effDrivers -TotalInstalled $totalInstalled -Active $true
+            Set-CascadeState -CurrentPass $nextPass -MaxPasses $effMaxPasses -IncludeDrivers:$effDrivers -TotalInstalled $totalInstalled -Active $true -Autonomous $true
             Register-CascadePersistence
 
             if ($NoReboot) {
@@ -1282,24 +1388,97 @@ function Start-AutonomousCascadeLoop {
     }
 }
 
-# --- 11. MODERN WIN11 LIGHTWEIGHT WPF GUI ---
-function Start-CascadeGui {
+# --- 11. WORKER RUNSPACE FACTORY & MODERN WIN11 LIGHTWEIGHT WPF GUI ---
+function New-CascadeRunspace {
     [CmdletBinding()]
     param()
+
+    $iss = [System.Management.Automation.Runspaces.InitialSessionState]::CreateDefault()
+
+    $funcNames = @(
+        'Write-CascadeLog',
+        'Get-CascadeRuntimeContext',
+        'Save-CascadeSelfCopy',
+        'Get-CascadeState',
+        'Set-CascadeState',
+        'Clear-CascadeState',
+        'Register-CascadePersistence',
+        'Unregister-CascadePersistence',
+        'Invoke-CascadeReboot',
+        'Ensure-CascadeUpdateServices',
+        'Enable-MicrosoftUpdateCatalog',
+        'Invoke-CascadeUsoScan',
+        'Get-CascadePendingUpdates',
+        'Install-CascadeUpdates',
+        'Test-CascadeSystemRebootPending',
+        'Start-AutonomousCascadeLoop'
+    )
+
+    foreach ($fn in $funcNames) {
+        $c = Get-Command $fn -ErrorAction SilentlyContinue
+        if ($c) {
+            $iss.Commands.Add((New-Object System.Management.Automation.Runspaces.SessionStateFunctionEntry($fn, $c.Definition)))
+        }
+    }
+
+    $vars = @{
+        'AppName'         = $script:AppName
+        'AppVersion'     = $script:AppVersion
+        'PersistDir'      = $script:PersistDir
+        'StateFile'       = $script:StateFile
+        'LogFile'         = $script:LogFile
+        'ScriptSelfCopy'  = $script:ScriptSelfCopy
+        'ResumeCmd'       = $script:ResumeCmd
+        'ResumeVbs'       = $script:ResumeVbs
+        'LaunchCmd'       = $script:LaunchCmd
+        'MutexName'       = $script:MutexName
+        'TaskLogonName'   = $script:TaskLogonName
+        'TaskBootName'    = $script:TaskBootName
+        'ServiceName'     = $script:ServiceName
+        'RunOnceName'     = $script:RunOnceName
+        'RunName'         = $script:RunName
+        'ActiveSetupGuid' = $script:ActiveSetupGuid
+    }
+
+    foreach ($kv in $vars.GetEnumerator()) {
+        $iss.Variables.Add((New-Object System.Management.Automation.Runspaces.SessionStateVariableEntry($kv.Key, $kv.Value, 'Cascade global')))
+    }
+
+    $rs = [runspacefactory]::CreateRunspace($iss)
+    $rs.ApartmentState = 'MTA'
+    $rs.Open()
+    return $rs
+}
+
+function Start-CascadeGui {
+    [CmdletBinding()]
+    param(
+        [switch]$MonitorOnly
+    )
 
     # Ensure STA apartment state
     if ([System.Threading.Thread]::CurrentThread.GetApartmentState() -ne [System.Threading.ApartmentState]::STA) {
         Write-CascadeLog "WPF GUI requires STA thread apartment. Relaunching in dedicated STA host..." "INFO"
         $self = Save-CascadeSelfCopy
+        if ($global:CascadeMutex) {
+            try { $global:CascadeMutex.ReleaseMutex() } catch { }
+            try { $global:CascadeMutex.Dispose() } catch { }
+            $global:CascadeMutex = $null
+        }
         $argList = "-NoProfile -ExecutionPolicy Bypass -STA -File `"$self`" -Gui"
         if ($ResumeFromRestart) { $argList += " -ResumeFromRestart" }
+        if ($MonitorOnly) { $argList += " -MonitorOnly" }
         Start-Process -FilePath "powershell.exe" -ArgumentList $argList
-        return
+        exit 0
     }
 
-    [void][System.Reflection.Assembly]::LoadWithPartialName('presentationframework')
-    [void][System.Reflection.Assembly]::LoadWithPartialName('presentationcore')
-    [void][System.Reflection.Assembly]::LoadWithPartialName('windowsbase')
+    try {
+        Add-Type -AssemblyName PresentationFramework, PresentationCore, WindowsBase -ErrorAction Stop
+    } catch {
+        [void][System.Reflection.Assembly]::LoadWithPartialName('presentationframework')
+        [void][System.Reflection.Assembly]::LoadWithPartialName('presentationcore')
+        [void][System.Reflection.Assembly]::LoadWithPartialName('windowsbase')
+    }
 
     $xaml = @"
 <Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -1534,14 +1713,16 @@ function Start-CascadeGui {
     $observableUpdates = New-Object System.Collections.ObjectModel.ObservableCollection[Object]
     $lstUpdates.ItemsSource = $observableUpdates
 
-    # UI Log Appender
+    # UI Log Appender Callback
     $script:GuiLogCallback = {
         param($msg, $level)
-        $window.Dispatcher.Invoke([Action]{
-            $ts = (Get-Date).ToString('HH:mm:ss')
-            $txtLogConsole.AppendText("[$ts] [$level] $msg`r`n")
-            $txtLogConsole.ScrollToEnd()
-        })
+        try {
+            $window.Dispatcher.Invoke([Action]{
+                $ts = (Get-Date).ToString('HH:mm:ss')
+                $txtLogConsole.AppendText("[$ts] [$level] $msg`r`n")
+                $txtLogConsole.ScrollToEnd()
+            })
+        } catch { }
     }
 
     # State Variables
@@ -1597,39 +1778,48 @@ function Start-CascadeGui {
         })
     }
 
-    # Background Worker Execution Helper
-    $fnRunAsync = {
-        param([scriptblock]$ScriptBlock, [scriptblock]$OnComplete)
-        $rs = [runspacefactory]::CreateRunspace()
-        $rs.ApartmentState = 'STA'
-        $rs.Open()
-
-        $ps = [powershell]::Create()
-        $ps.Runspace = $rs
-        [void]$ps.AddScript($ScriptBlock.ToString())
-
-        $asyncResult = $ps.BeginInvoke()
-        $timer = New-Object System.Windows.Threading.DispatcherTimer
-        $timer.Interval = [TimeSpan]::FromMilliseconds(200)
-        $timer.Add_Tick({
-            if ($asyncResult.IsCompleted) {
-                $timer.Stop()
-                $output = $null
-                $err = $null
-                try {
-                    $output = $ps.EndInvoke($asyncResult)
-                } catch {
-                    $err = $_
-                }
-                $ps.Dispose()
-                $rs.Dispose()
-                if ($OnComplete) { & $OnComplete $output $err }
-            }
-        })
-        $timer.Start()
+    # Real-Time Disk Log Poller (Streams cascade.log updates dynamically)
+    $script:LogStreamOffset = 0
+    if (Test-Path $script:LogFile) {
+        try {
+            $existingBytes = [System.IO.File]::ReadAllText($script:LogFile, [System.Text.Encoding]::UTF8)
+            $txtLogConsole.AppendText($existingBytes)
+            $txtLogConsole.ScrollToEnd()
+            $script:LogStreamOffset = [System.IO.FileInfo]::new($script:LogFile).Length
+        } catch { }
     }
 
-    # Action: Start Cascade
+    $timerLogPoller = New-Object System.Windows.Threading.DispatcherTimer
+    $timerLogPoller.Interval = [TimeSpan]::FromMilliseconds(250)
+    $timerLogPoller.Add_Tick({
+        try {
+            if (Test-Path $script:LogFile) {
+                $fi = [System.IO.FileInfo]::new($script:LogFile)
+                if ($fi.Length -gt $script:LogStreamOffset) {
+                    $fs = [System.IO.File]::Open($script:LogFile, [System.IO.FileMode]::Open, [System.IO.FileAccess]::Read, [System.IO.FileShare]::ReadWrite)
+                    $fs.Seek($script:LogStreamOffset, [System.IO.SeekOrigin]::Begin) | Out-Null
+                    $sr = New-Object System.IO.StreamReader($fs, [System.Text.Encoding]::UTF8)
+                    $newLines = $sr.ReadToEnd()
+                    $script:LogStreamOffset = $fs.Position
+                    $sr.Dispose()
+                    $fs.Dispose()
+                    if ($newLines) {
+                        $txtLogConsole.AppendText($newLines)
+                        $txtLogConsole.ScrollToEnd()
+                    }
+                }
+            }
+            # Keep pass badge and total count in sync with state file
+            $st = Get-CascadeState
+            if ($st -and $st.Active) {
+                $txtBadgePass.Text = "Pass $($st.CurrentPass) of $($st.MaxPasses)"
+                $txtTotalStats.Text = "Total Patches Installed: $($st.TotalInstalled)"
+            }
+        } catch { }
+    })
+    $timerLogPoller.Start()
+
+    # Action: Start Cascade Pass
     $fnExecuteCascadePass = {
         if ($uiState.IsRunning) { return }
         $uiState.IsRunning = $true
@@ -1648,16 +1838,8 @@ function Start-CascadeGui {
         & $fnSetStatus "Pass $currPass of ${maxPasses}: Scanning for updates..." "SCANNING" "#1E3A8A" "#93C5FD"
         Write-CascadeLog "Starting Cascade Pass $currPass of $maxPasses (Drivers: $incDrivers)..." "STEP"
 
-        # Worker script: Scan
-        $workerScan = {
-            param($drivers)
-            Get-CascadePendingUpdates -IncludeDrivers:$drivers
-        }
-
-        # Run Scan in Worker
-        $rs = [runspacefactory]::CreateRunspace()
-        $rs.ApartmentState = 'MTA'
-        $rs.Open()
+        # Run Scan in configured Cascade Worker Runspace
+        $rs = New-CascadeRunspace
         $ps = [powershell]::Create()
         $ps.Runspace = $rs
         [void]$ps.AddCommand('Get-CascadePendingUpdates').AddParameter('IncludeDrivers', $incDrivers)
@@ -1689,13 +1871,11 @@ function Start-CascadeGui {
                     return
                 }
 
-                # Step 2: Download & Install
+                # Step 2: Download & Install in configured Cascade Worker Runspace
                 & $fnSetStatus "Pass $currPass of ${maxPasses}: Installing $($updates.Count) update package(s)..." "INSTALLING" "#7C2D12" "#FDBA74"
                 Write-CascadeLog "Pass ${currPass}: Beginning installation of $($updates.Count) updates..." "STEP"
 
-                $rsInst = [runspacefactory]::CreateRunspace()
-                $rsInst.ApartmentState = 'MTA'
-                $rsInst.Open()
+                $rsInst = New-CascadeRunspace
                 $psInst = [powershell]::Create()
                 $psInst.Runspace = $rsInst
                 [void]$psInst.AddCommand('Install-CascadeUpdates').AddParameter('UpdatesToProcess', $updates)
@@ -1723,7 +1903,7 @@ function Start-CascadeGui {
                             $nextPass = $currPass + 1
                             if ($nextPass -le $maxPasses) {
                                 & $fnSetStatus "Reboot required to commit updates. Pass $nextPass of $maxPasses scheduled." "REBOOTING" "#831843" "#F472B6"
-                                Set-CascadeState -CurrentPass $nextPass -MaxPasses $maxPasses -IncludeDrivers:$incDrivers -TotalInstalled $uiState.TotalInstalled -Active $true
+                                Set-CascadeState -CurrentPass $nextPass -MaxPasses $maxPasses -IncludeDrivers:$incDrivers -TotalInstalled $uiState.TotalInstalled -Active $true -Autonomous $false
                                 Register-CascadePersistence
 
                                 # Show Countdown Banner
@@ -1774,6 +1954,14 @@ function Start-CascadeGui {
         $timerScan.Start()
     }
 
+    # Monitor Only Mode Handler
+    if ($MonitorOnly) {
+        $btnStartCascade.IsEnabled = $false
+        $btnScanOnly.IsEnabled = $false
+        $btnInstallSelected.IsEnabled = $false
+        & $fnSetStatus "Connected to active background cascade (Pass $($uiState.CurrentPass) of $($uiState.MaxPasses))." "MONITORING" "#1E3A8A" "#93C5FD"
+    }
+
     # Wire Button Events
     $btnStartCascade.Add_Click({ & $fnExecuteCascadePass })
 
@@ -1820,7 +2008,12 @@ function Start-CascadeGui {
         $lstUpdates.Items.Refresh()
     })
 
-    $btnClearLog.Add_Click({ $txtLogConsole.Clear() })
+    $btnClearLog.Add_Click({
+        $txtLogConsole.Clear()
+        if (Test-Path $script:LogFile) {
+            try { $script:LogStreamOffset = [System.IO.FileInfo]::new($script:LogFile).Length } catch { }
+        }
+    })
 
     $btnCopyLog.Add_Click({
         try {
@@ -1834,9 +2027,7 @@ function Start-CascadeGui {
         $incDrivers = [bool]$chkIncludeDrivers.IsChecked
         $btnScanOnly.IsEnabled = $false
 
-        $rsScan = [runspacefactory]::CreateRunspace()
-        $rsScan.ApartmentState = 'MTA'
-        $rsScan.Open()
+        $rsScan = New-CascadeRunspace
         $psScan = [powershell]::Create()
         $psScan.Runspace = $rsScan
         [void]$psScan.AddCommand('Get-CascadePendingUpdates').AddParameter('IncludeDrivers', $incDrivers)
@@ -1869,9 +2060,7 @@ function Start-CascadeGui {
         & $fnSetStatus "Installing $($selected.Count) selected update(s)..." "INSTALLING" "#7C2D12" "#FDBA74"
         $btnInstallSelected.IsEnabled = $false
 
-        $rsInst = [runspacefactory]::CreateRunspace()
-        $rsInst.ApartmentState = 'MTA'
-        $rsInst.Open()
+        $rsInst = New-CascadeRunspace
         $psInst = [powershell]::Create()
         $psInst.Runspace = $rsInst
         [void]$psInst.AddCommand('Install-CascadeUpdates').AddParameter('UpdatesToProcess', $selected)
@@ -1898,12 +2087,16 @@ function Start-CascadeGui {
     })
 
     # If launched with -ResumeFromRestart, automatically start the pass!
-    if ($ResumeFromRestart) {
+    if ($ResumeFromRestart -and -not $MonitorOnly) {
         $window.Add_Loaded({
             Write-CascadeLog "Autonomous resume trigger active. Launching Pass $($uiState.CurrentPass) automatically..." "STEP"
             & $fnExecuteCascadePass
         })
     }
+
+    $window.Add_Closed({
+        try { $timerLogPoller.Stop() } catch { }
+    })
 
     # Show Window
     $window.ShowDialog() | Out-Null
@@ -1941,6 +2134,13 @@ try {
 }
 
 if (-not $hasMutex) {
+    $st = Get-CascadeState
+    $ctx = Get-CascadeRuntimeContext
+    if ($st -and $st.Active -and -not $Autonomous -and $ctx.Interactive -and (Get-Process -Id $PID).SessionId -ne 0) {
+        Write-CascadeLog "Another instance of UpdateCascade is actively processing updates. Attaching GUI in live monitor mode..." "INFO"
+        Start-CascadeGui -MonitorOnly
+        exit 0
+    }
     Write-CascadeLog "Another instance of UpdateCascade is already actively running. Exiting secondary process." "INFO"
     exit 0
 }
@@ -1999,11 +2199,18 @@ if ($Autonomous -or $Cascade) {
 if ($ResumeFromRestart) {
     $activeState = Get-CascadeState
     if ($activeState -and $activeState.Active) {
+        $isAutonomous = [bool]$activeState.Autonomous -or $Autonomous
         $ctx = Get-CascadeRuntimeContext
-        if ($ctx.Interactive) {
-            Start-CascadeGui
-        } else {
+        if ($isAutonomous) {
+            Write-CascadeLog "Resuming autonomous CLI cascade (Pass $($activeState.CurrentPass) of $($activeState.MaxPasses))..." "STEP"
             Start-AutonomousCascadeLoop -MaxPasses ([int]$activeState.MaxPasses) -IncludeDrivers:([bool]$activeState.IncludeDrivers) -RebootDelay 5
+        } else {
+            if ($ctx.Interactive -and (Get-Process -Id $PID).SessionId -ne 0) {
+                Start-CascadeGui
+            } else {
+                Write-CascadeLog "Non-interactive session detected on restart. Running headless loop for Pass $($activeState.CurrentPass)..." "INFO"
+                Start-AutonomousCascadeLoop -MaxPasses ([int]$activeState.MaxPasses) -IncludeDrivers:([bool]$activeState.IncludeDrivers) -RebootDelay 5
+            }
         }
         exit 0
     }
@@ -2011,7 +2218,7 @@ if ($ResumeFromRestart) {
 
 # 7. Default Interactive Launch: WPF GUI
 $ctx = Get-CascadeRuntimeContext
-if ($ctx.Interactive) {
+if ($ctx.Interactive -and (Get-Process -Id $PID).SessionId -ne 0) {
     Start-CascadeGui
 } else {
     Write-CascadeLog "Non-interactive environment detected. Defaulting to autonomous CLI cascade..." "INFO"
