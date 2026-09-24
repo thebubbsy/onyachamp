@@ -90,7 +90,7 @@ param(
     [Parameter(ParameterSetName = 'Default')]
     [Parameter(ParameterSetName = 'Autonomous')]
     [Parameter(ParameterSetName = 'Interactive')]
-    [bool]$IncludeDrivers = $true,
+    [switch]$IncludeDrivers = $true,
 
     [Parameter(ParameterSetName = 'Default')]
     [Parameter(ParameterSetName = 'Autonomous')]
@@ -241,7 +241,7 @@ function Ensure-CascadeElevation {
         if (-not $selfScript) {
             $selfScript = Save-CascadeSelfCopy
         }
-        $argList = "-NoProfile -ExecutionPolicy Bypass -File `"$selfScript`""
+        $argList = "-NoProfile -ExecutionPolicy Bypass -STA -File `"$selfScript`""
         if ($Autonomous) { $argList += " -Autonomous -MaxPasses $MaxPasses -IncludeDrivers:$IncludeDrivers" }
 
         try {
@@ -1059,7 +1059,7 @@ function Invoke-CascadeUsoScan {
 function Get-CascadePendingUpdates {
     [CmdletBinding()]
     param(
-        [bool]$IncludeDrivers = $true,
+        [switch]$IncludeDrivers = $true,
         [scriptblock]$StatusCallback
     )
 
@@ -1265,7 +1265,7 @@ function Start-AutonomousCascadeLoop {
     [CmdletBinding()]
     param(
         [int]$MaxPasses = 5,
-        [bool]$IncludeDrivers = $true,
+        [switch]$IncludeDrivers = $true,
         [int]$RebootDelay = 5,
         [switch]$NoReboot,
         [scriptblock]$StatusCallback,
@@ -1515,7 +1515,7 @@ function Start-CascadeGui {
                 <StackPanel Grid.Column="0">
                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                         <TextBlock Text=">>" FontSize="20" Margin="0,0,8,0" Foreground="#38BDF8"/>
-                        <TextBlock Text="UPDATE CASCADE" FontSize="20" FontWeight="Bold" Foreground="#38BDF8" LetterSpacing="1"/>
+                        <TextBlock Text="UPDATE CASCADE" FontSize="20" FontWeight="Bold" Foreground="#38BDF8"/>
                         <Border Background="#0EA5E9" CornerRadius="4" Padding="6,2" Margin="12,0,0,0" VerticalAlignment="Center">
                             <TextBlock Text="OOBE &amp; DESKTOP READY" FontSize="10" FontWeight="Bold" Foreground="#FFFFFF"/>
                         </Border>
@@ -1680,8 +1680,21 @@ function Start-CascadeGui {
 </Window>
 "@
 
-    $reader = [System.Xml.XmlReader]::Create([System.IO.StringReader]::new($xaml))
-    $window = [System.Windows.Markup.XamlReader]::Load($reader)
+    $window = $null
+    try {
+        $reader = [System.Xml.XmlReader]::Create([System.IO.StringReader]::new($xaml))
+        $window = [System.Windows.Markup.XamlReader]::Load($reader)
+    } catch {
+        Write-CascadeLog "Failed to load WPF XAML interface: $($_.Exception.Message)" "ERROR"
+    }
+
+    if (-not $window) {
+        Write-CascadeLog "WPF GUI window could not be initialized. Falling back gracefully to autonomous CLI cascade..." "WARN"
+        if (-not $MonitorOnly) {
+            Start-AutonomousCascadeLoop -MaxPasses $MaxPasses -IncludeDrivers:$IncludeDrivers -RebootDelay $RebootDelay
+        }
+        return
+    }
 
     # Bind UI Controls
     $txtPillStatus      = $window.FindName('TxtPillStatus')
@@ -1831,7 +1844,7 @@ function Start-CascadeGui {
         $bannerCountdown.Visibility = [System.Windows.Visibility]::Collapsed
 
         $currPass = $uiState.CurrentPass
-        $maxPasses = [int]$cmbMaxPasses.Text
+        $maxPasses = if ($cmbMaxPasses.SelectedItem) { [int]$cmbMaxPasses.SelectedItem.Content } else { 5 }
         $incDrivers = [bool]$chkIncludeDrivers.IsChecked
         $uiState.MaxPasses = $maxPasses
 
@@ -1983,29 +1996,35 @@ function Start-CascadeGui {
     })
 
     $btnRestartNow.Add_Click({
+        & $fnSetStatus "Initiating immediate system reboot..." "REBOOTING" "#7F1D1D" "#FCA5A5"
+        Write-CascadeLog "Operator triggered immediate reboot from countdown banner." "WARN"
         Invoke-CascadeReboot -DelaySeconds 0 -Reason "Manual reboot confirmation"
     })
 
     $btnManualReboot.Add_Click({
-        $res = [System.Windows.MessageBox]::Show("Initiate immediate system reboot?", "Confirm Restart", [System.Windows.MessageBoxButton]::YesNo, [System.Windows.MessageBoxImage]::Warning)
-        if ($res -eq [System.Windows.MessageBoxResult]::Yes) {
-            Invoke-CascadeReboot -DelaySeconds 0 -Reason "Manual operator reboot"
-        }
+        & $fnSetStatus "Initiating immediate system reboot..." "REBOOTING" "#7F1D1D" "#FCA5A5"
+        Write-CascadeLog "Operator triggered manual immediate reboot." "WARN"
+        Invoke-CascadeReboot -DelaySeconds 0 -Reason "Manual operator reboot"
     })
 
     $btnUnregisterAll.Add_Click({
         $cnt = Unregister-CascadePersistence
-        [System.Windows.MessageBox]::Show("Successfully disarmed and cleaned $cnt persistence artifacts.", "Persistence Cleanup", [System.Windows.MessageBoxButton]::OK, [System.Windows.MessageBoxImage]::Information) | Out-Null
+        & $fnSetStatus "Successfully disarmed and cleaned $cnt persistence artifact(s)." "CLEANED" "#065F46" "#6EE7B7"
+        Write-CascadeLog "Persistence cleanup: successfully disarmed and cleaned $cnt persistence artifact(s)." "INFO"
     })
 
     $btnSelectAll.Add_Click({
         foreach ($item in $observableUpdates) { $item.IsSelected = $true }
         $lstUpdates.Items.Refresh()
+        & $fnSetStatus "Selected all $($observableUpdates.Count) update package(s)." "READY" "#1E3A8A" "#93C5FD"
+        Write-CascadeLog "Selected all $($observableUpdates.Count) update package(s)." "INFO"
     })
 
     $btnDeselectAll.Add_Click({
         foreach ($item in $observableUpdates) { $item.IsSelected = $false }
         $lstUpdates.Items.Refresh()
+        & $fnSetStatus "Deselected all update packages." "READY" "#1E3A8A" "#93C5FD"
+        Write-CascadeLog "Deselected all update packages." "INFO"
     })
 
     $btnClearLog.Add_Click({
@@ -2013,19 +2032,27 @@ function Start-CascadeGui {
         if (Test-Path $script:LogFile) {
             try { $script:LogStreamOffset = [System.IO.FileInfo]::new($script:LogFile).Length } catch { }
         }
+        & $fnSetStatus "Activity log console cleared." "CLEARED" "#1E3A8A" "#93C5FD"
     })
 
     $btnCopyLog.Add_Click({
         try {
             [System.Windows.Clipboard]::SetText($txtLogConsole.Text)
+            & $fnSetStatus "Activity log copied to clipboard." "COPIED" "#065F46" "#6EE7B7"
             Write-CascadeLog "Log contents copied to clipboard." "INFO"
-        } catch { }
+        } catch {
+            & $fnSetStatus "Failed to copy log to clipboard: $($_.Exception.Message)" "WARNING" "#7C2D12" "#FDBA74"
+            Write-CascadeLog "Failed to copy log to clipboard: $($_.Exception.Message)" "WARN"
+        }
     })
 
     $btnScanOnly.Add_Click({
         & $fnSetStatus "Scanning for pending updates and drivers..." "SCANNING" "#1E3A8A" "#93C5FD"
         $incDrivers = [bool]$chkIncludeDrivers.IsChecked
+        Write-CascadeLog "Starting manual scan for pending updates (Drivers: $incDrivers)..." "STEP"
         $btnScanOnly.IsEnabled = $false
+        $btnStartCascade.IsEnabled = $false
+        $btnInstallSelected.IsEnabled = $false
 
         $rsScan = New-CascadeRunspace
         $psScan = [powershell]::Create()
@@ -2043,8 +2070,12 @@ function Start-CascadeGui {
                 $psScan.Dispose()
                 $rsScan.Dispose()
                 $btnScanOnly.IsEnabled = $true
+                $btnStartCascade.IsEnabled = $true
+                $btnInstallSelected.IsEnabled = $true
                 & $fnPopulateUpdates $res
-                & $fnSetStatus "Scan complete: found $($res.Count) pending update(s)." "READY" "#1E3A8A" "#93C5FD"
+                $foundCnt = if ($res) { $res.Count } else { 0 }
+                & $fnSetStatus "Scan complete: found $foundCnt pending update(s)." "READY" "#1E3A8A" "#93C5FD"
+                Write-CascadeLog "Scan complete: found $foundCnt pending update(s)." "INFO"
             }
         })
         $t.Start()
@@ -2053,12 +2084,16 @@ function Start-CascadeGui {
     $btnInstallSelected.Add_Click({
         $selected = @($observableUpdates | Where-Object { $_.IsSelected } | ForEach-Object { $_.Raw })
         if (-not $selected -or $selected.Count -eq 0) {
-            [System.Windows.MessageBox]::Show("Please select at least one update to install.", "No Updates Selected", [System.Windows.MessageBoxButton]::OK, [System.Windows.MessageBoxImage]::Warning) | Out-Null
+            & $fnSetStatus "No updates selected. Please select at least one update from the list to install." "WARNING" "#7C2D12" "#FDBA74"
+            Write-CascadeLog "Manual install aborted: no updates selected in the update list." "WARN"
             return
         }
 
         & $fnSetStatus "Installing $($selected.Count) selected update(s)..." "INSTALLING" "#7C2D12" "#FDBA74"
+        Write-CascadeLog "Manual installation started for $($selected.Count) selected update(s)..." "STEP"
         $btnInstallSelected.IsEnabled = $false
+        $btnStartCascade.IsEnabled = $false
+        $btnScanOnly.IsEnabled = $false
 
         $rsInst = New-CascadeRunspace
         $psInst = [powershell]::Create()
@@ -2076,11 +2111,46 @@ function Start-CascadeGui {
                 $psInst.Dispose()
                 $rsInst.Dispose()
                 $btnInstallSelected.IsEnabled = $true
+                $btnStartCascade.IsEnabled = $true
+                $btnScanOnly.IsEnabled = $true
 
-                $instCnt = if ($res) { $res.InstalledCount } else { 0 }
-                $reb = if ($res) { $res.RebootRequired } else { $false }
-                & $fnSetStatus "Manual install complete ($instCnt installed). Reboot required: $reb" "READY" "#1E3A8A" "#93C5FD"
-                if ($reb) { $bannerCountdown.Visibility = [System.Windows.Visibility]::Visible }
+                $instCnt = if ($res -and $res.InstalledCount) { [int]$res.InstalledCount } else { 0 }
+                $reb = if ($res -and $res.RebootRequired) { [bool]$res.RebootRequired } else { $false }
+                if (-not $reb -and $instCnt -gt 0) {
+                    $reb = Test-CascadeSystemRebootPending
+                }
+
+                $uiState.TotalInstalled += $instCnt
+                $txtTotalStats.Text = "Total Patches Installed: $($uiState.TotalInstalled)"
+
+                if ($reb) {
+                    & $fnSetStatus "Manual install complete ($instCnt installed). System restart required to commit updates." "REBOOT REQ" "#831843" "#F472B6"
+                    Write-CascadeLog "Manual install complete ($instCnt installed). System restart required to commit updates." "WARN"
+                    $bannerCountdown.Visibility = [System.Windows.Visibility]::Visible
+                    $script:RebootAborted = $false
+                    $countSeconds = 5
+                    $timerCount = New-Object System.Windows.Threading.DispatcherTimer
+                    $timerCount.Interval = [TimeSpan]::FromSeconds(1)
+                    $timerCount.Add_Tick({
+                        if ($script:RebootAborted) {
+                            $timerCount.Stop()
+                            $bannerCountdown.Visibility = [System.Windows.Visibility]::Collapsed
+                            & $fnSetStatus "Reboot cancelled by operator. Manual install committed." "READY" "#1E3A8A" "#93C5FD"
+                            Write-CascadeLog "Reboot countdown cancelled by operator." "WARN"
+                            return
+                        }
+                        $txtCountdown.Text = "[!] Reboot required to commit updates. Restarting automatically in $countSeconds second(s)..."
+                        if ($countSeconds -le 0) {
+                            $timerCount.Stop()
+                            Invoke-CascadeReboot -DelaySeconds 0 -Reason "UpdateCascade manual install commit"
+                        }
+                        $countSeconds--
+                    })
+                    $timerCount.Start()
+                } else {
+                    & $fnSetStatus "Manual install complete ($instCnt installed). System is up to date." "COMPLETED" "#064E3B" "#6EE7B7"
+                    Write-CascadeLog "Manual install complete: $instCnt update package(s) installed successfully." "SUCCESS"
+                }
             }
         })
         $t.Start()
