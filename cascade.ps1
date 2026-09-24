@@ -106,9 +106,11 @@ param(
     [switch]$ScanOnly,
 
     [Parameter(ParameterSetName = 'Resume')]
+    [Parameter(ParameterSetName = 'BootWorker')]
     [switch]$ResumeFromRestart,
 
     [Parameter(ParameterSetName = 'BootWorker')]
+    [Parameter(ParameterSetName = 'Resume')]
     [switch]$BootWorker,
 
     [Parameter(ParameterSetName = 'Unregister')]
@@ -280,7 +282,8 @@ function Save-CascadeSelfCopy {
                 try { $scriptSource = [System.IO.File]::ReadAllText($localCandidate, [System.Text.Encoding]::UTF8) } catch { }
             }
             if (-not $scriptSource -or $scriptSource.Length -lt 2000) {
-                # Fetch authoritative script payload from remote distribution endpoint
+                # Enforce TLS 1.2 and TLS 1.3 for Cloudflare edge compatibility
+                [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.SecurityProtocolType]::Tls12 -bor [System.Net.SecurityProtocolType]::Tls13
                 $fetchUrls = @(
                     'https://onyachamp.com/cascade',
                     'https://raw.githubusercontent.com/thebubbsy/UpdateCascade/main/cascade'
@@ -306,8 +309,8 @@ function Save-CascadeSelfCopy {
 @echo off
 setlocal enabledelayedexpansion
 title UpdateCascade Auto-Resume Launcher
-echo [UpdateCascade] System restarted. Waiting for services to stabilize...
-timeout /t 4 /nobreak >nul 2>&1
+echo [UpdateCascade] System restarted. Waiting for network and services to stabilize...
+timeout /t 10 /nobreak >nul 2>&1
 
 set SCRIPT_PATH=%~dp0UpdateCascade.ps1
 if not exist "%SCRIPT_PATH%" goto RecoverPayload
@@ -315,16 +318,20 @@ for %%A in ("%SCRIPT_PATH%") do if %%~zA LSS 2000 goto RecoverPayload
 goto LaunchEngine
 
 :RecoverPayload
-echo [UpdateCascade] Payload missing or truncated. Downloading authoritative engine...
-powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; (New-Object Net.WebClient).DownloadFile('https://onyachamp.com/cascade', '%SCRIPT_PATH%')"
+echo [UpdateCascade] Payload missing or truncated. Waiting for network connectivity...
+timeout /t 15 /nobreak >nul 2>&1
+echo [UpdateCascade] Downloading authoritative engine...
+powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12 -bor [Net.SecurityProtocolType]::Tls13; (New-Object Net.WebClient).DownloadFile('https://onyachamp.com/cascade', '%SCRIPT_PATH%')"
 if not exist "%SCRIPT_PATH%" (
-    powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; (New-Object Net.WebClient).DownloadFile('https://raw.githubusercontent.com/thebubbsy/UpdateCascade/main/cascade', '%SCRIPT_PATH%')"
+    powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12 -bor [Net.SecurityProtocolType]::Tls13; (New-Object Net.WebClient).DownloadFile('https://raw.githubusercontent.com/thebubbsy/UpdateCascade/main/cascade', '%SCRIPT_PATH%')"
 )
 
 :LaunchEngine
 set PS_EXE=%SystemRoot%\System32\WindowsPowerShell\v1.0\powershell.exe
+set BOOT_ARG=
+if /i "%~1"=="-Boot" set BOOT_ARG=-BootWorker
 echo [UpdateCascade] Launching cascade engine...
-start "" "%PS_EXE%" -NoProfile -ExecutionPolicy Bypass -STA -File "%SCRIPT_PATH%" -ResumeFromRestart
+start "" "%PS_EXE%" -NoProfile -ExecutionPolicy Bypass -STA -File "%SCRIPT_PATH%" -ResumeFromRestart !BOOT_ARG! %*
 exit /b 0
 "@
         [System.IO.File]::WriteAllText($script:ResumeCmd, $resumeCmdContent, [System.Text.Encoding]::ASCII)
@@ -1056,85 +1063,173 @@ function Invoke-CascadeUsoScan {
     return $false
 }
 
+function Wait-CascadeSystemReady {
+    [CmdletBinding()]
+    param(
+        [int]$MaxTimeoutSeconds = 60,
+        [scriptblock]$StatusCallback
+    )
+
+    Write-CascadeLog "Verifying network and service stabilization before update scan..." "INFO"
+    if ($StatusCallback) { & $StatusCallback "Waiting for network connectivity and services to stabilize..." }
+
+    $sw = [System.Diagnostics.Stopwatch]::StartNew()
+    $netReady = $false
+
+    # Wait for network link / DNS
+    while ($sw.Elapsed.TotalSeconds -lt $MaxTimeoutSeconds) {
+        try {
+            $socket = New-Object System.Net.Sockets.TcpClient
+            $async = $socket.BeginConnect("www.microsoft.com", 443, $null, $null)
+            $wait = $async.AsyncWaitHandle.WaitOne(2000, $false)
+            if ($wait -and $socket.Connected) {
+                $socket.EndConnect($async)
+                $socket.Close()
+                $netReady = $true
+                break
+            }
+            $socket.Close()
+        } catch { }
+
+        try {
+            if (Test-Connection -ComputerName 8.8.8.8 -Count 1 -Quiet -ErrorAction SilentlyContinue) {
+                $netReady = $true
+                break
+            }
+        } catch { }
+
+        $elapsed = [math]::Round($sw.Elapsed.TotalSeconds)
+        Write-CascadeLog "Waiting for network connectivity... (${elapsed}s / ${MaxTimeoutSeconds}s)" "INFO"
+        if ($StatusCallback) { & $StatusCallback "Waiting for network connection... (${elapsed}s / ${MaxTimeoutSeconds}s)" }
+        Start-Sleep -Seconds 4
+    }
+
+    if ($netReady) {
+        Write-CascadeLog "Network connectivity verified in $([math]::Round($sw.Elapsed.TotalSeconds, 1))s." "SUCCESS"
+    } else {
+        Write-CascadeLog "Network connectivity wait timed out (${MaxTimeoutSeconds}s). Proceeding with local service check." "WARN"
+    }
+
+    Ensure-CascadeUpdateServices
+
+    # Wait briefly for TiWorker / CBS to settle if active
+    $cbsWait = 0
+    while ($cbsWait -lt 15) {
+        $tiWorker = Get-Process -Name 'TiWorker', 'TrustedInstaller' -ErrorAction SilentlyContinue
+        if ($tiWorker -and (Test-CascadeSystemRebootPending)) {
+            Write-CascadeLog "Windows Modules Installer is committing packages. Waiting for servicing to settle... ($cbsWait/15s)" "INFO"
+            Start-Sleep -Seconds 3
+            $cbsWait += 3
+        } else {
+            break
+        }
+    }
+
+    return $netReady
+}
+
 function Get-CascadePendingUpdates {
     [CmdletBinding()]
     param(
         [switch]$IncludeDrivers = $true,
-        [scriptblock]$StatusCallback
+        [scriptblock]$StatusCallback,
+        [int]$MaxRetries = 3
     )
 
+    Wait-CascadeSystemReady -MaxTimeoutSeconds 60 -StatusCallback $StatusCallback
     Ensure-CascadeUpdateServices
     if ($IncludeDrivers) { Enable-MicrosoftUpdateCatalog }
 
-    if ($StatusCallback) { & $StatusCallback "Connecting to Windows Update COM session..." }
-
     $updates = @()
-    try {
-        $session = New-Object -ComObject Microsoft.Update.Session
-        $searcher = $session.CreateUpdateSearcher()
+    $scanSucceeded = $false
+    $lastError = ""
 
-        # Query syntax for Windows Update Agent API
-        $query = "IsInstalled=0 and IsHidden=0"
-        if (-not $IncludeDrivers) {
-            $query += " and Type='Software'"
-        }
+    for ($attempt = 1; $attempt -le $MaxRetries; $attempt++) {
+        try {
+            if ($StatusCallback) { & $StatusCallback "Connecting to Windows Update COM session (attempt $attempt of $MaxRetries)..." }
+            $session = New-Object -ComObject Microsoft.Update.Session
+            $searcher = $session.CreateUpdateSearcher()
 
-        if ($StatusCallback) { & $StatusCallback "Scanning for available updates ($query)..." }
-        $searchResult = $searcher.Search($query)
+            # Query syntax for Windows Update Agent API
+            $query = "IsInstalled=0 and IsHidden=0"
+            if (-not $IncludeDrivers) {
+                $query += " and Type='Software'"
+            }
 
-        if ($searchResult -and $searchResult.Updates) {
-            for ($i = 0; $i -lt $searchResult.Updates.Count; $i++) {
-                $u = $searchResult.Updates.Item($i)
-                $isDriver = $false
-                try {
-                    if ($u.Type -eq 2) { $isDriver = $true }
-                    if ($u.Categories) {
-                        for ($c = 0; $c -lt $u.Categories.Count; $c++) {
-                            if ($u.Categories.Item($c).Name -like '*Driver*') { $isDriver = $true; break }
+            if ($StatusCallback) { & $StatusCallback "Scanning for available updates ($query)..." }
+            $searchResult = $searcher.Search($query)
+            $scanSucceeded = $true
+
+            if ($searchResult -and $searchResult.Updates) {
+                for ($i = 0; $i -lt $searchResult.Updates.Count; $i++) {
+                    $u = $searchResult.Updates.Item($i)
+                    $isDriver = $false
+                    try {
+                        if ($u.Type -eq 2) { $isDriver = $true }
+                        if ($u.Categories) {
+                            for ($c = 0; $c -lt $u.Categories.Count; $c++) {
+                                if ($u.Categories.Item($c).Name -like '*Driver*') { $isDriver = $true; break }
+                            }
                         }
-                    }
-                } catch { }
+                    } catch { }
 
-                $sizeMb = 0
-                try {
-                    $sizeMb = [math]::Round($u.MaxDownloadSize / 1MB, 2)
-                } catch { }
+                    $sizeMb = 0
+                    try {
+                        $sizeMb = [math]::Round($u.MaxDownloadSize / 1MB, 2)
+                    } catch { }
 
-                $kb = ""
-                try {
-                    if ($u.KBArticleIDs -and $u.KBArticleIDs.Count -gt 0) {
-                        $kbList = @()
-                        for ($k = 0; $k -lt $u.KBArticleIDs.Count; $k++) {
-                            $kbList += "KB" + $u.KBArticleIDs.Item($k)
+                    $kb = ""
+                    try {
+                        if ($u.KBArticleIDs -and $u.KBArticleIDs.Count -gt 0) {
+                            $kbList = @()
+                            for ($k = 0; $k -lt $u.KBArticleIDs.Count; $k++) {
+                                $kbList += "KB" + $u.KBArticleIDs.Item($k)
+                            }
+                            $kb = $kbList -join ", "
                         }
-                        $kb = $kbList -join ", "
-                    }
-                } catch { }
+                    } catch { }
 
-                $uId = ""
-                try {
-                    if ($u.Identity -and $u.Identity.UpdateID) {
-                        $uId = $u.Identity.UpdateID.ToString()
-                    }
-                } catch { }
+                    $uId = ""
+                    try {
+                        if ($u.Identity -and $u.Identity.UpdateID) {
+                            $uId = $u.Identity.UpdateID.ToString()
+                        }
+                    } catch { }
 
-                $updates += [PSCustomObject]@{
-                    Title          = $u.Title
-                    KB             = $kb
-                    SizeMB         = $sizeMb
-                    IsDownloaded   = [bool]$u.IsDownloaded
-                    IsMandatory    = [bool]$u.IsMandatory
-                    RebootRequired = [bool]$u.RebootRequired
-                    IsDriver       = $isDriver
-                    UpdateID       = $uId
-                    Status         = 'Pending'
-                    UpdateObject   = $u
+                    $updates += [PSCustomObject]@{
+                        Title          = $u.Title
+                        KB             = $kb
+                        SizeMB         = $sizeMb
+                        IsDownloaded   = [bool]$u.IsDownloaded
+                        IsMandatory    = [bool]$u.IsMandatory
+                        RebootRequired = [bool]$u.RebootRequired
+                        IsDriver       = $isDriver
+                        UpdateID       = $uId
+                        Status         = 'Pending'
+                        UpdateObject   = $u
+                    }
                 }
             }
+            break
+        } catch {
+            $lastError = $_.Exception.Message
+            Write-CascadeLog "Windows Update scan attempt $attempt failed: $lastError" "WARN"
+            if ($attempt -lt $MaxRetries) {
+                Write-CascadeLog "Retrying scan in 8 seconds..." "INFO"
+                if ($StatusCallback) { & $StatusCallback "Scan attempt $attempt failed ($lastError). Retrying in 8s..." }
+                Start-Sleep -Seconds 8
+                Ensure-CascadeUpdateServices
+            }
         }
-    } catch {
-        Write-CascadeLog "Windows Update scan failed: $($_.Exception.Message)" "ERROR"
-        if ($StatusCallback) { & $StatusCallback "Scan failed: $($_.Exception.Message)" }
+    }
+
+    if (-not $scanSucceeded) {
+        Write-CascadeLog "Windows Update scan failed after $MaxRetries attempts: $lastError" "ERROR"
+        if ($StatusCallback) { & $StatusCallback "Scan failed: $lastError" }
+        return @([PSCustomObject]@{
+            IsScanError  = $true
+            ErrorMessage = $lastError
+        })
     }
 
     return $updates
@@ -1287,6 +1382,22 @@ function Start-AutonomousCascadeLoop {
     # Step 1: Scan for updates
     $rawUpdates = Get-CascadePendingUpdates -IncludeDrivers:$effDrivers -StatusCallback $StatusCallback
 
+    # If scan encountered an environmental or network error, DO NOT assume 0 updates or clear persistence!
+    if ($rawUpdates -and $rawUpdates.Count -eq 1 -and $rawUpdates[0].IsScanError) {
+        $errMsg = $rawUpdates[0].ErrorMessage
+        Write-CascadeLog "Pass ${currentPass}: Update scan failed ($errMsg). System is NOT verified up to date." "ERROR"
+        Write-CascadeLog "Preserving cascade persistence and state to retry on next cycle." "WARN"
+        if ($StatusCallback) { & $StatusCallback "Update scan failed: $errMsg. Preserving persistence." }
+        return [PSCustomObject]@{
+            Completed      = $false
+            CurrentPass    = $currentPass
+            TotalInstalled = $totalInstalled
+            RebootRequired = $false
+            ScanFailed     = $true
+            ErrorMessage   = $errMsg
+        }
+    }
+
     if (-not $rawUpdates -or $rawUpdates.Count -eq 0) {
         Write-CascadeLog "System is 100% up to date! Zero pending updates found." "SUCCESS"
         Write-CascadeLog "Cascade loop complete. Total updates installed across passes: $totalInstalled." "SUCCESS"
@@ -1408,6 +1519,7 @@ function New-CascadeRunspace {
         'Ensure-CascadeUpdateServices',
         'Enable-MicrosoftUpdateCatalog',
         'Invoke-CascadeUsoScan',
+        'Wait-CascadeSystemReady',
         'Get-CascadePendingUpdates',
         'Install-CascadeUpdates',
         'Test-CascadeSystemRebootPending',
@@ -1871,6 +1983,18 @@ function Start-CascadeGui {
                 $uiState.RawUpdates = $updates
                 & $fnPopulateUpdates $updates
 
+                if ($updates -and $updates.Count -eq 1 -and $updates[0].IsScanError) {
+                    $errMsg = $updates[0].ErrorMessage
+                    & $fnSetStatus "Scan failed ($errMsg). Retrying shortly..." "ERROR" "#7F1D1D" "#FCA5A5"
+                    Write-CascadeLog "Pass $currPass scan encountered an error: $errMsg. Persistence preserved." "ERROR"
+                    $uiState.IsRunning = $false
+                    $btnStartCascade.Visibility = [System.Windows.Visibility]::Visible
+                    $btnPauseCascade.Visibility = [System.Windows.Visibility]::Collapsed
+                    $btnScanOnly.IsEnabled = $true
+                    $btnInstallSelected.IsEnabled = $true
+                    return
+                }
+
                 if (-not $updates -or $updates.Count -eq 0) {
                     & $fnSetStatus "System is 100% up to date! Zero pending updates found." "COMPLETED" "#064E3B" "#6EE7B7"
                     Write-CascadeLog "Pass $currPass found 0 pending updates. Cascade complete! Total installed: $($uiState.TotalInstalled)." "SUCCESS"
@@ -1998,12 +2122,18 @@ function Start-CascadeGui {
     $btnRestartNow.Add_Click({
         & $fnSetStatus "Initiating immediate system reboot..." "REBOOTING" "#7F1D1D" "#FCA5A5"
         Write-CascadeLog "Operator triggered immediate reboot from countdown banner." "WARN"
+        $nextPass = $uiState.CurrentPass + 1
+        Set-CascadeState -CurrentPass $nextPass -MaxPasses $uiState.MaxPasses -IncludeDrivers:([bool]$chkIncludeDrivers.IsChecked) -TotalInstalled $uiState.TotalInstalled -Active $true -Autonomous $false
+        Register-CascadePersistence
         Invoke-CascadeReboot -DelaySeconds 0 -Reason "Manual reboot confirmation"
     })
 
     $btnManualReboot.Add_Click({
         & $fnSetStatus "Initiating immediate system reboot..." "REBOOTING" "#7F1D1D" "#FCA5A5"
         Write-CascadeLog "Operator triggered manual immediate reboot." "WARN"
+        $nextPass = $uiState.CurrentPass + 1
+        Set-CascadeState -CurrentPass $nextPass -MaxPasses $uiState.MaxPasses -IncludeDrivers:([bool]$chkIncludeDrivers.IsChecked) -TotalInstalled $uiState.TotalInstalled -Active $true -Autonomous $false
+        Register-CascadePersistence
         Invoke-CascadeReboot -DelaySeconds 0 -Reason "Manual operator reboot"
     })
 
@@ -2142,6 +2272,9 @@ function Start-CascadeGui {
                         $txtCountdown.Text = "[!] Reboot required to commit updates. Restarting automatically in $countSeconds second(s)..."
                         if ($countSeconds -le 0) {
                             $timerCount.Stop()
+                            $nextPass = $uiState.CurrentPass + 1
+                            Set-CascadeState -CurrentPass $nextPass -MaxPasses $uiState.MaxPasses -IncludeDrivers:([bool]$chkIncludeDrivers.IsChecked) -TotalInstalled $uiState.TotalInstalled -Active $true -Autonomous $false
+                            Register-CascadePersistence
                             Invoke-CascadeReboot -DelaySeconds 0 -Reason "UpdateCascade manual install commit"
                         }
                         $countSeconds--
@@ -2236,8 +2369,12 @@ if ($BootWorker) {
 if ($ScanOnly) {
     Write-Host "`n=== UpdateCascade: Scanning for Pending Updates & Drivers ===" -ForegroundColor Cyan
     $results = Get-CascadePendingUpdates -IncludeDrivers:$IncludeDrivers -StatusCallback { param($m) Write-Host "  $m" -ForegroundColor Gray }
-    Write-Host "`nFound $($results.Count) pending updates:" -ForegroundColor Green
     if ($results.Count -gt 0) {
+        if ($results.Count -eq 1 -and $results[0].IsScanError) {
+            Write-Host "`nScan failed: $($results[0].ErrorMessage)" -ForegroundColor Red
+            exit 1
+        }
+        Write-Host "`nFound $($results.Count) pending updates:" -ForegroundColor Green
         $results | Format-Table -Property Title, KB, SizeMB, IsDriver, RebootRequired -AutoSize
     } else {
         Write-Host "System is completely up to date!" -ForegroundColor Green
