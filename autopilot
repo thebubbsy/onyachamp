@@ -8185,48 +8185,33 @@ function Enable-HubBitLocker {
     }
 }
 
-# --- Function: Set-HubLocalAdminPosture (Local Admin Randomization - Zero Registry Footprint) ---
+# --- Function: Set-HubLocalAdminPosture (Local Admin Posture - Deferred to Enterprise LAPS) ---
 function Set-HubLocalAdminPosture {
     [CmdletBinding()]
     param()
 
-    Write-Host "`nEnforcing Local Administrator Security Posture (RAM-Only)..." -ForegroundColor Cyan
+    Write-Host "`nEvaluating Local Administrator Security Posture (LAPS-Managed)..." -ForegroundColor Cyan
     try {
-        # Generate cryptographically random 20-character password
-        $rng = [System.Security.Cryptography.RandomNumberGenerator]::Create()
-        $charPool = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789!@#$%^&*"
-        $passChars = New-Object char[] 20
-        $rndBytes = New-Object byte[] 20
-        $rng.GetBytes($rndBytes)
-        for ($i = 0; $i -lt 20; $i++) {
-            $passChars[$i] = $charPool[$rndBytes[$i] % $charPool.Length]
-        }
-        $newPass = New-Object string ($passChars, 0, 20)
-
         $adminAccount = (Get-CimInstance Win32_UserAccount -Filter "SID LIKE 'S-1-5-21-%-500'" -ErrorAction SilentlyContinue)
-        if ($adminAccount) {
-            $secStr = ConvertTo-SecureString $newPass -AsPlainText -Force
-            Set-LocalUser -Name $adminAccount.Name -Password $secStr -PasswordNeverExpires $true -ErrorAction SilentlyContinue
-            Write-Host "Rotated local Administrator password ($($adminAccount.Name)) with 20-char high-entropy value." -ForegroundColor Green
-        }
-
         try {
             $guest = Get-CimInstance Win32_UserAccount -Filter "SID LIKE 'S-1-5-21-%-501'" -ErrorAction SilentlyContinue
             if ($guest) { Disable-LocalUser -Name $guest.Name -ErrorAction SilentlyContinue }
         } catch { }
 
-        # Zero registry footprint: LAPS policy and keys are managed by Intune / Group Policy
+        Write-Host "Local Administrator password management deferred to enterprise Windows LAPS / Intune policy." -ForegroundColor Green
+
         return [PSCustomObject]@{
             Success         = $true
             AdminAccount    = if ($adminAccount) { $adminAccount.Name } else { 'Administrator' }
-            PasswordRotated = [bool]($adminAccount -ne $null)
-            Message         = "Local admin rotated and default inactive accounts disabled (in-memory posture, zero registry keys written)"
+            PasswordRotated = $false
+            Message         = "Local Administrator password management deferred to enterprise LAPS (zero local password rotation performed, zero registry keys written)"
         }
     } catch {
         Write-Host "Local admin posture note: $($_.Exception.Message)" -ForegroundColor Yellow
         return [PSCustomObject]@{ Success = $false; Message = $_.Exception.Message }
     }
 }
+
 
 # --- Function: Set-HubSecurityBaseline (Defender Antivirus & Windows Firewall Baseline) ---
 function Set-HubSecurityBaseline {
