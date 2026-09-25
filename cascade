@@ -1017,7 +1017,7 @@ function Ensure-CascadeUpdateServices {
     [CmdletBinding()]
     param()
 
-    $services = @('wuauserv', 'UsoSvc', 'BITS', 'TrustedInstaller', 'cryptsvc')
+    $services = @('wuauserv', 'UsoSvc', 'BITS', 'TrustedInstaller', 'cryptsvc', 'DoSvc')
     foreach ($s in $services) {
         try {
             $svc = Get-Service -Name $s -ErrorAction SilentlyContinue
@@ -1031,6 +1031,20 @@ function Ensure-CascadeUpdateServices {
             }
         } catch { }
     }
+
+    # Configure Delivery Optimization to prefer LAN Peering (Mode 1 = Local Subnet / NAT)
+    try {
+        $doPolicyPath = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\DeliveryOptimization"
+        if (-not (Test-Path $doPolicyPath)) {
+            New-Item -Path $doPolicyPath -Force -ErrorAction SilentlyContinue | Out-Null
+        }
+        $curMode = (Get-ItemProperty -Path $doPolicyPath -Name "DODownloadMode" -ErrorAction SilentlyContinue).DODownloadMode
+        if ($null -eq $curMode -or $curMode -eq 0 -or $curMode -eq 99) {
+            Set-ItemProperty -Path $doPolicyPath -Name "DODownloadMode" -Value 1 -Type DWord -Force -ErrorAction SilentlyContinue
+            Write-CascadeLog "Configured Delivery Optimization DODownloadMode = 1 (LAN Peering enabled)." "INFO"
+        }
+        Enable-NetFirewallRule -DisplayName "*Delivery Optimization*" -ErrorAction SilentlyContinue
+    } catch { }
 }
 
 function Enable-MicrosoftUpdateCatalog {
@@ -1249,6 +1263,95 @@ function Test-CascadeSystemRebootPending {
     return $pending
 }
 
+function Get-CascadeDoSnapshot {
+    [CmdletBinding()]
+    param()
+
+    $snap = @{}
+    try {
+        $items = Get-DeliveryOptimizationStatus -ErrorAction SilentlyContinue
+        if ($items) {
+            foreach ($item in $items) {
+                if ($item.FileId) {
+                    $snap[$item.FileId] = @{
+                        LanPeers   = [int64]($item.BytesFromLanPeers + $item.BytesFromGroupPeers)
+                        HttpWan    = [int64]$item.BytesFromHttp
+                        NumPeers   = [int]$item.NumPeers
+                    }
+                }
+            }
+        }
+    } catch { }
+    return $snap
+}
+
+function Get-CascadeDoDiff {
+    [CmdletBinding()]
+    param(
+        [hashtable]$BaselineSnapshot
+    )
+
+    $deltaLan = [int64]0
+    $deltaWan = [int64]0
+    $maxPeers = [int]0
+    $activeDownloading = $false
+
+    try {
+        $currentItems = Get-DeliveryOptimizationStatus -ErrorAction SilentlyContinue
+        if ($currentItems) {
+            foreach ($item in $currentItems) {
+                if ($item.Status -eq 'Downloading') {
+                    $activeDownloading = $true
+                }
+                $fileId = $item.FileId
+                if (-not $fileId) { continue }
+
+                $curLan = [int64]($item.BytesFromLanPeers + $item.BytesFromGroupPeers)
+                $curWan = [int64]$item.BytesFromHttp
+                $curPeers = [int]$item.NumPeers
+                if ($curPeers -gt $maxPeers) { $maxPeers = $curPeers }
+
+                if ($BaselineSnapshot -and $BaselineSnapshot.ContainsKey($fileId)) {
+                    $prev = $BaselineSnapshot[$fileId]
+                    $prevLan = [int64]$prev.LanPeers
+                    $prevWan = [int64]$prev.HttpWan
+
+                    if ($curLan -gt $prevLan) { $deltaLan += ($curLan - $prevLan) }
+                    if ($curWan -gt $prevWan) { $deltaWan += ($curWan - $prevWan) }
+                } else {
+                    $deltaLan += $curLan
+                    $deltaWan += $curWan
+                }
+            }
+        }
+    } catch { }
+
+    $totalBytes = $deltaLan + $deltaWan
+    $pctLan = if ($totalBytes -gt 0) { [math]::Round(($deltaLan / $totalBytes) * 100, 1) } else { 0 }
+
+    $sourceType = 'NONE'
+    if ($deltaLan -gt 0 -and $deltaWan -eq 0) {
+        $sourceType = 'LAN'
+    } elseif ($deltaLan -gt 0 -and $deltaWan -gt 0) {
+        $sourceType = 'HYBRID'
+    } elseif ($deltaWan -gt 0) {
+        $sourceType = 'WAN'
+    }
+
+    return [PSCustomObject]@{
+        DeltaLanBytes     = $deltaLan
+        DeltaWanBytes     = $deltaWan
+        TotalBytes        = $totalBytes
+        DeltaLanMB        = [math]::Round($deltaLan / 1MB, 2)
+        DeltaWanMB        = [math]::Round($deltaWan / 1MB, 2)
+        TotalMB           = [math]::Round($totalBytes / 1MB, 2)
+        PercentLan        = $pctLan
+        MaxPeers          = $maxPeers
+        SourceType        = $sourceType
+        ActiveDownloading = $activeDownloading
+    }
+}
+
 function Install-CascadeUpdates {
     [CmdletBinding()]
     param(
@@ -1264,6 +1367,13 @@ function Install-CascadeUpdates {
             InstalledCount = 0
             FailedCount    = 0
             RebootRequired = $false
+            SourceType     = 'NONE'
+            LanBytes       = 0
+            WanBytes       = 0
+            DeltaLanMB     = 0
+            DeltaWanMB     = 0
+            PercentLan     = 0
+            MaxPeers       = 0
         }
     }
 
@@ -1274,10 +1384,14 @@ function Install-CascadeUpdates {
 
     if ($StatusCallback) { & $StatusCallback "Preparing download bundle for $($UpdatesToProcess.Count) update package(s)..." }
 
+    $allAlreadyDownloaded = $true
     foreach ($item in $UpdatesToProcess) {
         $uObj = if ($item.UpdateObject) { $item.UpdateObject } else { $item }
         if ($uObj.EulaAccepted -eq $false) {
             try { $uObj.AcceptEula() } catch { }
+        }
+        if (-not $uObj.IsDownloaded) {
+            $allAlreadyDownloaded = $false
         }
         $downloadColl.Add($uObj) | Out-Null
     }
@@ -1285,18 +1399,84 @@ function Install-CascadeUpdates {
     $downloader.Updates = $downloadColl
     if ($StatusCallback) { & $StatusCallback "Downloading $($downloadColl.Count) update package(s)..." }
 
+    $snapBefore = Get-CascadeDoSnapshot
+
+    if ($allAlreadyDownloaded) {
+        Write-CascadeLog "[SOURCE: LOCAL CACHE] All $($downloadColl.Count) update package(s) already verified in local disk cache." "INFO"
+        if ($StatusCallback) { & $StatusCallback "[SOURCE: LOCAL CACHE] All updates already present in local disk cache." }
+    }
+
+    $psDl = [powershell]::Create()
+    [void]$psDl.AddScript({
+        param($d)
+        return $d.Download()
+    }).AddParameter('d', $downloader)
+
+    $asyncDl = $psDl.BeginInvoke()
+    $lastReport = [DateTime]::MinValue
+
+    while (-not $asyncDl.IsCompleted) {
+        if ((Get-Date) -gt $lastReport.AddSeconds(2)) {
+            $interimDiff = Get-CascadeDoDiff -BaselineSnapshot $snapBefore
+            if ($interimDiff.TotalMB -gt 0 -or $interimDiff.ActiveDownloading) {
+                if ($interimDiff.SourceType -eq 'LAN') {
+                    $msg = "[SOURCE: LAN PEER (PREFERRED)] Pulling from local network peer ($($interimDiff.DeltaLanMB) MB from LAN, 100% P2P | $($interimDiff.MaxPeers) peer(s))"
+                    if ($StatusCallback) { & $StatusCallback $msg }
+                } elseif ($interimDiff.SourceType -eq 'HYBRID') {
+                    $msg = "[SOURCE: HYBRID (LAN + WAN)] Pulling from LAN peer ($($interimDiff.DeltaLanMB) MB, $($interimDiff.PercentLan)% P2P) and WAN CDN ($($interimDiff.DeltaWanMB) MB)"
+                    if ($StatusCallback) { & $StatusCallback $msg }
+                } elseif ($interimDiff.SourceType -eq 'WAN') {
+                    $msg = "[SOURCE: WAN CDN (WARNING)] Downloading from Microsoft CDN over WAN ($($interimDiff.DeltaWanMB) MB from WAN - 0 MB from local LAN)"
+                    if ($StatusCallback) { & $StatusCallback $msg }
+                }
+            }
+            $lastReport = Get-Date
+        }
+        Start-Sleep -Milliseconds 300
+    }
+
     try {
-        $downloadResult = $downloader.Download()
+        $downloadResult = $psDl.EndInvoke($asyncDl)
     } catch {
         Write-CascadeLog "Download error: $($_.Exception.Message)" "ERROR"
         if ($StatusCallback) { & $StatusCallback "Download error: $($_.Exception.Message)" }
+        $psDl.Dispose()
         return [PSCustomObject]@{
             Success        = $false
             InstalledCount = 0
             FailedCount    = $UpdatesToProcess.Count
             RebootRequired = $false
             Error          = $_.Exception.Message
+            SourceType     = 'ERROR'
+            LanBytes       = 0
+            WanBytes       = 0
+            DeltaLanMB     = 0
+            DeltaWanMB     = 0
+            PercentLan     = 0
+            MaxPeers       = 0
         }
+    }
+    $psDl.Dispose()
+
+    $finalDo = Get-CascadeDoDiff -BaselineSnapshot $snapBefore
+    $sourceClassification = 'CACHE'
+
+    if ($finalDo.DeltaLanMB -gt 0 -and $finalDo.DeltaWanMB -eq 0) {
+        $sourceClassification = 'LAN'
+        Write-CascadeLog "[SOURCE: LAN PEER (PREFERRED)] Download complete: 100% sourced from local network peer ($($finalDo.DeltaLanMB) MB from LAN across $($finalDo.MaxPeers) peer(s)). Zero WAN bandwidth consumed!" "SUCCESS"
+        if ($StatusCallback) { & $StatusCallback "[SOURCE: LAN PEER] Downloaded $($finalDo.DeltaLanMB) MB from local network peer (100% P2P across $($finalDo.MaxPeers) peer(s))." }
+    } elseif ($finalDo.DeltaLanMB -gt 0 -and $finalDo.DeltaWanMB -gt 0) {
+        $sourceClassification = 'HYBRID'
+        Write-CascadeLog "[SOURCE: HYBRID (LAN + WAN)] Download complete: $($finalDo.DeltaLanMB) MB from local LAN peer ($($finalDo.PercentLan)% P2P) and $($finalDo.DeltaWanMB) MB from Microsoft CDN over WAN." "INFO"
+        if ($StatusCallback) { & $StatusCallback "[SOURCE: HYBRID] Sourced $($finalDo.DeltaLanMB) MB from LAN peer and $($finalDo.DeltaWanMB) MB from WAN CDN." }
+    } elseif ($finalDo.DeltaWanMB -gt 0) {
+        $sourceClassification = 'WAN'
+        Write-CascadeLog "[SOURCE: WAN CDN (WARNING)] Download complete: 100% sourced from Microsoft CDN over WAN ($($finalDo.DeltaWanMB) MB). 0 bytes pulled from local LAN peers. No local peers detected or peer caching unavailable." "WARN"
+        if ($StatusCallback) { & $StatusCallback "[SOURCE: WAN CDN (WARNING)] Downloaded $($finalDo.DeltaWanMB) MB from Microsoft CDN over WAN (0 MB from LAN peers)." }
+    } else {
+        $sourceClassification = 'CACHE'
+        Write-CascadeLog "[SOURCE: LOCAL CACHE] Packages verified in local disk cache (0 MB downloaded over network)." "INFO"
+        if ($StatusCallback) { & $StatusCallback "[SOURCE: LOCAL CACHE] Packages present in local disk cache." }
     }
 
     $installer = $session.CreateUpdateInstaller()
@@ -1352,6 +1532,13 @@ function Install-CascadeUpdates {
         InstalledCount = $installed
         FailedCount    = $failed
         RebootRequired = $rebootNeeded
+        SourceType     = $sourceClassification
+        LanBytes       = $finalDo.DeltaLanBytes
+        WanBytes       = $finalDo.DeltaWanBytes
+        DeltaLanMB     = $finalDo.DeltaLanMB
+        DeltaWanMB     = $finalDo.DeltaWanMB
+        PercentLan     = $finalDo.PercentLan
+        MaxPeers       = $finalDo.MaxPeers
     }
 }
 
@@ -1521,6 +1708,8 @@ function New-CascadeRunspace {
         'Invoke-CascadeUsoScan',
         'Wait-CascadeSystemReady',
         'Get-CascadePendingUpdates',
+        'Get-CascadeDoSnapshot',
+        'Get-CascadeDoDiff',
         'Install-CascadeUpdates',
         'Test-CascadeSystemRebootPending',
         'Start-AutonomousCascadeLoop'
@@ -1636,6 +1825,9 @@ function Start-CascadeGui {
                 </StackPanel>
 
                 <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                    <Border Name="PillSource" Background="#334155" CornerRadius="12" Padding="12,4" Margin="0,0,10,0" Visibility="Collapsed">
+                        <TextBlock Name="TxtPillSource" Text="SOURCE: LAN PEER" FontSize="11" FontWeight="Bold" Foreground="#6EE7B7"/>
+                    </Border>
                     <Border Name="PillStatus" Background="#1E3A8A" CornerRadius="12" Padding="12,4" Margin="0,0,10,0">
                         <TextBlock Name="TxtPillStatus" Text="READY" FontSize="11" FontWeight="Bold" Foreground="#93C5FD"/>
                     </Border>
@@ -1655,7 +1847,10 @@ function Start-CascadeGui {
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
                     <TextBlock Name="TxtStatusMessage" Text="System ready. Click 'Start Autonomous Cascade' to begin." FontSize="13" FontWeight="SemiBold" Foreground="#F1F5F9"/>
-                    <TextBlock Name="TxtTotalStats" Grid.Column="1" Text="Total Patches Installed: 0" FontSize="12" Foreground="#94A3B8"/>
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                        <TextBlock Name="TxtSourceDetail" Text="" FontSize="11" FontWeight="SemiBold" Foreground="#6EE7B7" Margin="0,0,14,0" VerticalAlignment="Center"/>
+                        <TextBlock Name="TxtTotalStats" Text="Total Patches Installed: 0" FontSize="12" Foreground="#94A3B8" VerticalAlignment="Center"/>
+                    </StackPanel>
                 </Grid>
 
                 <!-- Step Progress -->
@@ -1811,8 +2006,11 @@ function Start-CascadeGui {
     # Bind UI Controls
     $txtPillStatus      = $window.FindName('TxtPillStatus')
     $pillStatus         = $window.FindName('PillStatus')
+    $pillSource         = $window.FindName('PillSource')
+    $txtPillSource      = $window.FindName('TxtPillSource')
     $txtBadgePass       = $window.FindName('TxtBadgePass')
     $txtStatusMessage   = $window.FindName('TxtStatusMessage')
+    $txtSourceDetail    = $window.FindName('TxtSourceDetail')
     $txtTotalStats      = $window.FindName('TxtTotalStats')
     $progCurrentStep    = $window.FindName('ProgCurrentStep')
     $bannerCountdown    = $window.FindName('BannerCountdown')
@@ -1880,6 +2078,30 @@ function Start-CascadeGui {
             if ($pillText)   { $txtPillStatus.Text = $pillText }
             if ($pillBgHex)  { $pillStatus.Background = [System.Windows.Media.BrushConverter]::new().ConvertFromString($pillBgHex) }
             if ($pillFgHex)  { $txtPillStatus.Foreground = [System.Windows.Media.BrushConverter]::new().ConvertFromString($pillFgHex) }
+        })
+    }
+
+    # Helper: Update Download Source Indicator (LAN Peer vs WAN CDN)
+    $fnSetSource = {
+        param($sourceType, $label, $bgHex, $fgHex, $borderHex, $detail)
+        $window.Dispatcher.Invoke([Action]{
+            if (-not $sourceType -or $sourceType -eq 'NONE') {
+                $pillSource.Visibility = [System.Windows.Visibility]::Collapsed
+                $txtSourceDetail.Text = ""
+                return
+            }
+            $pillSource.Visibility = [System.Windows.Visibility]::Visible
+            if ($label) { $txtPillSource.Text = $label }
+            if ($bgHex) { $pillSource.Background = [System.Windows.Media.BrushConverter]::new().ConvertFromString($bgHex) }
+            if ($fgHex) { $txtPillSource.Foreground = [System.Windows.Media.BrushConverter]::new().ConvertFromString($fgHex) }
+            if ($borderHex) {
+                $pillSource.BorderBrush = [System.Windows.Media.BrushConverter]::new().ConvertFromString($borderHex)
+                $pillSource.BorderThickness = [System.Windows.Thickness]::new(1)
+            }
+            if ($detail) {
+                $txtSourceDetail.Text = $detail
+                if ($fgHex) { $txtSourceDetail.Foreground = [System.Windows.Media.BrushConverter]::new().ConvertFromString($fgHex) }
+            }
         })
     }
 
@@ -1961,6 +2183,7 @@ function Start-CascadeGui {
         $uiState.MaxPasses = $maxPasses
 
         & $fnSetStatus "Pass $currPass of ${maxPasses}: Scanning for updates..." "SCANNING" "#1E3A8A" "#93C5FD"
+        & $fnSetSource 'NONE'
         Write-CascadeLog "Starting Cascade Pass $currPass of $maxPasses (Drivers: $incDrivers)..." "STEP"
 
         # Run Scan in configured Cascade Worker Runspace
@@ -1997,6 +2220,7 @@ function Start-CascadeGui {
 
                 if (-not $updates -or $updates.Count -eq 0) {
                     & $fnSetStatus "System is 100% up to date! Zero pending updates found." "COMPLETED" "#064E3B" "#6EE7B7"
+                    & $fnSetSource 'NONE'
                     Write-CascadeLog "Pass $currPass found 0 pending updates. Cascade complete! Total installed: $($uiState.TotalInstalled)." "SUCCESS"
                     Unregister-CascadePersistence
                     Clear-CascadeState
@@ -2012,29 +2236,59 @@ function Start-CascadeGui {
                 & $fnSetStatus "Pass $currPass of ${maxPasses}: Installing $($updates.Count) update package(s)..." "INSTALLING" "#7C2D12" "#FDBA74"
                 Write-CascadeLog "Pass ${currPass}: Beginning installation of $($updates.Count) updates..." "STEP"
 
+                $snapBaselineGui = Get-CascadeDoSnapshot
                 $rsInst = New-CascadeRunspace
                 $psInst = [powershell]::Create()
                 $psInst.Runspace = $rsInst
                 [void]$psInst.AddCommand('Install-CascadeUpdates').AddParameter('UpdatesToProcess', $updates)
 
                 $instResult = $psInst.BeginInvoke()
+                $instTick = 0
                 $timerInst = New-Object System.Windows.Threading.DispatcherTimer
                 $timerInst.Interval = [TimeSpan]::FromMilliseconds(300)
                 $timerInst.Add_Tick({
-                    if ($instResult.IsCompleted) {
-                        $timerInst.Stop()
-                        $res = $null
-                        try { $res = $psInst.EndInvoke($instResult) } catch { }
-                        $psInst.Dispose()
-                        $rsInst.Dispose()
+                    $instTick++
+                    if (-not $instResult.IsCompleted) {
+                        if ($instTick % 3 -eq 0) {
+                            $diff = Get-CascadeDoDiff -BaselineSnapshot $snapBaselineGui
+                            if ($diff.TotalMB -gt 0 -or $diff.ActiveDownloading) {
+                                if ($diff.SourceType -eq 'LAN') {
+                                    & $fnSetSource "LAN" "LAN PEER (GOOD)" "#064E3B" "#6EE7B7" "#10B981" "LAN Peer: $($diff.DeltaLanMB) MB ($($diff.PercentLan)% P2P | $($diff.MaxPeers) peer(s))"
+                                } elseif ($diff.SourceType -eq 'WAN') {
+                                    & $fnSetSource "WAN" "WAN CDN (WARNING)" "#7F1D1D" "#FCA5A5" "#EF4444" "WAN CDN: $($diff.DeltaWanMB) MB (0 MB from LAN)"
+                                } elseif ($diff.SourceType -eq 'HYBRID') {
+                                    & $fnSetSource "HYBRID" "HYBRID (LAN + WAN)" "#1E3A8A" "#93C5FD" "#38BDF8" "Hybrid: $($diff.DeltaLanMB) MB LAN / $($diff.DeltaWanMB) MB WAN"
+                                }
+                            }
+                        }
+                        return
+                    }
 
-                        $installedCount = if ($res -and $res.InstalledCount) { [int]$res.InstalledCount } else { 0 }
-                        $rebootReq = if ($res -and $res.RebootRequired) { [bool]$res.RebootRequired } else { $false }
-                        if (-not $rebootReq) { $rebootReq = ($installedCount -gt 0) -or (Test-CascadeSystemRebootPending) }
+                    $timerInst.Stop()
+                    $res = $null
+                    try { $res = $psInst.EndInvoke($instResult) } catch { }
+                    $psInst.Dispose()
+                    $rsInst.Dispose()
 
-                        $uiState.TotalInstalled += $installedCount
-                        $txtTotalStats.Text = "Total Patches Installed: $($uiState.TotalInstalled)"
-                        Write-CascadeLog "Pass $currPass installation finished ($installedCount installed). Reboot required: $rebootReq" "INFO"
+                    if ($res -and $res.SourceType) {
+                        if ($res.SourceType -eq 'LAN') {
+                            & $fnSetSource "LAN" "LAN PEER (GOOD)" "#064E3B" "#6EE7B7" "#10B981" "LAN Peer: $($res.DeltaLanMB) MB ($($res.PercentLan)% P2P | $($res.MaxPeers) peer(s))"
+                        } elseif ($res.SourceType -eq 'WAN') {
+                            & $fnSetSource "WAN" "WAN CDN (WARNING)" "#7F1D1D" "#FCA5A5" "#EF4444" "WAN CDN: $($res.DeltaWanMB) MB (0 MB from LAN)"
+                        } elseif ($res.SourceType -eq 'HYBRID') {
+                            & $fnSetSource "HYBRID" "HYBRID (LAN + WAN)" "#1E3A8A" "#93C5FD" "#38BDF8" "Hybrid: $($res.DeltaLanMB) MB LAN / $($res.DeltaWanMB) MB WAN"
+                        } elseif ($res.SourceType -eq 'CACHE') {
+                            & $fnSetSource "CACHE" "LOCAL DISK CACHE" "#1E293B" "#94A3B8" "#475569" "Disk Cache: 0 MB downloaded"
+                        }
+                    }
+
+                    $installedCount = if ($res -and $res.InstalledCount) { [int]$res.InstalledCount } else { 0 }
+                    $rebootReq = if ($res -and $res.RebootRequired) { [bool]$res.RebootRequired } else { $false }
+                    if (-not $rebootReq) { $rebootReq = ($installedCount -gt 0) -or (Test-CascadeSystemRebootPending) }
+
+                    $uiState.TotalInstalled += $installedCount
+                    $txtTotalStats.Text = "Total Patches Installed: $($uiState.TotalInstalled)"
+                    Write-CascadeLog "Pass $currPass installation finished ($installedCount installed). Reboot required: $rebootReq" "INFO"
 
                         if ($rebootReq) {
                             $nextPass = $currPass + 1
@@ -2083,7 +2337,6 @@ function Start-CascadeGui {
                             $btnStartCascade.Visibility = [System.Windows.Visibility]::Visible
                             $btnPauseCascade.Visibility = [System.Windows.Visibility]::Collapsed
                         }
-                    }
                 })
                 $timerInst.Start()
             }
@@ -2178,6 +2431,7 @@ function Start-CascadeGui {
 
     $btnScanOnly.Add_Click({
         & $fnSetStatus "Scanning for pending updates and drivers..." "SCANNING" "#1E3A8A" "#93C5FD"
+        & $fnSetSource 'NONE'
         $incDrivers = [bool]$chkIncludeDrivers.IsChecked
         Write-CascadeLog "Starting manual scan for pending updates (Drivers: $incDrivers)..." "STEP"
         $btnScanOnly.IsEnabled = $false
@@ -2225,24 +2479,54 @@ function Start-CascadeGui {
         $btnStartCascade.IsEnabled = $false
         $btnScanOnly.IsEnabled = $false
 
+        $snapBaselineGuiManual = Get-CascadeDoSnapshot
         $rsInst = New-CascadeRunspace
         $psInst = [powershell]::Create()
         $psInst.Runspace = $rsInst
         [void]$psInst.AddCommand('Install-CascadeUpdates').AddParameter('UpdatesToProcess', $selected)
 
         $async = $psInst.BeginInvoke()
+        $tTick = 0
         $t = New-Object System.Windows.Threading.DispatcherTimer
         $t.Interval = [TimeSpan]::FromMilliseconds(300)
         $t.Add_Tick({
-            if ($async.IsCompleted) {
-                $t.Stop()
-                $res = $null
-                try { $res = $psInst.EndInvoke($async) } catch { }
-                $psInst.Dispose()
-                $rsInst.Dispose()
-                $btnInstallSelected.IsEnabled = $true
-                $btnStartCascade.IsEnabled = $true
-                $btnScanOnly.IsEnabled = $true
+            $tTick++
+            if (-not $async.IsCompleted) {
+                if ($tTick % 3 -eq 0) {
+                    $diff = Get-CascadeDoDiff -BaselineSnapshot $snapBaselineGuiManual
+                    if ($diff.TotalMB -gt 0 -or $diff.ActiveDownloading) {
+                        if ($diff.SourceType -eq 'LAN') {
+                            & $fnSetSource "LAN" "LAN PEER (GOOD)" "#064E3B" "#6EE7B7" "#10B981" "LAN Peer: $($diff.DeltaLanMB) MB ($($diff.PercentLan)% P2P | $($diff.MaxPeers) peer(s))"
+                        } elseif ($diff.SourceType -eq 'WAN') {
+                            & $fnSetSource "WAN" "WAN CDN (WARNING)" "#7F1D1D" "#FCA5A5" "#EF4444" "WAN CDN: $($diff.DeltaWanMB) MB (0 MB from LAN)"
+                        } elseif ($diff.SourceType -eq 'HYBRID') {
+                            & $fnSetSource "HYBRID" "HYBRID (LAN + WAN)" "#1E3A8A" "#93C5FD" "#38BDF8" "Hybrid: $($diff.DeltaLanMB) MB LAN / $($diff.DeltaWanMB) MB WAN"
+                        }
+                    }
+                }
+                return
+            }
+
+            $t.Stop()
+            $res = $null
+            try { $res = $psInst.EndInvoke($async) } catch { }
+            $psInst.Dispose()
+            $rsInst.Dispose()
+            $btnInstallSelected.IsEnabled = $true
+            $btnStartCascade.IsEnabled = $true
+            $btnScanOnly.IsEnabled = $true
+
+            if ($res -and $res.SourceType) {
+                if ($res.SourceType -eq 'LAN') {
+                    & $fnSetSource "LAN" "LAN PEER (GOOD)" "#064E3B" "#6EE7B7" "#10B981" "LAN Peer: $($res.DeltaLanMB) MB ($($res.PercentLan)% P2P | $($res.MaxPeers) peer(s))"
+                } elseif ($res.SourceType -eq 'WAN') {
+                    & $fnSetSource "WAN" "WAN CDN (WARNING)" "#7F1D1D" "#FCA5A5" "#EF4444" "WAN CDN: $($res.DeltaWanMB) MB (0 MB from LAN)"
+                } elseif ($res.SourceType -eq 'HYBRID') {
+                    & $fnSetSource "HYBRID" "HYBRID (LAN + WAN)" "#1E3A8A" "#93C5FD" "#38BDF8" "Hybrid: $($res.DeltaLanMB) MB LAN / $($res.DeltaWanMB) MB WAN"
+                } elseif ($res.SourceType -eq 'CACHE') {
+                    & $fnSetSource "CACHE" "LOCAL DISK CACHE" "#1E293B" "#94A3B8" "#475569" "Disk Cache: 0 MB downloaded"
+                }
+            }
 
                 $instCnt = if ($res -and $res.InstalledCount) { [int]$res.InstalledCount } else { 0 }
                 $reb = if ($res -and $res.RebootRequired) { [bool]$res.RebootRequired } else { $false }
@@ -2284,7 +2568,6 @@ function Start-CascadeGui {
                     & $fnSetStatus "Manual install complete ($instCnt installed). System is up to date." "COMPLETED" "#064E3B" "#6EE7B7"
                     Write-CascadeLog "Manual install complete: $instCnt update package(s) installed successfully." "SUCCESS"
                 }
-            }
         })
         $t.Start()
     })
