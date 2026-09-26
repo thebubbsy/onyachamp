@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Downloads | OnyaChamp</title>
+    <meta name="description" content="Download the latest installers and PowerShell scripts from Matthew Bubb's (OnyaChamp) GitHub repositories.">
+    <meta name="author" content="Matthew Bubb">
+    <link rel="canonical" href="https://onyachamp.com/resources.html">
+
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://onyachamp.com/resources.html">
+    <meta property="og:title" content="Downloads | OnyaChamp">
+    <meta property="og:description" content="The latest installers and PowerShell scripts from my GitHub repositories.">
+    <meta property="og:image" content="https://avatars.githubusercontent.com/u/49204026?v=4">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <!-- Navigation Bar -->
+    <header class="navbar">
+        <div class="container nav-container">
+            <a href="index.html" class="nav-brand">
+                <div class="brand-icon">
+                    <i class="fas fa-terminal"></i>
+                </div>
+                <span class="brand-title">OnyaChamp</span>
+            </a>
+
+            <nav>
+                <ul class="nav-links">
+                    <li><a href="marksmith.html" style="color: #38bdf8; font-weight: 700;"><i class="fas fa-crown"></i> MarkSmith</a></li>
+                    <li><a href="index.html#featured-spotlights">Flagship Projects</a></li>
+                    <li><a href="index.html#open-source">Tooling Catalog</a></li>
+                    <li><a href="resources.html" aria-current="page">Downloads</a></li>
+                    <li><a href="index.html#contact">Contact</a></li>
+                </ul>
+            </nav>
+
+            <div class="nav-cta">
+                <a href="https://www.buymeacoffee.com/mbubbtechz" target="_blank" rel="noopener noreferrer" class="btn btn-coffee btn-sm" title="Support on Buy Me a Coffee">
+                    <i class="fas fa-mug-hot"></i> Coffee
+                </a>
+                <a href="https://github.com/thebubbsy" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-sm">
+                    <i class="fab fa-github"></i> GitHub
+                </a>
+            </div>
+
+            <button class="mobile-menu-btn" aria-label="Toggle navigation menu">
+                <i class="fas fa-bars"></i>
+            </button>
+        </div>
+    </header>
+
+    <main class="res-page">
+        <div class="container">
+            <div class="section-header">
+                <span class="badge badge-cyan"><i class="fas fa-download"></i> DOWNLOADS</span>
+                <h2>Downloads</h2>
+                <p>The latest installers and PowerShell scripts from my GitHub repos. Each file comes straight from GitHub; click it and it downloads.</p>
+            </div>
+
+            <div class="res-stats" aria-live="polite">
+                <div class="res-stat">
+                    <div class="res-stat-value" id="res-total">&ndash;</div>
+                    <div class="res-stat-label">Downloads from this site</div>
+                </div>
+                <div class="res-stat">
+                    <div class="res-stat-value" id="res-last30">&ndash;</div>
+                    <div class="res-stat-label">In the last 30 days</div>
+                </div>
+                <div class="res-stat">
+                    <div class="res-stat-value" id="res-count">&ndash;</div>
+                    <div class="res-stat-label">Files available</div>
+                </div>
+            </div>
+
+            <p class="res-note">
+                <i class="fas fa-circle-info"></i>
+                <span><strong>About these numbers:</strong> they only count downloads started from this page. Downloads straight from GitHub (release pages, <code>git clone</code>, <code>irm | iex</code>) aren't included, so the real totals are higher.</span>
+            </p>
+
+            <div class="res-toolbar" role="group" aria-label="Filter files">
+                <button type="button" class="res-filter is-active" data-filter="all">All</button>
+                <button type="button" class="res-filter" data-filter="app"><i class="fa-brands fa-windows"></i> Installers</button>
+                <button type="button" class="res-filter" data-filter="ps1"><i class="fas fa-terminal"></i> PowerShell</button>
+            </div>
+
+            <div id="res-groups" class="res-groups">
+                <p class="res-empty">Loading files&hellip;</p>
+            </div>
+            <noscript><p class="res-empty">This page needs JavaScript to list files. Everything is also on <a href="https://github.com/thebubbsy">GitHub</a>.</p></noscript>
+
+            <p class="res-synced" id="res-synced"></p>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <div class="footer-grid">
+                <div class="footer-brand">
+                    <strong>OnyaChamp.com</strong> — Systems Engineering Platform by Matthew Bubb.
+                </div>
+
+                <ul class="footer-nav">
+                    <li><a href="marksmith.html">MarkSmith Engine</a></li>
+                    <li><a href="index.html#featured-spotlights">Flagship Projects</a></li>
+                    <li><a href="resources.html">Downloads</a></li>
+                    <li><a href="https://www.powershellgallery.com/profiles/bubbsy" target="_blank" rel="noopener noreferrer">PSGallery</a></li>
+                    <li><a href="https://github.com/thebubbsy" target="_blank" rel="noopener noreferrer">GitHub</a></li>
+                    <li><a href="https://www.buymeacoffee.com/mbubbtechz" target="_blank" rel="noopener noreferrer"><i class="fas fa-mug-hot" style="color: #FFDD00;"></i> Buy Me a Coffee</a></li>
+                </ul>
+
+                <div class="footer-copy">
+                    &copy; 2026 OnyaChamp / Matthew Bubb. All rights reserved.
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="app.js"></script>
+    <script src="resources.js"></script>
+</body>
+</html>

@@ -1,0 +1,122 @@
+{
+  "generated": "2026-09-26T05:46:25Z",
+  "owner": "thebubbsy",
+  "groups": [
+    {
+      "repo": "AutopilotCommandHub",
+      "description": "Standalone Windows Autopilot OOBE Provisioning & Endpoint Deployment Engine (WinUI 3 Fluent Dark WPF)",
+      "url": "https://github.com/thebubbsy/AutopilotCommandHub",
+      "files": [
+        {
+          "id": "autopilotcommandhub/file/autopilot.ps1",
+          "name": "autopilot.ps1",
+          "kind": "file",
+          "version": "main",
+          "size": 1001818,
+          "updated": "2026-09-24T18:05:20Z",
+          "url": "https://raw.githubusercontent.com/thebubbsy/AutopilotCommandHub/main/autopilot.ps1"
+        },
+        {
+          "id": "autopilotcommandhub/file/get-dellwarranty.ps1",
+          "name": "Get-DellWarranty.ps1",
+          "kind": "file",
+          "version": "main",
+          "size": 16143,
+          "updated": "2026-09-20T08:10:34Z",
+          "url": "https://raw.githubusercontent.com/thebubbsy/AutopilotCommandHub/main/Get-DellWarranty.ps1"
+        },
+        {
+          "id": "autopilotcommandhub/file/start-deviceauth.ps1",
+          "name": "Start-DeviceAuth.ps1",
+          "kind": "file",
+          "version": "main",
+          "size": 4596,
+          "updated": "2026-09-19T20:54:05Z",
+          "url": "https://raw.githubusercontent.com/thebubbsy/AutopilotCommandHub/main/Start-DeviceAuth.ps1"
+        },
+        {
+          "id": "autopilotcommandhub/file/start-hubfleetserver.ps1",
+          "name": "Start-HubFleetServer.ps1",
+          "kind": "file",
+          "version": "main",
+          "size": 30947,
+          "updated": "2026-09-24T17:30:15Z",
+          "url": "https://raw.githubusercontent.com/thebubbsy/AutopilotCommandHub/main/Start-HubFleetServer.ps1"
+        }
+      ]
+    },
+    {
+      "repo": "LocalPilotFleet",
+      "description": "",
+      "url": "https://github.com/thebubbsy/LocalPilotFleet",
+      "files": [
+        {
+          "id": "localpilotfleet/file/start-localpilotfleet.ps1",
+          "name": "Start-LocalPilotFleet.ps1",
+          "kind": "file",
+          "version": "main",
+          "size": 12970,
+          "updated": "2026-09-07T17:56:16Z",
+          "url": "https://raw.githubusercontent.com/thebubbsy/LocalPilotFleet/main/Start-LocalPilotFleet.ps1"
+        }
+      ]
+    },
+    {
+      "repo": "marksmith",
+      "description": "Marksmith - turn AI chats into polished documents (native WinUI 3 app)",
+      "url": "https://github.com/thebubbsy/marksmith",
+      "files": [
+        {
+          "id": "marksmith/release/marksmith-setup-arm64.exe",
+          "name": "Marksmith-Setup-arm64.exe",
+          "kind": "release",
+          "version": "v3.2.0",
+          "size": 68930804,
+          "updated": "2026-09-19T12:49:04Z",
+          "url": "https://github.com/thebubbsy/marksmith/releases/download/v3.2.0/Marksmith-Setup-arm64.exe"
+        },
+        {
+          "id": "marksmith/release/marksmith-setup-x64.exe",
+          "name": "Marksmith-Setup-x64.exe",
+          "kind": "release",
+          "version": "v3.2.0",
+          "size": 72212334,
+          "updated": "2026-09-19T12:48:07Z",
+          "url": "https://github.com/thebubbsy/marksmith/releases/download/v3.2.0/Marksmith-Setup-x64.exe"
+        }
+      ]
+    },
+    {
+      "repo": "UpdateCascade",
+      "description": "Autonomous Multi-Pass Windows Update & Driver Cascade Engine with Bulletproof Reboot Persistence",
+      "url": "https://github.com/thebubbsy/UpdateCascade",
+      "files": [
+        {
+          "id": "updatecascade/file/cascade.ps1",
+          "name": "cascade.ps1",
+          "kind": "file",
+          "version": "main",
+          "size": 129328,
+          "updated": "2026-09-25T04:15:01Z",
+          "url": "https://raw.githubusercontent.com/thebubbsy/UpdateCascade/main/cascade.ps1"
+        }
+      ]
+    },
+    {
+      "repo": "WingetBatch",
+      "description": "PowerShell module for batch winget operations, update monitoring, and package discovery",
+      "url": "https://github.com/thebubbsy/WingetBatch",
+      "files": [
+        {
+          "id": "wingetbatch/file/wingetbatch_standalone.ps1",
+          "name": "WingetBatch_Standalone.ps1",
+          "kind": "file",
+          "version": "main",
+          "size": 256274,
+          "updated": "2026-07-27T15:57:20Z",
+          "url": "https://raw.githubusercontent.com/thebubbsy/WingetBatch/main/WingetBatch_Standalone.ps1"
+        }
+      ]
+    }
+  ]
+}
