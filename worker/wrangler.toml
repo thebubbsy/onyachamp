@@ -1,0 +1,19 @@
+# Cloudflare Worker that counts downloads started from onyachamp.com/resources.html.
+# Runs on the site's own domain, so the page can call /api/downloads/* same-origin.
+name = "onyachamp-downloads"
+main = "src/index.js"
+compatibility_date = "2026-09-01"
+workers_dev = false
+
+routes = [
+  { pattern = "onyachamp.com/api/downloads*", zone_name = "onyachamp.com" },
+]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "onyachamp-stats"
+# Replace with the id printed by `npx wrangler d1 create onyachamp-stats`.
+database_id = "REPLACE_WITH_D1_DATABASE_ID"
+
+[vars]
+MANIFEST_URL = "https://onyachamp.com/data/resources.json"

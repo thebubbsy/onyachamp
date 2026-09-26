@@ -1,0 +1,60 @@
+name: Refresh resources manifest
+
+# Rebuilds data/resources.json (the file list behind resources.html) from the
+# latest GitHub releases and root .ps1 files across thebubbsy's public repos.
+
+on:
+  schedule:
+    - cron: '17 */6 * * *'
+  workflow_dispatch:
+  repository_dispatch:
+    types: [resources-updated]
+  push:
+    paths:
+      - scripts/build_resources.py
+      - .github/workflows/resources-manifest.yml
+
+permissions:
+  contents: write
+  actions: write
+
+concurrency:
+  group: resources-manifest-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Build manifest
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python scripts/build_resources.py
+
+      - name: Commit if changed
+        id: commit
+        run: |
+          if git diff --quiet -- data/resources.json && [ -z "$(git ls-files --others --exclude-standard data/resources.json)" ]; then
+            echo "No changes."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/resources.json
+          git commit -m "resources: refresh download manifest"
+          git push
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+
+      # Pushes made with GITHUB_TOKEN don't trigger other workflows, so kick the
+      # Pages deploy explicitly when main changed.
+      - name: Redeploy site
+        if: steps.commit.outputs.changed == 'true' && github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh workflow run deploy.yml --ref main
