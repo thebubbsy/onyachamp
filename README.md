@@ -28,23 +28,16 @@ python -m http.server 8000
 
 ---
 
-## 📝 Footnote: PowerShell scripts
+## PowerShell scripts
 
-You'll also notice a few PowerShell scripts in the repo root. The site isn't about them. They live here for two reasons:
-
-- **To keep them.** Like a one-offs repo, they're tools I want to hold on to permanently.
-- **To run them quickly.** Because GitHub Pages serves these files at `onyachamp.com`, I can run them on any machine, including a fresh Windows install at OOBE (`Shift + F10`), with a single `irm | iex` line:
+The `.ps1` files in the root aren't part of the site. They're stored here to keep, and because Pages serves them, two of them can be run on any machine (including at OOBE with `Shift + F10`) in one line:
 
 ```powershell
 irm https://onyachamp.com/autopilot | iex   # Autopilot OOBE Command Hub
-irm https://onyachamp.com/cascade   | iex   # UpdateCascade (Windows Update & driver loop)
+irm https://onyachamp.com/cascade   | iex   # UpdateCascade
 ```
 
-| File | What it is |
-| :--- | :--- |
-| `autopilot` / `autopilot.ps1` | Autopilot OOBE Command Hub. It's automatically synced from [AutopilotCommandHub](https://github.com/thebubbsy/AutopilotCommandHub). |
-| `cascade` / `cascade.ps1` | UpdateCascade, a multi-pass Windows Update and driver installer that keeps running across reboots. See [UpdateCascade](https://github.com/thebubbsy/UpdateCascade). |
-| `Get-DellWarranty.ps1` | Dell warranty and hardware-refresh lookup. It needs your own Dell API credentials; see `.env.example`. |
-| `Start-DeviceAuth.ps1` | Device-code sign-in helper for Microsoft Graph and Intune. |
-
-The copies without an extension exist so the `irm` URLs stay short. Full documentation for each tool lives in its own repository.
+- `autopilot`, `autopilot.ps1`: [AutopilotCommandHub](https://github.com/thebubbsy/AutopilotCommandHub), synced automatically
+- `cascade`, `cascade.ps1`: [UpdateCascade](https://github.com/thebubbsy/UpdateCascade), a Windows Update and driver installer that keeps running across reboots
+- `Get-DellWarranty.ps1`: Dell warranty lookup (needs your own API credentials, see `.env.example`)
+- `Start-DeviceAuth.ps1`: device-code sign-in for Microsoft Graph and Intune
