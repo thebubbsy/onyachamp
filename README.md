@@ -16,7 +16,7 @@ The personal portfolio of **Matthew Bubb** (OnyaChamp), a systems engineer and t
   - A terminal walkthrough, my PowerShell Gallery modules, my tech stack and contact links.
 - **MarkSmith ([`marksmith.html`](marksmith.html))** is a dedicated product page. It has an interactive Markdown-to-Word demo, side-by-side comparisons with Pandoc and other converters, downloadable sample documents and pricing.
 
-- **Downloads ([`resources.html`](resources.html))** lists the latest `.exe`, `.msi` and `.ps1` files from my public GitHub repos: assets from each repo's latest release, plus `.ps1` files in each repo's root. Files download straight from GitHub. A GitHub Action ([`resources-manifest.yml`](.github/workflows/resources-manifest.yml)) refreshes the list every 6 hours.
+- **Downloads ([`resources.html`](resources.html))** lists the latest `.exe`, `.msi` and `.ps1` files from my public GitHub repos: assets from each repo's latest release, plus `.ps1` files in each repo's root (build/publish helpers and tests are skipped). Files download straight from GitHub. A GitHub Action ([`resources-manifest.yml`](.github/workflows/resources-manifest.yml)) refreshes the list every 6 hours.
 
 ## Tech
 

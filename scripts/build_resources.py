@@ -25,6 +25,12 @@ OUT = os.environ.get("RESOURCES_OUT", os.path.join(os.path.dirname(__file__), ".
 RELEASE_EXTS = (".exe", ".msi", ".ps1")
 ROOT_EXTS = (".ps1",)
 
+# This site's own .ps1 files are mirrors of other repos, so listing them would
+# just duplicate entries.
+SKIP_REPOS = {"onyachamp"}
+# Repo plumbing rather than tools: build/publish/deploy helpers and Pester tests.
+SKIP_ROOT_FILE = re.compile(r"^(build|publish|deploy)([-_].*)?\.ps1$|\.tests\.ps1$", re.IGNORECASE)
+
 
 def api(path):
     req = urllib.request.Request(
@@ -92,6 +98,8 @@ def root_ps1_files(repo):
     for f in contents:
         if f.get("type") != "file" or not f["name"].lower().endswith(ROOT_EXTS):
             continue
+        if SKIP_ROOT_FILE.search(f["name"]):
+            continue
         commits = api(
             f"/repos/{OWNER}/{repo['name']}/commits?per_page=1"
             f"&sha={urllib.parse.quote(branch)}&path={urllib.parse.quote(f['path'])}"
@@ -112,7 +120,7 @@ def root_ps1_files(repo):
 def main():
     groups = []
     for repo in sorted(list_repos(), key=lambda r: r["name"].lower()):
-        if repo.get("fork") or repo.get("archived") or repo.get("private"):
+        if repo.get("fork") or repo.get("archived") or repo.get("private") or repo["name"] in SKIP_REPOS:
             continue
         files = release_files(repo) + root_ps1_files(repo)
         if not files:
