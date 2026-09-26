@@ -1,23 +1,7 @@
 {
-  "generated": "2026-09-26T05:45:19Z",
+  "generated": "2026-09-26T05:46:25Z",
   "owner": "thebubbsy",
   "groups": [
-    {
-      "repo": "Aether_Audio_Archivist_Pro",
-      "description": "",
-      "url": "https://github.com/thebubbsy/Aether_Audio_Archivist_Pro",
-      "files": [
-        {
-          "id": "aether_audio_archivist_pro/file/deploy_to_github.ps1",
-          "name": "deploy_to_github.ps1",
-          "kind": "file",
-          "version": "main",
-          "size": 1125,
-          "updated": "2026-02-27T12:56:58Z",
-          "url": "https://raw.githubusercontent.com/thebubbsy/Aether_Audio_Archivist_Pro/main/deploy_to_github.ps1"
-        }
-      ]
-    },
     {
       "repo": "AutopilotCommandHub",
       "description": "Standalone Windows Autopilot OOBE Provisioning & Endpoint Deployment Engine (WinUI 3 Fluent Dark WPF)",
@@ -62,79 +46,6 @@
       ]
     },
     {
-      "repo": "AutopilotFast",
-      "description": "High-speed Windows Autopilot hardware hash harvester and direct Microsoft Graph cloud device registrar for Windows OOBE (Shift+F10) powered by PowerShell 7+.",
-      "url": "https://github.com/thebubbsy/AutopilotFast",
-      "files": [
-        {
-          "id": "autopilotfast/file/publish.ps1",
-          "name": "publish.ps1",
-          "kind": "file",
-          "version": "main",
-          "size": 1279,
-          "updated": "2026-09-01T04:07:52Z",
-          "url": "https://raw.githubusercontent.com/thebubbsy/AutopilotFast/main/publish.ps1"
-        }
-      ]
-    },
-    {
-      "repo": "FindObject",
-      "description": "PowerShell module for filtering objects by name with logical operators (AND/OR/NOT)",
-      "url": "https://github.com/thebubbsy/FindObject",
-      "files": [
-        {
-          "id": "findobject/file/findobject.e2e.tests.ps1",
-          "name": "FindObject.E2E.Tests.ps1",
-          "kind": "file",
-          "version": "main",
-          "size": 89286,
-          "updated": "2026-09-16T20:35:20Z",
-          "url": "https://raw.githubusercontent.com/thebubbsy/FindObject/main/FindObject.E2E.Tests.ps1"
-        },
-        {
-          "id": "findobject/file/findobject.tests.ps1",
-          "name": "FindObject.Tests.ps1",
-          "kind": "file",
-          "version": "main",
-          "size": 25593,
-          "updated": "2026-09-16T20:35:20Z",
-          "url": "https://raw.githubusercontent.com/thebubbsy/FindObject/main/FindObject.Tests.ps1"
-        }
-      ]
-    },
-    {
-      "repo": "IntuneShared",
-      "description": "Shared transport, resilient Graph REST client, and token provider kernel for modern PowerShell 7+ endpoint management.",
-      "url": "https://github.com/thebubbsy/IntuneShared",
-      "files": [
-        {
-          "id": "intuneshared/file/publish.ps1",
-          "name": "publish.ps1",
-          "kind": "file",
-          "version": "main",
-          "size": 1279,
-          "updated": "2026-09-01T04:07:51Z",
-          "url": "https://raw.githubusercontent.com/thebubbsy/IntuneShared/main/publish.ps1"
-        }
-      ]
-    },
-    {
-      "repo": "LocalPilot",
-      "description": "Zero-cloud workstation provisioning, Machine-as-Code recipes, hardware birth certificates, and proactive local self-healing remediations.",
-      "url": "https://github.com/thebubbsy/LocalPilot",
-      "files": [
-        {
-          "id": "localpilot/file/publish.ps1",
-          "name": "publish.ps1",
-          "kind": "file",
-          "version": "main",
-          "size": 1551,
-          "updated": "2026-09-07T14:51:52Z",
-          "url": "https://raw.githubusercontent.com/thebubbsy/LocalPilot/main/publish.ps1"
-        }
-      ]
-    },
-    {
       "repo": "LocalPilotFleet",
       "description": "",
       "url": "https://github.com/thebubbsy/LocalPilotFleet",
@@ -172,67 +83,6 @@
           "size": 72212334,
           "updated": "2026-09-19T12:48:07Z",
           "url": "https://github.com/thebubbsy/marksmith/releases/download/v3.2.0/Marksmith-Setup-x64.exe"
-        },
-        {
-          "id": "marksmith/file/build-all.ps1",
-          "name": "build-all.ps1",
-          "kind": "file",
-          "version": "main",
-          "size": 1090,
-          "updated": "2026-09-19T05:09:44Z",
-          "url": "https://raw.githubusercontent.com/thebubbsy/marksmith/main/build-all.ps1"
-        },
-        {
-          "id": "marksmith/file/publish-all.ps1",
-          "name": "publish-all.ps1",
-          "kind": "file",
-          "version": "main",
-          "size": 1740,
-          "updated": "2026-09-19T05:09:44Z",
-          "url": "https://raw.githubusercontent.com/thebubbsy/marksmith/main/publish-all.ps1"
-        }
-      ]
-    },
-    {
-      "repo": "onyachamp",
-      "description": "portfolio of personal projects from github, semi worth showing off material only. everything half baked. also used as a place to host powershell scripts for a \"irm LINK | iex\" workflow to quickly execute ps1 scripts on other machines",
-      "url": "https://github.com/thebubbsy/onyachamp",
-      "files": [
-        {
-          "id": "onyachamp/file/autopilot.ps1",
-          "name": "autopilot.ps1",
-          "kind": "file",
-          "version": "main",
-          "size": 1001818,
-          "updated": "2026-09-25T14:36:13Z",
-          "url": "https://raw.githubusercontent.com/thebubbsy/onyachamp/main/autopilot.ps1"
-        },
-        {
-          "id": "onyachamp/file/cascade.ps1",
-          "name": "cascade.ps1",
-          "kind": "file",
-          "version": "main",
-          "size": 129328,
-          "updated": "2026-09-25T04:15:26Z",
-          "url": "https://raw.githubusercontent.com/thebubbsy/onyachamp/main/cascade.ps1"
-        },
-        {
-          "id": "onyachamp/file/get-dellwarranty.ps1",
-          "name": "Get-DellWarranty.ps1",
-          "kind": "file",
-          "version": "main",
-          "size": 15962,
-          "updated": "2026-09-19T15:26:15Z",
-          "url": "https://raw.githubusercontent.com/thebubbsy/onyachamp/main/Get-DellWarranty.ps1"
-        },
-        {
-          "id": "onyachamp/file/start-deviceauth.ps1",
-          "name": "Start-DeviceAuth.ps1",
-          "kind": "file",
-          "version": "main",
-          "size": 4596,
-          "updated": "2026-09-19T20:40:25Z",
-          "url": "https://raw.githubusercontent.com/thebubbsy/onyachamp/main/Start-DeviceAuth.ps1"
         }
       ]
     },
@@ -258,24 +108,6 @@
       "url": "https://github.com/thebubbsy/WingetBatch",
       "files": [
         {
-          "id": "wingetbatch/file/build.ps1",
-          "name": "build.ps1",
-          "kind": "file",
-          "version": "main",
-          "size": 1330,
-          "updated": "2026-05-02T13:36:17Z",
-          "url": "https://raw.githubusercontent.com/thebubbsy/WingetBatch/main/build.ps1"
-        },
-        {
-          "id": "wingetbatch/file/publish.ps1",
-          "name": "publish.ps1",
-          "kind": "file",
-          "version": "main",
-          "size": 397,
-          "updated": "2026-06-08T10:50:18Z",
-          "url": "https://raw.githubusercontent.com/thebubbsy/WingetBatch/main/publish.ps1"
-        },
-        {
           "id": "wingetbatch/file/wingetbatch_standalone.ps1",
           "name": "WingetBatch_Standalone.ps1",
           "kind": "file",
@@ -283,22 +115,6 @@
           "size": 256274,
           "updated": "2026-07-27T15:57:20Z",
           "url": "https://raw.githubusercontent.com/thebubbsy/WingetBatch/main/WingetBatch_Standalone.ps1"
-        }
-      ]
-    },
-    {
-      "repo": "WingetIntune",
-      "description": "Enterprise Win32 packaging engine and Microsoft Graph cloud publisher with type-safe package adapters and durable Azure Block Blob upload state machines for PowerShell 7+.",
-      "url": "https://github.com/thebubbsy/WingetIntune",
-      "files": [
-        {
-          "id": "wingetintune/file/publish.ps1",
-          "name": "publish.ps1",
-          "kind": "file",
-          "version": "main",
-          "size": 1279,
-          "updated": "2026-09-01T04:07:52Z",
-          "url": "https://raw.githubusercontent.com/thebubbsy/WingetIntune/main/publish.ps1"
         }
       ]
     }
