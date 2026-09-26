@@ -195,13 +195,13 @@ img, video, svg, canvas {
 .nav-links {
   display: flex;
   align-items: center;
-  gap: 1.75rem;
+  gap: 1.25rem;
   list-style: none;
 }
 
 .nav-links a {
   color: var(--text-secondary);
-  font-size: 0.95rem;
+  font-size: 0.92rem;
   font-weight: 500;
   padding: 0.5rem 0.25rem;
   position: relative;
@@ -1426,7 +1426,11 @@ footer {
 }
 
 /* Responsive Media Queries */
-@media (max-width: 1080px) {
+@media (max-width: 1400px) {
+  .nav-cta { display: none; }
+}
+
+@media (max-width: 1180px) {
   .nav-links, .nav-cta { display: none; }
   .nav-links.active {
     display: flex;
@@ -2928,3 +2932,65 @@ footer {
   .res-file { flex-wrap: wrap; }
   .res-dl { width: 100%; }
 }
+
+/* ==========================================
+   Multi-page layout: page spacing + home site directory
+   ========================================== */
+.page-main > section:first-child { padding-top: 4rem; }
+
+.directory-section { padding: 1rem 0 5rem; }
+
+.dir-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr));
+  gap: 1rem;
+}
+
+.dir-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 1.25rem 1.35rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  color: var(--text-secondary);
+  transition: all var(--transition-normal);
+  min-width: 0;
+}
+
+.dir-card:hover {
+  background: var(--bg-card-hover);
+  border-color: var(--border-accent);
+  transform: translateY(-2px);
+  color: var(--text-secondary);
+}
+
+.dir-icon {
+  width: 2.6rem;
+  height: 2.6rem;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  border-radius: var(--radius-md);
+  background: rgba(56, 189, 248, 0.1);
+  color: var(--text-accent);
+  font-size: 1.1rem;
+}
+
+.dir-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 0.35rem; }
+
+.dir-title {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.dir-title .badge { font-size: 0.68rem; padding: 0.15rem 0.5rem; }
+.dir-desc { font-size: 0.9rem; line-height: 1.55; }
+.dir-arrow { color: var(--text-muted); margin-top: 0.8rem; transition: transform var(--transition-fast); }
+.dir-card:hover .dir-arrow { color: var(--text-accent); transform: translateX(3px); }

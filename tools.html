@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tools | OnyaChamp</title>
+    <meta name="description" content="Enterprise PowerShell modules, Windows Autopilot tools and developer utilities by Matthew Bubb, plus the bubbsy PowerShell Gallery profile.">
+    <meta name="keywords" content="Matthew Bubb, OnyaChamp, MarkSmith, WingetIntune, AutopilotFast, TeamsChatExporter, WingetBatch, FindObject, broadlink-garage-controller, BroadLink RM4, IoT, PowerShell, C#, OpenXML, Systems Engineer">
+    <meta name="author" content="Matthew Bubb">
+
+    <!-- Open Graph / Social Meta -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://onyachamp.com/tools.html">
+    <meta property="og:title" content="Tools | OnyaChamp">
+    <meta property="og:description" content="Zero-corruption document compilers, cloud infrastructure pipelines, and enterprise systems automation tooling.">
+    <meta property="og:image" content="https://avatars.githubusercontent.com/u/49204026?v=4">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:site" content="@TheBubbsy">
+    <meta name="twitter:title" content="Tools | OnyaChamp">
+    <meta name="twitter:description" content="Zero-corruption document compilers, cloud infrastructure pipelines, and enterprise systems automation tooling.">
+    <meta name="twitter:image" content="https://avatars.githubusercontent.com/u/49204026?v=4">
+
+    <link rel="canonical" href="https://onyachamp.com/tools.html">
+
+    <!-- Fonts & Icons -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <!-- Navigation Bar -->
+    <header class="navbar">
+        <div class="container nav-container">
+            <a href="index.html" class="nav-brand">
+                <div class="brand-icon">
+                    <i class="fas fa-terminal"></i>
+                </div>
+                <span class="brand-title">OnyaChamp</span>
+            </a>
+
+            <nav>
+                <ul class="nav-links">
+                    <li><a href="index.html">Home</a></li>
+                    <li><a href="marksmith.html">MarkSmith</a></li>
+                    <li><a href="teams-chat-exporter.html">Teams Exporter</a></li>
+                    <li><a href="garage-controller.html">Garage Controller</a></li>
+                    <li><a href="cli-tour.html">CLI Tour</a></li>
+                    <li><a href="tools.html" class="active" aria-current="page">Tools</a></li>
+                    <li><a href="stack.html">Stack</a></li>
+                    <li><a href="resources.html">Downloads</a></li>
+                    <li><a href="contact.html">Contact</a></li>
+                </ul>
+            </nav>
+
+            <div class="nav-cta">
+                <a href="https://www.buymeacoffee.com/mbubbtechz" target="_blank" rel="noopener noreferrer" class="btn btn-coffee btn-sm" title="Support on Buy Me a Coffee">
+                    <i class="fas fa-mug-hot"></i> Coffee
+                </a>
+                <a href="https://github.com/thebubbsy" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-sm">
+                    <i class="fab fa-github"></i> GitHub
+                </a>
+            </div>
+
+            <button class="mobile-menu-btn" aria-label="Toggle navigation menu">
+                <i class="fas fa-bars"></i>
+            </button>
+        </div>
+    </header>
+
+    <main class="page-main">
+    <!-- Curated Enterprise Open-Source Tools -->
+    <section id="open-source" class="repos-section">
+        <div class="container">
+            <div class="section-header">
+                <span class="badge badge-cyan"><i class="fab fa-github"></i> PRODUCTION-GRADE TOOLING</span>
+                <h2>Enterprise Cloud, Packaging &amp; Automation Tools</h2>
+                <p>A curated showcase of battle-tested PowerShell 7+ modules, Windows Autopilot tools, and developer utilities created by Matthew Bubb.</p>
+            </div>
+
+            <!-- Category Filter -->
+            <div class="filter-bar">
+                <button type="button" class="filter-btn active" data-filter="all">
+                    <i class="fas fa-list-check"></i> All Tooling
+                </button>
+                <button type="button" class="filter-btn" data-filter="flagship">
+                    <i class="fas fa-crown"></i> Flagship Compilers
+                </button>
+                <button type="button" class="filter-btn" data-filter="cloud">
+                    <i class="fas fa-cloud"></i> Intune &amp; Autopilot
+                </button>
+                <button type="button" class="filter-btn" data-filter="powershell">
+                    <i class="fas fa-terminal"></i> PowerShell Gallery
+                </button>
+                <button type="button" class="filter-btn" data-filter="edge">
+                    <i class="fas fa-network-wired"></i> Edge &amp; IoT
+                </button>
+            </div>
+
+            <div class="repos-grid">
+                <!-- UpdateCascade -->
+                <div class="repo-card" data-category="cloud powershell">
+                    <div class="repo-header">
+                        <div class="repo-title-group">
+                            <i class="fas fa-bolt repo-icon" style="color: #38BDF8;"></i>
+                            <h4 class="repo-name"><a href="https://github.com/thebubbsy/UpdateCascade" target="_blank" rel="noopener noreferrer">UpdateCascade</a></h4>
+                        </div>
+                        <span class="badge badge-cyan">OOBE &amp; Desktop</span>
+                    </div>
+                    <p class="repo-desc">Autonomous multi-pass Windows Update and Driver cascade engine with 100% reboot survivability. Engineered for zero-touch provisioning across Windows Setup (<code>Shift+F10</code> / <code>defaultuser0</code>), lock screen, and desktop with an exhaustive 17-tier persistence grid and 4-tier reboot engine.</p>
+                    
+                    <div class="repo-tags">
+                        <span class="badge">Windows Update</span>
+                        <span class="badge">Driver Cascade</span>
+                        <span class="badge">17-Tier Persistence</span>
+                        <span class="badge">OOBE Shift+F10</span>
+                        <span class="badge">WPF + Headless</span>
+                    </div>
+
+                    <div class="repo-terminal">
+                        <code>irm https://onyachamp.com/cascade | iex</code>
+                        <button class="copy-btn" data-copy="irm https://onyachamp.com/cascade | iex" title="Copy command">
+                            <i class="far fa-copy"></i>
+                        </button>
+                    </div>
+
+                    <div class="repo-footer">
+                        <div class="repo-meta">
+                            <span><i class="fas fa-code-branch"></i> main</span>
+                            <span><i class="fas fa-shield-halved"></i> MIT</span>
+                        </div>
+                        <a href="https://github.com/thebubbsy/UpdateCascade" class="btn btn-sm btn-outline" target="_blank" rel="noopener noreferrer">
+                            GitHub <i class="fas fa-arrow-up-right-from-square"></i>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- WingetIntune -->
+                <div class="repo-card" data-category="cloud powershell">
+                    <div class="repo-card-media" data-full="media/wingetintune-pipeline.png" data-caption="WingetIntune Production Pipeline — MSI adapter resolution, Session 0 isolation watchdog, and 6MB chunked Azure SAS storage upload.">
+                        <img src="media/wingetintune-pipeline.png" alt="WingetIntune packaging and cloud publishing terminal output" loading="lazy">
+                        <div class="repo-shot-overlay">
+                            <span class="repo-shot-tag"><i class="fas fa-terminal"></i> Graph SAS Pipeline</span>
+                            <span class="repo-zoom-hint"><i class="fas fa-magnifying-glass-plus"></i> Enlarge</span>
+                        </div>
+                    </div>
+
+                    <div class="repo-header">
+                        <div class="repo-title-group">
+                            <i class="fas fa-cloud-arrow-up repo-icon"></i>
+                            <h4 class="repo-name"><a href="https://github.com/thebubbsy/WingetIntune" target="_blank" rel="noopener noreferrer">WingetIntune</a></h4>
+                        </div>
+                        <span class="badge badge-cyan">PowerShell 7+</span>
+                    </div>
+                    <p class="repo-desc">Enterprise Win32 packaging engine and Microsoft Graph cloud publisher. Solves Session 0 isolation silent hangs (<code>0x87D1041C</code>), MSI mutex collisions (<code>1618</code>), and 32-bit WOW64 registry misdirection via dual-view <code>OpenBaseKey</code> inspection with durable 6MB chunked Azure SAS storage uploaders.</p>
+                    
+                    <div class="repo-tags">
+                        <span class="badge">Intune Win32</span>
+                        <span class="badge">Graph API</span>
+                        <span class="badge">Azure SAS 6MB</span>
+                        <span class="badge">Session 0 Guard</span>
+                    </div>
+
+                    <div class="repo-terminal">
+                        <code>Install-Module -Name WingetIntune</code>
+                        <button class="copy-btn" data-copy="Install-Module -Name WingetIntune" title="Copy command">
+                            <i class="far fa-copy"></i>
+                        </button>
+                    </div>
+
+                    <div class="repo-footer">
+                        <div class="repo-meta">
+                            <span><i class="far fa-star"></i> Enterprise</span>
+                            <span><i class="fas fa-code-branch"></i> PowerShell</span>
+                        </div>
+                        <a href="https://github.com/thebubbsy/WingetIntune" target="_blank" rel="noopener noreferrer">View Repo &rarr;</a>
+                    </div>
+                </div>
+
+                <!-- AutopilotFast -->
+                <div class="repo-card" data-category="cloud powershell">
+                    <div class="repo-card-media" data-full="media/autopilotfast-oobe.png" data-caption="AutopilotFast Windows OOBE Setup — 7-stage preflight network diagnostic ladder, terminal ASCII QR code, and Graph sync gate.">
+                        <img src="media/autopilotfast-oobe.png" alt="AutopilotFast Windows OOBE hardware harvester and Graph sync gate" loading="lazy">
+                        <div class="repo-shot-overlay">
+                            <span class="repo-shot-tag"><i class="fas fa-microchip"></i> 7-Stage Preflight</span>
+                            <span class="repo-zoom-hint"><i class="fas fa-magnifying-glass-plus"></i> Enlarge</span>
+                        </div>
+                    </div>
+
+                    <div class="repo-header">
+                        <div class="repo-title-group">
+                            <i class="fas fa-bolt-lightning repo-icon"></i>
+                            <h4 class="repo-name"><a href="https://github.com/thebubbsy/AutopilotFast" target="_blank" rel="noopener noreferrer">AutopilotFast</a></h4>
+                        </div>
+                        <span class="badge badge-emerald">Autopilot / OOBE</span>
+                    </div>
+                    <p class="repo-desc">High-speed Windows Autopilot hardware hash harvester and direct Microsoft Graph cloud importer. Replaces 45-minute USB stick shuffles with a 1-line OOBE bootstrap (<code>Shift + F10</code>), 7-stage preflight network ladder, terminal ASCII QR code, and Graph profile sync gating.</p>
+                    
+                    <div class="repo-tags">
+                        <span class="badge">Autopilot</span>
+                        <span class="badge">OOBE Shift+F10</span>
+                        <span class="badge">Graph Importer</span>
+                        <span class="badge">TPM 2.0</span>
+                    </div>
+
+                    <div class="repo-terminal">
+                        <code>Install-Module AutopilotFast -Force</code>
+                        <button class="copy-btn" data-copy="Install-Module AutopilotFast -Force" title="Copy command">
+                            <i class="far fa-copy"></i>
+                        </button>
+                    </div>
+
+                    <div class="repo-footer">
+                        <div class="repo-meta">
+                            <span><i class="far fa-star"></i> Enterprise</span>
+                            <span><i class="fas fa-code-branch"></i> PowerShell</span>
+                        </div>
+                        <a href="https://github.com/thebubbsy/AutopilotFast" target="_blank" rel="noopener noreferrer">View Repo &rarr;</a>
+                    </div>
+                </div>
+
+                <!-- FindObject -->
+                <div class="repo-card" data-category="powershell">
+                    <div class="repo-card-media" data-full="media/findobject-benchmark.png" data-caption="FindObject Benchmark &amp; Pipeline Grep — SIMD-vectorized String.IndexOf() running 4.8x to 344x faster than Where-Object.">
+                        <img src="media/findobject-benchmark.png" alt="FindObject SIMD benchmark comparing against Where-Object in PowerShell 7" loading="lazy">
+                        <div class="repo-shot-overlay">
+                            <span class="repo-shot-tag"><i class="fas fa-bolt"></i> 344x Faster (-First 10)</span>
+                            <span class="repo-zoom-hint"><i class="fas fa-magnifying-glass-plus"></i> Enlarge</span>
+                        </div>
+                    </div>
+
+                    <div class="repo-header">
+                        <div class="repo-title-group">
+                            <i class="fas fa-filter repo-icon"></i>
+                            <h4 class="repo-name"><a href="https://github.com/thebubbsy/FindObject" target="_blank" rel="noopener noreferrer">FindObject (fob)</a></h4>
+                        </div>
+                        <span class="badge badge-purple">PSGallery v2.0</span>
+                    </div>
+                    <p class="repo-desc">The object-aware grep that PowerShell should have shipped with. Filters pipeline objects via natural-language boolean syntax (<code>fob "chrome OR firefox NOT helper"</code>) using SIMD-vectorized <code>[String]::IndexOf()</code> instead of slow wildcard regexes. 4.8x to 344x faster on 100k objects.</p>
+                    
+                    <div class="repo-tags">
+                        <span class="badge">SIMD IndexOf</span>
+                        <span class="badge">Boolean Parser</span>
+                        <span class="badge">Pipeline Filter</span>
+                        <span class="badge">-First Early Exit</span>
+                    </div>
+
+                    <div class="repo-terminal">
+                        <code>Install-Module -Name FindObject</code>
+                        <button class="copy-btn" data-copy="Install-Module -Name FindObject" title="Copy command">
+                            <i class="far fa-copy"></i>
+                        </button>
+                    </div>
+
+                    <div class="repo-footer">
+                        <div class="repo-meta">
+                            <span><i class="fas fa-download"></i> PSGallery: bubbsy</span>
+                        </div>
+                        <a href="https://www.powershellgallery.com/packages/FindObject" target="_blank" rel="noopener noreferrer">PSGallery Link &rarr;</a>
+                    </div>
+                </div>
+
+                <!-- WingetBatch -->
+                <div class="repo-card" data-category="powershell">
+                    <div class="repo-card-media" data-full="media/wingetbatch-tui.png" data-caption="WingetBatch Spectre.Console TUI — interactive multi-select package installer with real-time download and install progress meters.">
+                        <img src="media/wingetbatch-tui.png" alt="WingetBatch Spectre.Console interactive terminal UI" loading="lazy">
+                        <div class="repo-shot-overlay">
+                            <span class="repo-shot-tag"><i class="fas fa-layer-group"></i> Spectre.Console TUI</span>
+                            <span class="repo-zoom-hint"><i class="fas fa-magnifying-glass-plus"></i> Enlarge</span>
+                        </div>
+                    </div>
+
+                    <div class="repo-header">
+                        <div class="repo-title-group">
+                            <i class="fas fa-box-archive repo-icon"></i>
+                            <h4 class="repo-name"><a href="https://github.com/thebubbsy/WingetBatch" target="_blank" rel="noopener noreferrer">WingetBatch</a></h4>
+                        </div>
+                        <span class="badge badge-purple">PSGallery v2.9</span>
+                    </div>
+                    <p class="repo-desc">Advanced batch operations for Windows Package Manager (winget). Features interactive multi-select installation, GitHub package discovery with 30-day caching, and background update monitoring with Spectre Console.</p>
+                    
+                    <div class="repo-tags">
+                        <span class="badge">Winget</span>
+                        <span class="badge">Batch Install</span>
+                        <span class="badge">Spectre Console</span>
+                        <span class="badge">PSGallery</span>
+                    </div>
+
+                    <div class="repo-terminal">
+                        <code>Install-Module -Name WingetBatch</code>
+                        <button class="copy-btn" data-copy="Install-Module -Name WingetBatch" title="Copy command">
+                            <i class="far fa-copy"></i>
+                        </button>
+                    </div>
+
+                    <div class="repo-footer">
+                        <div class="repo-meta">
+                            <span><i class="fas fa-download"></i> PSGallery: bubbsy</span>
+                        </div>
+                        <a href="https://www.powershellgallery.com/packages/WingetBatch" target="_blank" rel="noopener noreferrer">PSGallery Link &rarr;</a>
+                    </div>
+                </div>
+
+                <!-- PSGalleryBatch -->
+                <div class="repo-card" data-category="powershell">
+                    <div class="repo-header">
+                        <div class="repo-title-group">
+                            <i class="fas fa-layer-group repo-icon"></i>
+                            <h4 class="repo-name"><a href="https://github.com/thebubbsy/PSGalleryBatch" target="_blank" rel="noopener noreferrer">PSGalleryBatch</a></h4>
+                        </div>
+                        <span class="badge badge-purple">PSGallery v1.1</span>
+                    </div>
+                    <p class="repo-desc">Batch search, install, and update modules from PowerShell Gallery with an optional Spectre Console UI or Out-GridView fallback. Supports wildcards, multi-version pinning, and prerelease versions.</p>
+                    
+                    <div class="repo-tags">
+                        <span class="badge">PSGallery</span>
+                        <span class="badge">Spectre Console</span>
+                        <span class="badge">Module Manager</span>
+                    </div>
+
+                    <div class="repo-terminal">
+                        <code>Install-Module -Name PSGalleryBatch</code>
+                        <button class="copy-btn" data-copy="Install-Module -Name PSGalleryBatch" title="Copy command">
+                            <i class="far fa-copy"></i>
+                        </button>
+                    </div>
+
+                    <div class="repo-footer">
+                        <div class="repo-meta">
+                            <span><i class="fas fa-download"></i> PSGallery: bubbsy</span>
+                        </div>
+                        <a href="https://www.powershellgallery.com/packages/PSGalleryBatch" target="_blank" rel="noopener noreferrer">PSGallery Link &rarr;</a>
+                    </div>
+                </div>
+
+                <!-- whisper-writer -->
+                <div class="repo-card" data-category="flagship edge">
+                    <div class="repo-header">
+                        <div class="repo-title-group">
+                            <i class="fas fa-microphone-lines repo-icon"></i>
+                            <h4 class="repo-name"><a href="https://github.com/thebubbsy/whisper-writer" target="_blank" rel="noopener noreferrer">whisper-writer</a></h4>
+                        </div>
+                        <span class="badge badge-emerald">AI / Speech</span>
+                    </div>
+                    <p class="repo-desc">High-speed local voice dictation and speech-to-text utility powered by OpenAI's Whisper model with global system keyboard injection for hands-free typing across any active window.</p>
+                    
+                    <div class="repo-tags">
+                        <span class="badge">Whisper AI</span>
+                        <span class="badge">Local Speech</span>
+                        <span class="badge">Keyboard Injection</span>
+                    </div>
+
+                    <div class="repo-terminal">
+                        <code>git clone https://github.com/thebubbsy/whisper-writer</code>
+                        <button class="copy-btn" data-copy="git clone https://github.com/thebubbsy/whisper-writer" title="Copy command">
+                            <i class="far fa-copy"></i>
+                        </button>
+                    </div>
+
+                    <div class="repo-footer">
+                        <div class="repo-meta">
+                            <span><i class="far fa-star"></i> AI Tooling</span>
+                            <span><i class="fab fa-python"></i> Python</span>
+                        </div>
+                        <a href="https://github.com/thebubbsy/whisper-writer" target="_blank" rel="noopener noreferrer">View Repo &rarr;</a>
+                    </div>
+                </div>
+
+                <!-- universal-element-cloner -->
+                <div class="repo-card" data-category="edge">
+                    <div class="repo-header">
+                        <div class="repo-title-group">
+                            <i class="fas fa-clone repo-icon"></i>
+                            <h4 class="repo-name"><a href="https://github.com/thebubbsy/universal-element-cloner" target="_blank" rel="noopener noreferrer">universal-element-cloner</a></h4>
+                        </div>
+                        <span class="badge">DevTools</span>
+                    </div>
+                    <p class="repo-desc">High-fidelity Chrome/Edge browser extension for cloning live DOM elements with auto-scroll and computed CSS style capture for front-end reverse engineering and component reproduction.</p>
+                    
+                    <div class="repo-tags">
+                        <span class="badge">DOM Extractor</span>
+                        <span class="badge">CSS Computed</span>
+                        <span class="badge">Browser Ext</span>
+                    </div>
+
+                    <div class="repo-terminal">
+                        <code>git clone https://github.com/thebubbsy/universal-element-cloner</code>
+                        <button class="copy-btn" data-copy="git clone https://github.com/thebubbsy/universal-element-cloner" title="Copy command">
+                            <i class="far fa-copy"></i>
+                        </button>
+                    </div>
+
+                    <div class="repo-footer" style="margin-top: auto;">
+                        <div class="repo-meta">
+                            <span><i class="far fa-star"></i> Open Source</span>
+                            <span><i class="fab fa-js"></i> JavaScript</span>
+                        </div>
+                        <a href="https://github.com/thebubbsy/universal-element-cloner" target="_blank" rel="noopener noreferrer">View Repo &rarr;</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- PowerShell Gallery Profile Spotlight -->
+    <section id="psgallery" class="cta-section">
+        <div class="container">
+            <div class="cta-box" style="background: linear-gradient(135deg, rgba(24, 34, 54, 0.9) 0%, rgba(13, 20, 36, 0.95) 100%);">
+                <span class="badge badge-purple" style="margin-bottom: 1rem;"><i class="fas fa-cubes"></i> POWERSHELL GALLERY</span>
+                <h2>Official PowerShell Modules on PSGallery</h2>
+                <p>Browse, install, and update published enterprise PowerShell modules maintained under the official <strong>bubbsy</strong> profile on PowerShell Gallery.</p>
+
+                <div class="social-links">
+                    <a href="https://www.powershellgallery.com/profiles/bubbsy" target="_blank" rel="noopener noreferrer" class="btn btn-primary btn-lg">
+                        <i class="fas fa-boxes-packing"></i> Visit powershellgallery.com/profiles/bubbsy &rarr;
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+    </main>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <div class="footer-grid">
+                <div class="footer-brand">
+                    <strong>OnyaChamp.com</strong> — Systems Engineering Platform by Matthew Bubb.
+                </div>
+
+                <ul class="footer-nav">
+                    <li><a href="index.html">Home</a></li>
+                    <li><a href="marksmith.html">MarkSmith</a></li>
+                    <li><a href="teams-chat-exporter.html">Teams Exporter</a></li>
+                    <li><a href="garage-controller.html">Garage Controller</a></li>
+                    <li><a href="cli-tour.html">CLI Tour</a></li>
+                    <li><a href="tools.html">Tools</a></li>
+                    <li><a href="stack.html">Stack</a></li>
+                    <li><a href="resources.html">Downloads</a></li>
+                    <li><a href="contact.html">Contact</a></li>
+                    <li><a href="https://www.powershellgallery.com/profiles/bubbsy" target="_blank" rel="noopener noreferrer">PSGallery</a></li>
+                    <li><a href="https://github.com/thebubbsy" target="_blank" rel="noopener noreferrer">GitHub</a></li>
+                </ul>
+
+                <div class="footer-copy">
+                    &copy; 2026 OnyaChamp / Matthew Bubb. All rights reserved.
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Universal Lightbox Modal -->
+    <div id="shot-lightbox" class="shot-lightbox" role="dialog" aria-modal="true" aria-label="Enlarged screenshot" hidden>
+        <button class="lightbox-close" type="button" aria-label="Close screenshot preview">&times;</button>
+        <button class="lightbox-nav-btn lightbox-prev" type="button" aria-label="Previous screenshot">
+            <i class="fas fa-chevron-left"></i>
+        </button>
+        <button class="lightbox-nav-btn lightbox-next" type="button" aria-label="Next screenshot">
+            <i class="fas fa-chevron-right"></i>
+        </button>
+        <div class="shot-lightbox-inner">
+            <img id="lightbox-img" src="" alt="Enlarged screenshot preview">
+            <div id="lightbox-caption" class="lightbox-caption"></div>
+            <div id="lightbox-counter" class="lightbox-counter"></div>
+        </div>
+    </div>
+
+    <!-- JavaScript -->
+    <script src="app.js"></script>
+</body>
+</html>

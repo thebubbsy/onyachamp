@@ -46,13 +46,15 @@
 
             <nav>
                 <ul class="nav-links">
-                    <li><a href="marksmith.html" style="color: #38bdf8; font-weight: 700;"><i class="fas fa-crown"></i> MarkSmith</a></li>
-                    <li><a href="#featured-spotlights">Flagship Projects</a></li>
-                    <li><a href="#terminal-tour">Live CLI Tour</a></li>
-                    <li><a href="#open-source">Tooling Catalog</a></li>
+                    <li><a href="index.html" class="active" aria-current="page">Home</a></li>
+                    <li><a href="marksmith.html">MarkSmith</a></li>
+                    <li><a href="teams-chat-exporter.html">Teams Exporter</a></li>
+                    <li><a href="garage-controller.html">Garage Controller</a></li>
+                    <li><a href="cli-tour.html">CLI Tour</a></li>
+                    <li><a href="tools.html">Tools</a></li>
+                    <li><a href="stack.html">Stack</a></li>
                     <li><a href="resources.html">Downloads</a></li>
-                    <li><a href="#stack">Core Stack</a></li>
-                    <li><a href="#contact">Contact</a></li>
+                    <li><a href="contact.html">Contact</a></li>
                 </ul>
             </nav>
 
@@ -60,14 +62,8 @@
                 <a href="https://www.buymeacoffee.com/mbubbtechz" target="_blank" rel="noopener noreferrer" class="btn btn-coffee btn-sm" title="Support on Buy Me a Coffee">
                     <i class="fas fa-mug-hot"></i> Coffee
                 </a>
-                <a href="https://www.powershellgallery.com/profiles/bubbsy" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-sm">
-                    <i class="fas fa-boxes-packing"></i> PSGallery
-                </a>
                 <a href="https://github.com/thebubbsy" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-sm">
                     <i class="fab fa-github"></i> GitHub
-                </a>
-                <a href="marksmith.html" class="btn btn-primary btn-sm">
-                    <i class="fas fa-layer-group"></i> MarkSmith Engine &rarr;
                 </a>
             </div>
 
@@ -77,6 +73,7 @@
         </div>
     </header>
 
+    <main>
     <!-- Hero Section -->
     <section class="hero">
         <div class="container">
@@ -97,10 +94,10 @@
                 <a href="marksmith.html" class="btn btn-primary btn-lg">
                     <i class="fas fa-crown"></i> Explore MarkSmith (Flagship) &rarr;
                 </a>
-                <a href="#featured-spotlights" class="btn btn-secondary btn-lg">
-                    <i class="fas fa-cubes"></i> View Featured Projects
+                <a href="tools.html" class="btn btn-secondary btn-lg">
+                    <i class="fas fa-toolbox"></i> Browse the Tools
                 </a>
-                <a href="#terminal-tour" class="btn btn-secondary btn-lg">
+                <a href="cli-tour.html" class="btn btn-secondary btn-lg">
                     <i class="fas fa-terminal"></i> Interactive Terminal Tour
                 </a>
             </div>
@@ -146,857 +143,84 @@
         </div>
     </section>
 
-    <!-- Flagship Product Spotlight: MarkSmith -->
-    <section id="featured-spotlights" class="section-flagship">
+    <!-- Site Directory -->
+    <section id="directory" class="directory-section">
         <div class="container">
             <div class="section-header">
-                <span class="badge badge-purple"><i class="fas fa-crown"></i> FLAGSHIP DOCUMENT COMPILER</span>
-                <h2>Spotlight: MarkSmith Document Engine</h2>
-                <p>An offline Markdown-to-Office compiler that strictly obeys ECMA-376 schemas, translates Mermaid into 100% editable native Word vector shapes, and compiles LaTeX into native OMML equations without Microsoft Word.</p>
+                <span class="badge badge-cyan"><i class="fas fa-sitemap"></i> SITE DIRECTORY</span>
+                <h2>What's on This Site</h2>
+                <p>Every page, and what you'll find on it.</p>
             </div>
 
-            <div class="flagship-card">
-                <div class="flagship-grid">
-                    <div class="flagship-info">
-                        <span class="badge badge-cyan"><i class="fas fa-cube"></i> Pure ECMA-376 SAX Writer</span>
-                        <h3>Compile Markdown into Native Word, PowerPoint &amp; PDF in Milliseconds</h3>
-                        <p>Word's rendering engine is notoriously fragile. Pandoc and HTML-to-Word converters generate corrupt XML, missing namespaces, and blurry raster images. MarkSmith streams pure OpenXML with $O(1)$ memory overhead and zero COM interop.</p>
-                        
-                        <ul class="feature-checklist">
-                            <li><i class="fas fa-check-circle"></i> <strong>ShapeForge™ Vector Engine:</strong> Mermaid flowcharts, mindmaps, and Gantt charts compile to 100% editable native Word shapes (<code>&lt;wpg:wgp&gt;</code>).</li>
-                            <li><i class="fas fa-check-circle"></i> <strong>Native OMML Math:</strong> LaTeX compiled directly to Office Math without image rasterization.</li>
-                            <li><i class="fas fa-check-circle"></i> <strong>AI Citation Sanitizer:</strong> Automatically cleans ChatGPT/Claude citations (<code>[12†source]</code>) and delimiter artifacts.</li>
-                            <li><i class="fas fa-check-circle"></i> <strong>Corporate Template Injection:</strong> Preserves branded typography and layout from <code>.dotx</code> masters.</li>
-                            <li><i class="fas fa-check-circle"></i> <strong>Zero-Corruption Guarantee:</strong> Strict schema validation and dynamic relationship management.</li>
-                        </ul>
-
-                        <div class="hero-actions" style="justify-content: flex-start; margin-bottom: 0; gap: 0.75rem;">
-                            <a href="marksmith.html" class="btn btn-pro btn-lg">
-                                <i class="fas fa-arrow-right"></i> Open Dedicated MarkSmith Page
-                            </a>
-                            <a href="media/massive-markdown-showcase.docx" download="Massive-Markdown-Showcase.docx" class="btn btn-primary btn-lg">
-                                <i class="fa-solid fa-file-word"></i> Download Sample DOCX
-                            </a>
-                            <a href="https://github.com/thebubbsy/marksmith" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-lg">
-                                <i class="fab fa-github"></i> GitHub Repo
-                            </a>
-                        </div>
-                    </div>
-
-                    <!-- Visual Showcase: Real Running Split View + Screenshot Gallery -->
-                    <div class="spotlight-visual-column">
-                        <div class="lead-screenshot-box" data-full="media/desktop-split.png" data-caption="MarkSmith running in Split View — live source editing on left, Looking Glass preview on right.">
-                            <img src="media/desktop-split.png" alt="MarkSmith desktop app in split view: Markdown source on the left, rendered document preview on the right" loading="lazy">
-                            <div class="lead-shot-caption">
-                                <span><strong>Split View &amp; Looking Glass</strong> &bull; Native WinUI 3 Desktop Studio</span>
-                                <span class="zoom-icon"><i class="fas fa-magnifying-glass-plus"></i> Click to Enlarge</span>
-                            </div>
-                        </div>
-
-                        <!-- Mini Screenshot Strip -->
-                        <div class="project-media-strip" style="margin-top: 1rem;">
-                            <div class="project-shot-thumb" data-full="media/word-product-spec.png" data-caption="ShapeForge™ output inside Microsoft Word — Mermaid flowchart compiled to 100% native editable DrawingML shapes.">
-                                <img src="media/word-product-spec.png" alt="Mermaid diagram compiled into native editable Word shapes" loading="lazy">
-                                <div class="shot-overlay-tag">
-                                    <span>ShapeForge™ in Word</span>
-                                    <i class="fas fa-magnifying-glass-plus zoom-icon"></i>
-                                </div>
-                            </div>
-                            <div class="project-shot-thumb" data-full="media/desktop-math.png" data-caption="Native OMML math compiled from LaTeX — matrices, integrals, and chemistry formulas editable with Word's Equation Tools.">
-                                <img src="media/desktop-math.png" alt="LaTeX matrices and equations rendered in MarkSmith" loading="lazy">
-                                <div class="shot-overlay-tag">
-                                    <span>Native OMML Math</span>
-                                    <i class="fas fa-magnifying-glass-plus zoom-icon"></i>
-                                </div>
-                            </div>
-                            <div class="project-shot-thumb" data-full="media/marksmith-ai-detection.png" data-caption="AI Prompt &amp; Citation Sanitizer — detects pasted AI text, strips citation pips and converts math delimiters.">
-                                <img src="media/marksmith-ai-detection.png" alt="AI text cleaner interface in MarkSmith" loading="lazy">
-                                <div class="shot-overlay-tag">
-                                    <span>AI Text Sanitizer</span>
-                                    <i class="fas fa-magnifying-glass-plus zoom-icon"></i>
-                                </div>
-                            </div>
-                            <div class="project-shot-thumb" data-full="media/word-gauntlet.png" data-caption="The Document Gauntlet compiled DOCX open in Microsoft Word with zero repair prompts or XML corruption warnings.">
-                                <img src="media/word-gauntlet.png" alt="MarkSmith generated DOCX open in Microsoft Word" loading="lazy">
-                                <div class="shot-overlay-tag">
-                                    <span>Word Gauntlet (Clean)</span>
-                                    <i class="fas fa-magnifying-glass-plus zoom-icon"></i>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+            <nav class="dir-grid" aria-label="Site directory">
+                <a class="dir-card" href="marksmith.html">
+                    <span class="dir-icon"><i class="fas fa-crown"></i></span>
+                    <span class="dir-body">
+                        <span class="dir-title">MarkSmith <span class="badge badge-purple">Flagship</span></span>
+                        <span class="dir-desc">The offline Markdown-to-Office compiler: native Word and PowerPoint output, editable diagrams, native equations. Live demo, comparisons and pricing.</span>
+                    </span>
+                    <i class="fas fa-arrow-right dir-arrow" aria-hidden="true"></i>
+                </a>
+                <a class="dir-card" href="teams-chat-exporter.html">
+                    <span class="dir-icon"><i class="fas fa-comments"></i></span>
+                    <span class="dir-body">
+                        <span class="dir-title">TeamsChatExporter Pro <span class="badge badge-purple">Project</span></span>
+                        <span class="dir-desc">Export Microsoft Teams chats in 5 formats with SHA-256 chain-of-custody audit trails. Nothing leaves your machine.</span>
+                    </span>
+                    <i class="fas fa-arrow-right dir-arrow" aria-hidden="true"></i>
+                </a>
+                <a class="dir-card" href="garage-controller.html">
+                    <span class="dir-icon"><i class="fas fa-warehouse"></i></span>
+                    <span class="dir-body">
+                        <span class="dir-title">Garage Controller <span class="badge badge-emerald">Project</span></span>
+                        <span class="dir-desc">A serverless smart garage door controller for the BroadLink RM4 Pro, running on Cloudflare Pages and D1 with Siri and CarPlay triggers.</span>
+                    </span>
+                    <i class="fas fa-arrow-right dir-arrow" aria-hidden="true"></i>
+                </a>
+                <a class="dir-card" href="cli-tour.html">
+                    <span class="dir-icon"><i class="fas fa-terminal"></i></span>
+                    <span class="dir-body">
+                        <span class="dir-title">CLI Tour <span class="badge badge-cyan">Interactive</span></span>
+                        <span class="dir-desc">Click through real terminal runs of WingetIntune, AutopilotFast, FindObject and the MarkSmith CLI.</span>
+                    </span>
+                    <i class="fas fa-arrow-right dir-arrow" aria-hidden="true"></i>
+                </a>
+                <a class="dir-card" href="tools.html">
+                    <span class="dir-icon"><i class="fas fa-toolbox"></i></span>
+                    <span class="dir-body">
+                        <span class="dir-title">Tools <span class="badge badge-cyan">Catalog</span></span>
+                        <span class="dir-desc">Every PowerShell module and utility I maintain, filterable by category, plus my PowerShell Gallery profile.</span>
+                    </span>
+                    <i class="fas fa-arrow-right dir-arrow" aria-hidden="true"></i>
+                </a>
+                <a class="dir-card" href="stack.html">
+                    <span class="dir-icon"><i class="fas fa-gears"></i></span>
+                    <span class="dir-body">
+                        <span class="dir-title">Stack <span class="badge badge-cyan">About</span></span>
+                        <span class="dir-desc">The languages, platforms and specialties behind all of the above.</span>
+                    </span>
+                    <i class="fas fa-arrow-right dir-arrow" aria-hidden="true"></i>
+                </a>
+                <a class="dir-card" href="resources.html">
+                    <span class="dir-icon"><i class="fas fa-download"></i></span>
+                    <span class="dir-body">
+                        <span class="dir-title">Downloads <span class="badge badge-emerald">Files</span></span>
+                        <span class="dir-desc">The latest installers and PowerShell scripts from my GitHub repos, one click each.</span>
+                    </span>
+                    <i class="fas fa-arrow-right dir-arrow" aria-hidden="true"></i>
+                </a>
+                <a class="dir-card" href="contact.html">
+                    <span class="dir-icon"><i class="fas fa-handshake"></i></span>
+                    <span class="dir-body">
+                        <span class="dir-title">Contact <span class="badge badge-cyan">Get in touch</span></span>
+                        <span class="dir-desc">Collaboration, tooling or consulting: how to reach me.</span>
+                    </span>
+                    <i class="fas fa-arrow-right dir-arrow" aria-hidden="true"></i>
+                </a>
+            </nav>
         </div>
     </section>
-
-    <!-- Deep-Dive Spotlight: TeamsChatExporter Pro -->
-    <section class="section-flagship" style="padding-top: 0;">
-        <div class="container">
-            <div class="repo-card-featured">
-                <div class="featured-project-layout">
-                    <div>
-                        <div style="display: flex; gap: 0.5rem; margin-bottom: 0.75rem; flex-wrap: wrap;">
-                            <span class="badge badge-purple"><i class="fas fa-shield-halved"></i> COMPLIANCE &amp; E-DISCOVERY</span>
-                            <span class="badge badge-cyan">WinUI 3 &bull; .NET 8</span>
-                            <span class="badge badge-emerald">Zero Cloud Storage</span>
-                        </div>
-                        <h2 style="font-size: clamp(1.8rem, 3vw, 2.4rem); margin-bottom: 0.75rem;">TeamsChatExporter Pro</h2>
-                        <p style="font-size: 1.05rem; color: var(--text-secondary); margin-bottom: 1.25rem;">
-                            <strong>Export Microsoft Teams chats forever.</strong> One desktop app, 5 export formats, zero subscriptions, and compliance-grade audit trails with SHA-256 chain-of-custody integrity hashes for legal and HR e-discovery.
-                        </p>
-
-                        <div class="benchmark-grid" style="margin: 1.25rem 0;">
-                            <div class="benchmark-metric-card" style="padding: 1rem 1.25rem;">
-                                <div class="benchmark-val-row">
-                                    <span class="benchmark-val val-green">5</span>
-                                    <span class="benchmark-val-badge">Zero Subscription</span>
-                                </div>
-                                <div class="benchmark-desc">Export formats: HTML, PDF, Excel, Markdown, and plain text.</div>
-                            </div>
-                            <div class="benchmark-metric-card" style="padding: 1rem 1.25rem;">
-                                <div class="benchmark-val-row">
-                                    <span class="benchmark-val">SHA-256</span>
-                                    <span class="benchmark-val-badge">Chain of Custody</span>
-                                </div>
-                                <div class="benchmark-desc">Tamper-evident hash, UTC timestamps, UPN, and Tenant ID cover sheets.</div>
-                            </div>
-                        </div>
-
-                        <ul class="feature-checklist">
-                            <li><i class="fas fa-check-circle"></i> <strong>100% Local &amp; Private:</strong> Data stays on your machine. Zero cloud relay, zero telemetry.</li>
-                            <li><i class="fas fa-check-circle"></i> <strong>Compliance Cover Sheet:</strong> Generates court-ready PDF manifests with hash signatures.</li>
-                            <li><i class="fas fa-check-circle"></i> <strong>Cross-Tenant Migration:</strong> Moves chat histories, attachments, and reactions between Entra ID tenants.</li>
-                            <li><i class="fas fa-check-circle"></i> <strong>Offline Replay:</strong> Re-render and search historical conversations without hitting Graph API again.</li>
-                        </ul>
-
-                        <div class="hero-actions" style="justify-content: flex-start; margin-top: 1.5rem; margin-bottom: 0;">
-                            <a href="https://github.com/thebubbsy" target="_blank" rel="noopener noreferrer" class="btn btn-primary btn-md">
-                                <i class="fab fa-github"></i> View Project on GitHub
-                            </a>
-                            <a href="#open-source" class="btn btn-secondary btn-md">
-                                <i class="fas fa-layer-group"></i> See All Tools
-                            </a>
-                        </div>
-                    </div>
-
-                    <!-- Visual Screenshots for TeamsChatExporter -->
-                    <div>
-                        <div class="lead-screenshot-box" data-full="media/teams-chat-exporter-ui.png" data-caption="TeamsChatExporter Pro main interface — chat thread tree, date filtering, message preview, and format selector.">
-                            <img src="media/teams-chat-exporter-ui.png" alt="TeamsChatExporter Pro desktop application interface" loading="lazy">
-                            <div class="lead-shot-caption">
-                                <span><strong>TeamsChatExporter Desktop UI</strong> &bull; Chat Explorer</span>
-                                <span class="zoom-icon"><i class="fas fa-magnifying-glass-plus"></i> Click to Enlarge</span>
-                            </div>
-                        </div>
-
-                        <div class="project-media-strip" style="margin-top: 1rem;">
-                            <div class="project-shot-thumb" data-full="media/teams-compliance-pdf.png" data-caption="Compliance PDF Cover Sheet — complete chain of custody with SHA-256 hash, UTC timestamp, UPN, and Tenant ID.">
-                                <img src="media/teams-compliance-pdf.png" alt="Compliance PDF cover sheet with SHA-256 hash and metadata" loading="lazy">
-                                <div class="shot-overlay-tag">
-                                    <span>Compliance PDF Hash</span>
-                                    <i class="fas fa-magnifying-glass-plus zoom-icon"></i>
-                                </div>
-                            </div>
-                            <div class="project-shot-thumb" data-full="media/teams-tenant-migration.png" data-caption="Cross-Tenant Migration Module — migrate chat threads, reactions, and files across corporate tenants.">
-                                <img src="media/teams-tenant-migration.png" alt="Cross-tenant Teams chat migration tool" loading="lazy">
-                                <div class="shot-overlay-tag">
-                                    <span>Tenant Migration</span>
-                                    <i class="fas fa-magnifying-glass-plus zoom-icon"></i>
-                                </div>
-                            </div>
-                            <div class="project-shot-thumb" data-full="media/teams-pricing.png" data-caption="TeamsChatExporter Edition Matrix — Free, Personal, Team, and Compliance tiers with perpetual licensing.">
-                                <img src="media/teams-pricing.png" alt="TeamsChatExporter pricing and licensing matrix" loading="lazy">
-                                <div class="shot-overlay-tag">
-                                    <span>Perpetual Licensing</span>
-                                    <i class="fas fa-magnifying-glass-plus zoom-icon"></i>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Deep-Dive Spotlight: broadlink-garage-controller -->
-    <section class="section-flagship" style="padding-top: 0;">
-        <div class="container">
-            <div class="repo-card-featured">
-                <div class="featured-project-layout">
-                    <div>
-                        <div style="display: flex; gap: 0.5rem; margin-bottom: 0.75rem; flex-wrap: wrap;">
-                            <span class="badge badge-emerald"><i class="fas fa-cloud"></i> 100% SERVERLESS EDGE IoT</span>
-                            <span class="badge badge-cyan">Cloudflare Pages &bull; D1 SQL</span>
-                            <span class="badge badge-purple">BroadLink RM4 Pro &bull; RF 433MHz</span>
-                        </div>
-                        <h2 style="font-size: clamp(1.8rem, 3vw, 2.4rem); margin-bottom: 0.75rem;">broadlink-garage-controller</h2>
-                        <p style="font-size: 1.05rem; color: var(--text-secondary); margin-bottom: 1.25rem;">
-                            <strong>Smart Garage Door Controller for BroadLink RM4 Pro with dual architectures.</strong> Operates on Cloudflare Pages + Serverless D1 SQL database with a local Python / FastAPI LAN driver. Zero home servers left running 24/7.
-                        </p>
-
-                        <div class="benchmark-grid" style="margin: 1.25rem 0;">
-                            <div class="benchmark-metric-card" style="padding: 1rem 1.25rem;">
-                                <div class="benchmark-val-row">
-                                    <span class="benchmark-val val-green">4-Factor</span>
-                                    <span class="benchmark-val-badge">Crypto Auth</span>
-                                </div>
-                                <div class="benchmark-desc">Device token, hardware fingerprint, dynamic nonce, and timestamp verification.</div>
-                            </div>
-                            <div class="benchmark-metric-card" style="padding: 1rem 1.25rem;">
-                                <div class="benchmark-val-row">
-                                    <span class="benchmark-val">0ms</span>
-                                    <span class="benchmark-val-badge">Cold Start</span>
-                                </div>
-                                <div class="benchmark-desc">Instant Cloudflare edge execution with Siri Shortcuts and CarPlay voice triggers.</div>
-                            </div>
-                        </div>
-
-                        <ul class="feature-checklist">
-                            <li><i class="fas fa-check-circle"></i> <strong>Dual Runtimes:</strong> Serverless edge Cloudflare D1 stack + local LAN FastAPI Python daemon.</li>
-                            <li><i class="fas fa-check-circle"></i> <strong>Mobile Keypad PWA:</strong> Snappy web keypad with biometric unlock, auto-rearm, and visual status.</li>
-                            <li><i class="fas fa-check-circle"></i> <strong>Admin Device Whitelist:</strong> Manage authorized family devices, revoke access tokens, and inspect audits.</li>
-                            <li><i class="fas fa-check-circle"></i> <strong>CarPlay &amp; Siri Integration:</strong> Custom iOS shortcuts trigger the garage door hands-free while driving.</li>
-                        </ul>
-
-                        <div class="hero-actions" style="justify-content: flex-start; margin-top: 1.5rem; margin-bottom: 0;">
-                            <a href="https://github.com/thebubbsy/broadlink-garage-controller" target="_blank" rel="noopener noreferrer" class="btn btn-primary btn-md">
-                                <i class="fab fa-github"></i> View Repo on GitHub
-                            </a>
-                            <a href="https://garage.onyachamp.com" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-md">
-                                <i class="fas fa-globe"></i> Live PWA Portal
-                            </a>
-                        </div>
-                    </div>
-
-                    <!-- Visual Screenshots for broadlink-garage-controller -->
-                    <div>
-                        <div class="lead-screenshot-box" data-full="media/garage-keypad.png" data-caption="BroadLink Garage Controller mobile PWA keypad — single-tap cryptographic trigger with live connection state.">
-                            <img src="media/garage-keypad.png" alt="Garage controller mobile keypad user interface" loading="lazy">
-                            <div class="lead-shot-caption">
-                                <span><strong>Mobile Keypad PWA</strong> &bull; Siri &amp; CarPlay Enabled</span>
-                                <span class="zoom-icon"><i class="fas fa-magnifying-glass-plus"></i> Click to Enlarge</span>
-                            </div>
-                        </div>
-
-                        <div class="project-media-strip" style="margin-top: 1rem;">
-                            <div class="project-shot-thumb" data-full="media/garage-admin.png" data-caption="Admin Device Manager — register and whitelist client devices, manage tokens, and view access timestamps in Cloudflare D1.">
-                                <img src="media/garage-admin.png" alt="Garage admin device management dashboard" loading="lazy">
-                                <div class="shot-overlay-tag">
-                                    <span>Device Manager</span>
-                                    <i class="fas fa-magnifying-glass-plus zoom-icon"></i>
-                                </div>
-                            </div>
-                            <div class="project-shot-thumb" data-full="media/garage-stats.png" data-caption="Cloudflare D1 Analytics &amp; Weekly Leaderboard — trigger telemetry, access frequency, and automated rotation audits.">
-                                <img src="media/garage-stats.png" alt="Cloudflare D1 telemetry and analytics drawer" loading="lazy">
-                                <div class="shot-overlay-tag">
-                                    <span>Edge D1 Analytics</span>
-                                    <i class="fas fa-magnifying-glass-plus zoom-icon"></i>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Interactive Live Terminal Showcase -->
-    <section id="terminal-tour" class="section-flagship" style="padding-top: 1rem;">
-        <div class="container">
-            <div class="section-header">
-                <span class="badge badge-cyan"><i class="fas fa-terminal"></i> INTERACTIVE TERMINAL TOUR</span>
-                <h2>Inspect the Real Pipeline Execution</h2>
-                <p>Toggle between production command runs across Microsoft Intune packaging, Windows Autopilot OOBE bootstrapping, and SIMD pipeline object filtering.</p>
-            </div>
-
-            <div class="terminal-interactive">
-                <div class="terminal-topbar">
-                    <div class="terminal-dots">
-                        <span class="t-dot t-dot-red"></span>
-                        <span class="t-dot t-dot-yellow"></span>
-                        <span class="t-dot t-dot-green"></span>
-                    </div>
-
-                    <div class="terminal-tabs" role="tablist">
-                        <button type="button" class="terminal-tab-btn active" data-tab="tab-wingetintune">
-                            <i class="fas fa-cloud-arrow-up"></i> WingetIntune.ps1
-                        </button>
-                        <button type="button" class="terminal-tab-btn" data-tab="tab-autopilotfast">
-                            <i class="fas fa-bolt-lightning"></i> AutopilotFast (OOBE)
-                        </button>
-                        <button type="button" class="terminal-tab-btn" data-tab="tab-findobject">
-                            <i class="fas fa-stopwatch"></i> FindObject (Benchmark)
-                        </button>
-                        <button type="button" class="terminal-tab-btn" data-tab="tab-marksmith">
-                            <i class="fas fa-layer-group"></i> MarkSmith.CLI
-                        </button>
-                    </div>
-
-                    <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
-                        <span class="t-muted" style="font-size: 0.75rem; font-family: var(--font-mono);">PowerShell 7.4.5 LTS</span>
-                    </div>
-                </div>
-
-                <div class="terminal-screen">
-                    <!-- Pane 1: WingetIntune -->
-                    <div class="t-pane active" id="tab-wingetintune">
-                        <div class="terminal-line"><span class="t-prompt">PS C:\Engineering&gt;</span> <span class="t-cmd">Publish-IntuneWingetApp -Id "Google.Chrome" -AssignTo "Autopilot-Pilot-Fleet" -Intent Required</span></div>
-                        <div class="terminal-line t-info">[*] Resolving official Winget community manifest for 'Google.Chrome' (v128.0.6613.120)...</div>
-                        <div class="terminal-line t-success">[+] Matched x64 installer: GoogleChromeStandaloneEnterprise64.msi [114.2 MB]</div>
-                        <div class="terminal-line t-accent">[+] Mapping Adapter: WingetInstallerType.MSI (ProductCode: {B55A9B86-3532-358A-9A08-C8873EB2C288})</div>
-                        <div class="terminal-line t-warn">[*] Watchdog Generator: Injecting NT AUTHORITY\SYSTEM Session 0 isolation guard &amp; _MSIExecute mutex wait loop...</div>
-                        <div class="terminal-line t-info">[*] Detection Rule: Emitting OpenBaseKey(LocalMachine, RegistryView.Registry64) dual-view inspection script...</div>
-                        <div class="terminal-line t-success">[+] Packaging: IntuneWinAppUtil.exe compiled 'GoogleChrome.intunewin' in 3.8s</div>
-                        <div class="terminal-line t-info">[*] Microsoft Graph: Authenticating via MSAL Token Cache (Tenant: corp.contoso.com)...</div>
-                        <div class="terminal-line t-accent">[+] Storage: Provisioned Azure Block Blob SAS container (Chunk size: 6MB, 20 parallel blocks)</div>
-                        <div class="t-box">
-                            <div class="terminal-line t-success">[############################################################] 100.0% (114.2 / 114.2 MB)</div>
-                            <div class="terminal-line t-muted">Throughput: 42.6 MB/s | Retries: 0 | Durable JSON session state: COMMITTED</div>
-                        </div>
-                        <div class="terminal-line t-info">[*] Committing mobileAppContentFile with SHA-256 XML encryption metadata...</div>
-                        <div class="terminal-line t-success">[+] Server-side Intune Processing: Succeeded (Elapsed: 18.4s)</div>
-                        <div class="terminal-line t-success">[✓] Assigned to Entra ID Group 'Autopilot-Pilot-Fleet' with Intent: Required</div>
-                        <div style="margin-top: 1rem; display: flex; justify-content: flex-end;">
-                            <a href="media/wingetintune-pipeline.png" class="terminal-shot-link" data-full="media/wingetintune-pipeline.png" data-caption="WingetIntune Production Pipeline — MSI adapter resolution, Session 0 isolation watchdog, and 6MB chunked Azure SAS storage upload.">
-                                <i class="fas fa-magnifying-glass-plus"></i> Inspect High-Res Pipeline Screenshot &rarr;
-                            </a>
-                        </div>
-                    </div>
-
-                    <!-- Pane 2: AutopilotFast -->
-                    <div class="t-pane" id="tab-autopilotfast">
-                        <div class="terminal-line t-muted"># Windows 11 / Windows 10 OOBE Setup Screen — Pressed Shift + F10</div>
-                        <div class="terminal-line"><span class="t-prompt">X:\windows\system32&gt;</span> <span class="t-cmd">irm https://onyachamp.com/autopilot | iex</span></div>
-                        <div class="terminal-line t-accent">═══════════════════════════════════════════════════════════════════════════════</div>
-                        <div class="terminal-line t-accent">  AUTOPILOTFAST — 7-STAGE HARDWARE PREFLIGHT LADDER</div>
-                        <div class="terminal-line t-accent">═══════════════════════════════════════════════════════════════════════════════</div>
-                        <div class="terminal-line t-success">[1/7] Network Interface: Ethernet 1 (Realtek GbE) [State: Up, 1000 Mbps Full Duplex]</div>
-                        <div class="terminal-line t-success">[2/7] Gateway Connectivity: 10.0.0.1 [RTT: 0.35ms, Packet Loss: 0%]</div>
-                        <div class="terminal-line t-success">[3/7] DNS Attestation: Passed (Resolved ztd.dds.microsoft.com &amp; graph.microsoft.com)</div>
-                        <div class="terminal-line t-success">[4/7] TLS 1.3 Handshake: Passed (Handshake verified with login.microsoftonline.com)</div>
-                        <div class="terminal-line t-success">[5/7] TPM 2.0 Endorsement: Verified (EK cert present, IFX firmware 7.85 compliant)</div>
-                        <div class="terminal-line t-info">[6/7] MDM WMI Harvester: Spooling dmwappushservice... 4096-byte OA3 Hash extracted</div>
-                        <div class="t-box">
-                            <div class="terminal-line t-prompt">Scan terminal QR code or visit https://microsoft.com/devicelogin</div>
-                            <div class="terminal-line t-warn">ENTER AUTHENTICATION CODE: <strong style="color: #fff; background: #2563eb; padding: 2px 6px; border-radius: 4px;">D7X9-KP2M</strong></div>
-                        </div>
-                        <div class="terminal-line t-success">[+] Authenticated: Matthew Bubb (Tenant: corp.contoso.com, ID: a4f8...82c1)</div>
-                        <div class="terminal-line t-info">[*] Graph POST: Registering importedWindowsAutopilotDeviceIdentity... (Serial: 8CZ41209KV)</div>
-                        <div class="terminal-line t-accent">[*] Sync Gate Active: Polling deploymentProfileAssignmentStatus...</div>
-                        <div class="terminal-line t-muted">&nbsp;&nbsp;&nbsp;&nbsp;[+] Status: Pending (Elapsed: 12s)...</div>
-                        <div class="terminal-line t-success">&nbsp;&nbsp;&nbsp;&nbsp;[✓] Status: Assigned! Profile 'Standard Corporate Win11' locked</div>
-                        <div class="terminal-line t-success">[✓] Machine prepared. Initiating immediate reboot into Enrollment Status Page (ESP)...</div>
-                        <div style="margin-top: 1rem; display: flex; justify-content: flex-end;">
-                            <a href="media/autopilotfast-oobe.png" class="terminal-shot-link" data-full="media/autopilotfast-oobe.png" data-caption="AutopilotFast Windows OOBE Setup — 7-stage preflight network diagnostic ladder, terminal ASCII QR code, and Graph sync gate.">
-                                <i class="fas fa-magnifying-glass-plus"></i> Inspect High-Res OOBE Setup Screenshot &rarr;
-                            </a>
-                        </div>
-                    </div>
-
-                    <!-- Pane 3: FindObject -->
-                    <div class="t-pane" id="tab-findobject">
-                        <div class="terminal-line t-muted"># Benchmark: Filtering 100,000 objects in memory (PowerShell 7.4)</div>
-                        <div class="terminal-line"><span class="t-prompt">PS C:\Engineering&gt;</span> <span class="t-cmd">Measure-Command { $items | Where-Object { $_.Name -like '*chrome*' -or $_.Name -like '*firefox*' } | Where-Object { $_.Name -notlike '*helper*' } }</span></div>
-                        <div class="terminal-line t-warn">TotalSeconds : 14.182471  (PowerShell Wildcard &amp; Regex Engine)</div>
-                        <br>
-                        <div class="terminal-line t-muted"># FindObject (fob) with SIMD-vectorized [String]::IndexOf &amp; boolean parser</div>
-                        <div class="terminal-line"><span class="t-prompt">PS C:\Engineering&gt;</span> <span class="t-cmd">Measure-Command { $items | fob "chrome OR firefox NOT helper" }</span></div>
-                        <div class="terminal-line t-success">TotalSeconds : 2.941829   (4.8x FASTER — zero scriptblock ceremony)</div>
-                        <br>
-                        <div class="terminal-line t-muted"># Early pipeline termination with -First 10</div>
-                        <div class="terminal-line"><span class="t-prompt">PS C:\Engineering&gt;</span> <span class="t-cmd">Measure-Command { $items | fob "chrome OR firefox NOT helper" -First 10 }</span></div>
-                        <div class="terminal-line t-accent">TotalSeconds : 0.041289   (344x FASTER — stops paying for unwanted objects)</div>
-                        <br>
-                        <div class="terminal-line t-info">PS C:\Engineering&gt; Get-Process | fob "chrome OR msedge NOT crashpad" -First 3</div>
-                        <div class="t-box">
-                            <div class="terminal-line t-muted">Handles  NPM(K)    PM(K)      WS(K)     CPU(s)     Id  ProcessName</div>
-                            <div class="terminal-line t-muted">-------  ------    -----      -----     ------     --  -----------</div>
-                            <div class="terminal-line">   1240      84   142100     198420      42.12  14208  <span class="t-success">chrome</span></div>
-                            <div class="terminal-line">    890      62    88400     124500      18.45  18920  <span class="t-success">msedge</span></div>
-                            <div class="terminal-line">    760      48    64200      92100       9.14  21044  <span class="t-success">chrome</span></div>
-                        </div>
-                        <div style="margin-top: 1rem; display: flex; justify-content: flex-end;">
-                            <a href="media/findobject-benchmark.png" class="terminal-shot-link" data-full="media/findobject-benchmark.png" data-caption="FindObject Benchmark &amp; Pipeline Grep — SIMD-vectorized String.IndexOf() running 4.8x to 344x faster than Where-Object.">
-                                <i class="fas fa-magnifying-glass-plus"></i> Inspect High-Res Benchmark Screenshot &rarr;
-                            </a>
-                        </div>
-                    </div>
-
-                    <!-- Pane 4: MarkSmith CLI -->
-                    <div class="t-pane" id="tab-marksmith">
-                        <div class="terminal-line"><span class="t-prompt">$</span> <span class="t-cmd">marksmith compile technical-spec.md --output spec.docx --template corporate.dotx --strict-schema</span></div>
-                        <div class="terminal-line t-info">[*] Loading AST pipeline: Markdig + DefinitionLists + CriticMarkup...</div>
-                        <div class="terminal-line t-success">[+] Parsed 2,840 Markdown AST nodes in 4.2ms</div>
-                        <div class="terminal-line t-accent">[+] ShapeForge™: 4 Mermaid diagrams parsed &rarr; generated 28 native &lt;wpg:wgp&gt; DrawingML vector shapes</div>
-                        <div class="terminal-line t-info">[+] OMML Math: 18 LaTeX formulas converted to native &lt;m:oMath&gt; (whitespace preserved)</div>
-                        <div class="terminal-line t-success">[+] ContrastGuard: 48 color pairs evaluated &rarr; 100% WCAG 2.1 AA compliant (min ratio 5.1:1)</div>
-                        <div class="terminal-line t-warn">[+] Template Engine: Preserved styles, headers, and footers from 'corporate.dotx'</div>
-                        <div class="terminal-line t-info">[*] SAX Streaming: OpenXmlWriter flushed package with O(1) memory overhead</div>
-                        <div class="terminal-line t-success">[✓] Created spec.docx (148 KB). Schema validation passed: 0 warnings, 0 corruptions.</div>
-                        <div style="margin-top: 1rem; display: flex; justify-content: flex-end;">
-                            <a href="media/desktop-split.png" class="terminal-shot-link" data-full="media/desktop-split.png" data-caption="MarkSmith Studio Split View &amp; Looking Glass Preview — real-time ECMA-376 document compilation.">
-                                <i class="fas fa-magnifying-glass-plus"></i> Inspect High-Res Studio Screenshot &rarr;
-                            </a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Curated Enterprise Open-Source Tools -->
-    <section id="open-source" class="repos-section">
-        <div class="container">
-            <div class="section-header">
-                <span class="badge badge-cyan"><i class="fab fa-github"></i> PRODUCTION-GRADE TOOLING</span>
-                <h2>Enterprise Cloud, Packaging &amp; Automation Tools</h2>
-                <p>A curated showcase of battle-tested PowerShell 7+ modules, Windows Autopilot tools, and developer utilities created by Matthew Bubb.</p>
-            </div>
-
-            <!-- Category Filter -->
-            <div class="filter-bar">
-                <button type="button" class="filter-btn active" data-filter="all">
-                    <i class="fas fa-list-check"></i> All Tooling
-                </button>
-                <button type="button" class="filter-btn" data-filter="flagship">
-                    <i class="fas fa-crown"></i> Flagship Compilers
-                </button>
-                <button type="button" class="filter-btn" data-filter="cloud">
-                    <i class="fas fa-cloud"></i> Intune &amp; Autopilot
-                </button>
-                <button type="button" class="filter-btn" data-filter="powershell">
-                    <i class="fas fa-terminal"></i> PowerShell Gallery
-                </button>
-                <button type="button" class="filter-btn" data-filter="edge">
-                    <i class="fas fa-network-wired"></i> Edge &amp; IoT
-                </button>
-            </div>
-
-            <div class="repos-grid">
-                <!-- UpdateCascade -->
-                <div class="repo-card" data-category="cloud powershell">
-                    <div class="repo-header">
-                        <div class="repo-title-group">
-                            <i class="fas fa-bolt repo-icon" style="color: #38BDF8;"></i>
-                            <h4 class="repo-name"><a href="https://github.com/thebubbsy/UpdateCascade" target="_blank" rel="noopener noreferrer">UpdateCascade</a></h4>
-                        </div>
-                        <span class="badge badge-cyan">OOBE &amp; Desktop</span>
-                    </div>
-                    <p class="repo-desc">Autonomous multi-pass Windows Update and Driver cascade engine with 100% reboot survivability. Engineered for zero-touch provisioning across Windows Setup (<code>Shift+F10</code> / <code>defaultuser0</code>), lock screen, and desktop with an exhaustive 17-tier persistence grid and 4-tier reboot engine.</p>
-                    
-                    <div class="repo-tags">
-                        <span class="badge">Windows Update</span>
-                        <span class="badge">Driver Cascade</span>
-                        <span class="badge">17-Tier Persistence</span>
-                        <span class="badge">OOBE Shift+F10</span>
-                        <span class="badge">WPF + Headless</span>
-                    </div>
-
-                    <div class="repo-terminal">
-                        <code>irm https://onyachamp.com/cascade | iex</code>
-                        <button class="copy-btn" data-copy="irm https://onyachamp.com/cascade | iex" title="Copy command">
-                            <i class="far fa-copy"></i>
-                        </button>
-                    </div>
-
-                    <div class="repo-footer">
-                        <div class="repo-meta">
-                            <span><i class="fas fa-code-branch"></i> main</span>
-                            <span><i class="fas fa-shield-halved"></i> MIT</span>
-                        </div>
-                        <a href="https://github.com/thebubbsy/UpdateCascade" class="btn btn-sm btn-outline" target="_blank" rel="noopener noreferrer">
-                            GitHub <i class="fas fa-arrow-up-right-from-square"></i>
-                        </a>
-                    </div>
-                </div>
-
-                <!-- WingetIntune -->
-                <div class="repo-card" data-category="cloud powershell">
-                    <div class="repo-card-media" data-full="media/wingetintune-pipeline.png" data-caption="WingetIntune Production Pipeline — MSI adapter resolution, Session 0 isolation watchdog, and 6MB chunked Azure SAS storage upload.">
-                        <img src="media/wingetintune-pipeline.png" alt="WingetIntune packaging and cloud publishing terminal output" loading="lazy">
-                        <div class="repo-shot-overlay">
-                            <span class="repo-shot-tag"><i class="fas fa-terminal"></i> Graph SAS Pipeline</span>
-                            <span class="repo-zoom-hint"><i class="fas fa-magnifying-glass-plus"></i> Enlarge</span>
-                        </div>
-                    </div>
-
-                    <div class="repo-header">
-                        <div class="repo-title-group">
-                            <i class="fas fa-cloud-arrow-up repo-icon"></i>
-                            <h4 class="repo-name"><a href="https://github.com/thebubbsy/WingetIntune" target="_blank" rel="noopener noreferrer">WingetIntune</a></h4>
-                        </div>
-                        <span class="badge badge-cyan">PowerShell 7+</span>
-                    </div>
-                    <p class="repo-desc">Enterprise Win32 packaging engine and Microsoft Graph cloud publisher. Solves Session 0 isolation silent hangs (<code>0x87D1041C</code>), MSI mutex collisions (<code>1618</code>), and 32-bit WOW64 registry misdirection via dual-view <code>OpenBaseKey</code> inspection with durable 6MB chunked Azure SAS storage uploaders.</p>
-                    
-                    <div class="repo-tags">
-                        <span class="badge">Intune Win32</span>
-                        <span class="badge">Graph API</span>
-                        <span class="badge">Azure SAS 6MB</span>
-                        <span class="badge">Session 0 Guard</span>
-                    </div>
-
-                    <div class="repo-terminal">
-                        <code>Install-Module -Name WingetIntune</code>
-                        <button class="copy-btn" data-copy="Install-Module -Name WingetIntune" title="Copy command">
-                            <i class="far fa-copy"></i>
-                        </button>
-                    </div>
-
-                    <div class="repo-footer">
-                        <div class="repo-meta">
-                            <span><i class="far fa-star"></i> Enterprise</span>
-                            <span><i class="fas fa-code-branch"></i> PowerShell</span>
-                        </div>
-                        <a href="https://github.com/thebubbsy/WingetIntune" target="_blank" rel="noopener noreferrer">View Repo &rarr;</a>
-                    </div>
-                </div>
-
-                <!-- AutopilotFast -->
-                <div class="repo-card" data-category="cloud powershell">
-                    <div class="repo-card-media" data-full="media/autopilotfast-oobe.png" data-caption="AutopilotFast Windows OOBE Setup — 7-stage preflight network diagnostic ladder, terminal ASCII QR code, and Graph sync gate.">
-                        <img src="media/autopilotfast-oobe.png" alt="AutopilotFast Windows OOBE hardware harvester and Graph sync gate" loading="lazy">
-                        <div class="repo-shot-overlay">
-                            <span class="repo-shot-tag"><i class="fas fa-microchip"></i> 7-Stage Preflight</span>
-                            <span class="repo-zoom-hint"><i class="fas fa-magnifying-glass-plus"></i> Enlarge</span>
-                        </div>
-                    </div>
-
-                    <div class="repo-header">
-                        <div class="repo-title-group">
-                            <i class="fas fa-bolt-lightning repo-icon"></i>
-                            <h4 class="repo-name"><a href="https://github.com/thebubbsy/AutopilotFast" target="_blank" rel="noopener noreferrer">AutopilotFast</a></h4>
-                        </div>
-                        <span class="badge badge-emerald">Autopilot / OOBE</span>
-                    </div>
-                    <p class="repo-desc">High-speed Windows Autopilot hardware hash harvester and direct Microsoft Graph cloud importer. Replaces 45-minute USB stick shuffles with a 1-line OOBE bootstrap (<code>Shift + F10</code>), 7-stage preflight network ladder, terminal ASCII QR code, and Graph profile sync gating.</p>
-                    
-                    <div class="repo-tags">
-                        <span class="badge">Autopilot</span>
-                        <span class="badge">OOBE Shift+F10</span>
-                        <span class="badge">Graph Importer</span>
-                        <span class="badge">TPM 2.0</span>
-                    </div>
-
-                    <div class="repo-terminal">
-                        <code>Install-Module AutopilotFast -Force</code>
-                        <button class="copy-btn" data-copy="Install-Module AutopilotFast -Force" title="Copy command">
-                            <i class="far fa-copy"></i>
-                        </button>
-                    </div>
-
-                    <div class="repo-footer">
-                        <div class="repo-meta">
-                            <span><i class="far fa-star"></i> Enterprise</span>
-                            <span><i class="fas fa-code-branch"></i> PowerShell</span>
-                        </div>
-                        <a href="https://github.com/thebubbsy/AutopilotFast" target="_blank" rel="noopener noreferrer">View Repo &rarr;</a>
-                    </div>
-                </div>
-
-                <!-- FindObject -->
-                <div class="repo-card" data-category="powershell">
-                    <div class="repo-card-media" data-full="media/findobject-benchmark.png" data-caption="FindObject Benchmark &amp; Pipeline Grep — SIMD-vectorized String.IndexOf() running 4.8x to 344x faster than Where-Object.">
-                        <img src="media/findobject-benchmark.png" alt="FindObject SIMD benchmark comparing against Where-Object in PowerShell 7" loading="lazy">
-                        <div class="repo-shot-overlay">
-                            <span class="repo-shot-tag"><i class="fas fa-bolt"></i> 344x Faster (-First 10)</span>
-                            <span class="repo-zoom-hint"><i class="fas fa-magnifying-glass-plus"></i> Enlarge</span>
-                        </div>
-                    </div>
-
-                    <div class="repo-header">
-                        <div class="repo-title-group">
-                            <i class="fas fa-filter repo-icon"></i>
-                            <h4 class="repo-name"><a href="https://github.com/thebubbsy/FindObject" target="_blank" rel="noopener noreferrer">FindObject (fob)</a></h4>
-                        </div>
-                        <span class="badge badge-purple">PSGallery v2.0</span>
-                    </div>
-                    <p class="repo-desc">The object-aware grep that PowerShell should have shipped with. Filters pipeline objects via natural-language boolean syntax (<code>fob "chrome OR firefox NOT helper"</code>) using SIMD-vectorized <code>[String]::IndexOf()</code> instead of slow wildcard regexes. 4.8x to 344x faster on 100k objects.</p>
-                    
-                    <div class="repo-tags">
-                        <span class="badge">SIMD IndexOf</span>
-                        <span class="badge">Boolean Parser</span>
-                        <span class="badge">Pipeline Filter</span>
-                        <span class="badge">-First Early Exit</span>
-                    </div>
-
-                    <div class="repo-terminal">
-                        <code>Install-Module -Name FindObject</code>
-                        <button class="copy-btn" data-copy="Install-Module -Name FindObject" title="Copy command">
-                            <i class="far fa-copy"></i>
-                        </button>
-                    </div>
-
-                    <div class="repo-footer">
-                        <div class="repo-meta">
-                            <span><i class="fas fa-download"></i> PSGallery: bubbsy</span>
-                        </div>
-                        <a href="https://www.powershellgallery.com/packages/FindObject" target="_blank" rel="noopener noreferrer">PSGallery Link &rarr;</a>
-                    </div>
-                </div>
-
-                <!-- WingetBatch -->
-                <div class="repo-card" data-category="powershell">
-                    <div class="repo-card-media" data-full="media/wingetbatch-tui.png" data-caption="WingetBatch Spectre.Console TUI — interactive multi-select package installer with real-time download and install progress meters.">
-                        <img src="media/wingetbatch-tui.png" alt="WingetBatch Spectre.Console interactive terminal UI" loading="lazy">
-                        <div class="repo-shot-overlay">
-                            <span class="repo-shot-tag"><i class="fas fa-layer-group"></i> Spectre.Console TUI</span>
-                            <span class="repo-zoom-hint"><i class="fas fa-magnifying-glass-plus"></i> Enlarge</span>
-                        </div>
-                    </div>
-
-                    <div class="repo-header">
-                        <div class="repo-title-group">
-                            <i class="fas fa-box-archive repo-icon"></i>
-                            <h4 class="repo-name"><a href="https://github.com/thebubbsy/WingetBatch" target="_blank" rel="noopener noreferrer">WingetBatch</a></h4>
-                        </div>
-                        <span class="badge badge-purple">PSGallery v2.9</span>
-                    </div>
-                    <p class="repo-desc">Advanced batch operations for Windows Package Manager (winget). Features interactive multi-select installation, GitHub package discovery with 30-day caching, and background update monitoring with Spectre Console.</p>
-                    
-                    <div class="repo-tags">
-                        <span class="badge">Winget</span>
-                        <span class="badge">Batch Install</span>
-                        <span class="badge">Spectre Console</span>
-                        <span class="badge">PSGallery</span>
-                    </div>
-
-                    <div class="repo-terminal">
-                        <code>Install-Module -Name WingetBatch</code>
-                        <button class="copy-btn" data-copy="Install-Module -Name WingetBatch" title="Copy command">
-                            <i class="far fa-copy"></i>
-                        </button>
-                    </div>
-
-                    <div class="repo-footer">
-                        <div class="repo-meta">
-                            <span><i class="fas fa-download"></i> PSGallery: bubbsy</span>
-                        </div>
-                        <a href="https://www.powershellgallery.com/packages/WingetBatch" target="_blank" rel="noopener noreferrer">PSGallery Link &rarr;</a>
-                    </div>
-                </div>
-
-                <!-- PSGalleryBatch -->
-                <div class="repo-card" data-category="powershell">
-                    <div class="repo-header">
-                        <div class="repo-title-group">
-                            <i class="fas fa-layer-group repo-icon"></i>
-                            <h4 class="repo-name"><a href="https://github.com/thebubbsy/PSGalleryBatch" target="_blank" rel="noopener noreferrer">PSGalleryBatch</a></h4>
-                        </div>
-                        <span class="badge badge-purple">PSGallery v1.1</span>
-                    </div>
-                    <p class="repo-desc">Batch search, install, and update modules from PowerShell Gallery with an optional Spectre Console UI or Out-GridView fallback. Supports wildcards, multi-version pinning, and prerelease versions.</p>
-                    
-                    <div class="repo-tags">
-                        <span class="badge">PSGallery</span>
-                        <span class="badge">Spectre Console</span>
-                        <span class="badge">Module Manager</span>
-                    </div>
-
-                    <div class="repo-terminal">
-                        <code>Install-Module -Name PSGalleryBatch</code>
-                        <button class="copy-btn" data-copy="Install-Module -Name PSGalleryBatch" title="Copy command">
-                            <i class="far fa-copy"></i>
-                        </button>
-                    </div>
-
-                    <div class="repo-footer">
-                        <div class="repo-meta">
-                            <span><i class="fas fa-download"></i> PSGallery: bubbsy</span>
-                        </div>
-                        <a href="https://www.powershellgallery.com/packages/PSGalleryBatch" target="_blank" rel="noopener noreferrer">PSGallery Link &rarr;</a>
-                    </div>
-                </div>
-
-                <!-- whisper-writer -->
-                <div class="repo-card" data-category="flagship edge">
-                    <div class="repo-header">
-                        <div class="repo-title-group">
-                            <i class="fas fa-microphone-lines repo-icon"></i>
-                            <h4 class="repo-name"><a href="https://github.com/thebubbsy/whisper-writer" target="_blank" rel="noopener noreferrer">whisper-writer</a></h4>
-                        </div>
-                        <span class="badge badge-emerald">AI / Speech</span>
-                    </div>
-                    <p class="repo-desc">High-speed local voice dictation and speech-to-text utility powered by OpenAI's Whisper model with global system keyboard injection for hands-free typing across any active window.</p>
-                    
-                    <div class="repo-tags">
-                        <span class="badge">Whisper AI</span>
-                        <span class="badge">Local Speech</span>
-                        <span class="badge">Keyboard Injection</span>
-                    </div>
-
-                    <div class="repo-terminal">
-                        <code>git clone https://github.com/thebubbsy/whisper-writer</code>
-                        <button class="copy-btn" data-copy="git clone https://github.com/thebubbsy/whisper-writer" title="Copy command">
-                            <i class="far fa-copy"></i>
-                        </button>
-                    </div>
-
-                    <div class="repo-footer">
-                        <div class="repo-meta">
-                            <span><i class="far fa-star"></i> AI Tooling</span>
-                            <span><i class="fab fa-python"></i> Python</span>
-                        </div>
-                        <a href="https://github.com/thebubbsy/whisper-writer" target="_blank" rel="noopener noreferrer">View Repo &rarr;</a>
-                    </div>
-                </div>
-
-                <!-- universal-element-cloner -->
-                <div class="repo-card" data-category="edge">
-                    <div class="repo-header">
-                        <div class="repo-title-group">
-                            <i class="fas fa-clone repo-icon"></i>
-                            <h4 class="repo-name"><a href="https://github.com/thebubbsy/universal-element-cloner" target="_blank" rel="noopener noreferrer">universal-element-cloner</a></h4>
-                        </div>
-                        <span class="badge">DevTools</span>
-                    </div>
-                    <p class="repo-desc">High-fidelity Chrome/Edge browser extension for cloning live DOM elements with auto-scroll and computed CSS style capture for front-end reverse engineering and component reproduction.</p>
-                    
-                    <div class="repo-tags">
-                        <span class="badge">DOM Extractor</span>
-                        <span class="badge">CSS Computed</span>
-                        <span class="badge">Browser Ext</span>
-                    </div>
-
-                    <div class="repo-terminal">
-                        <code>git clone https://github.com/thebubbsy/universal-element-cloner</code>
-                        <button class="copy-btn" data-copy="git clone https://github.com/thebubbsy/universal-element-cloner" title="Copy command">
-                            <i class="far fa-copy"></i>
-                        </button>
-                    </div>
-
-                    <div class="repo-footer" style="margin-top: auto;">
-                        <div class="repo-meta">
-                            <span><i class="far fa-star"></i> Open Source</span>
-                            <span><i class="fab fa-js"></i> JavaScript</span>
-                        </div>
-                        <a href="https://github.com/thebubbsy/universal-element-cloner" target="_blank" rel="noopener noreferrer">View Repo &rarr;</a>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- PowerShell Gallery Profile Spotlight -->
-    <section id="psgallery" class="cta-section" style="padding-top: 0;">
-        <div class="container">
-            <div class="cta-box" style="background: linear-gradient(135deg, rgba(24, 34, 54, 0.9) 0%, rgba(13, 20, 36, 0.95) 100%);">
-                <span class="badge badge-purple" style="margin-bottom: 1rem;"><i class="fas fa-cubes"></i> POWERSHELL GALLERY</span>
-                <h2>Official PowerShell Modules on PSGallery</h2>
-                <p>Browse, install, and update published enterprise PowerShell modules maintained under the official <strong>bubbsy</strong> profile on PowerShell Gallery.</p>
-
-                <div class="social-links">
-                    <a href="https://www.powershellgallery.com/profiles/bubbsy" target="_blank" rel="noopener noreferrer" class="btn btn-primary btn-lg">
-                        <i class="fas fa-boxes-packing"></i> Visit powershellgallery.com/profiles/bubbsy &rarr;
-                    </a>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Core Engineering Competencies -->
-    <section id="stack" class="architecture-section">
-        <div class="container">
-            <div class="section-header">
-                <span class="badge badge-cyan"><i class="fas fa-gears"></i> CORE DISCIPLINES</span>
-                <h2>Engineering Stack &amp; Architectural Specialties</h2>
-                <p>Specialized disciplines across high-performance document compilers, cloud infrastructure, and modern desktop runtimes.</p>
-            </div>
-
-            <div class="tech-grid">
-                <div class="tech-item">
-                    <i class="fab fa-microsoft tech-icon"></i>
-                    <div class="tech-info">
-                        <h5>C# / .NET 9</h5>
-                        <span>High-Throughput Systems</span>
-                    </div>
-                </div>
-
-                <div class="tech-item">
-                    <i class="fas fa-file-code tech-icon"></i>
-                    <div class="tech-info">
-                        <h5>ECMA-376 OpenXML</h5>
-                        <span>Strict Schema Governance</span>
-                    </div>
-                </div>
-
-                <div class="tech-item">
-                    <i class="fas fa-terminal tech-icon"></i>
-                    <div class="tech-info">
-                        <h5>PowerShell 7+ LTS</h5>
-                        <span>SIMD &amp; Cloud Automation</span>
-                    </div>
-                </div>
-
-                <div class="tech-item">
-                    <i class="fas fa-window-maximize tech-icon"></i>
-                    <div class="tech-info">
-                        <h5>WinUI 3 &amp; WPF</h5>
-                        <span>Modern Windows UX</span>
-                    </div>
-                </div>
-
-                <div class="tech-item">
-                    <i class="fas fa-cloud tech-icon"></i>
-                    <div class="tech-info">
-                        <h5>Microsoft Graph REST</h5>
-                        <span>Intune &amp; Azure Blob State Machines</span>
-                    </div>
-                </div>
-
-                <div class="tech-item">
-                    <i class="fas fa-shapes tech-icon"></i>
-                    <div class="tech-info">
-                        <h5>ShapeForge™ DrawingML</h5>
-                        <span>Vector Geometry Solvers</span>
-                    </div>
-                </div>
-
-                <div class="tech-item">
-                    <i class="fas fa-network-wired tech-icon"></i>
-                    <div class="tech-info">
-                        <h5>Cloudflare Pages &amp; D1</h5>
-                        <span>Serverless Edge SQL IoT</span>
-                    </div>
-                </div>
-
-                <div class="tech-item">
-                    <i class="fas fa-universal-access tech-icon"></i>
-                    <div class="tech-info">
-                        <h5>WCAG 2.1 AA/AAA</h5>
-                        <span>Algorithmic ContrastGuard</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Contact & Collaboration -->
-    <section id="contact" class="cta-section">
-        <div class="container">
-            <div class="cta-box">
-                <span class="badge badge-cyan" style="margin-bottom: 1rem;"><i class="fas fa-handshake"></i> COLLABORATION &amp; CONSULTING</span>
-                <h2>Looking to Collaborate or Deploy Tooling?</h2>
-                <p>Whether you need custom document compilation pipelines, enterprise Intune / Autopilot automation, or architecture consulting, let's connect.</p>
-
-                <div class="social-links">
-                    <a href="https://www.buymeacoffee.com/mbubbtechz" target="_blank" rel="noopener noreferrer" class="btn btn-coffee btn-lg">
-                        <i class="fas fa-mug-hot"></i> Buy Me a Coffee (@mbubbtechz)
-                    </a>
-                    <a href="https://github.com/thebubbsy" target="_blank" rel="noopener noreferrer" class="btn btn-primary btn-lg">
-                        <i class="fab fa-github"></i> GitHub (@thebubbsy)
-                    </a>
-                    <a href="https://www.powershellgallery.com/profiles/bubbsy" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-lg">
-                        <i class="fas fa-boxes-packing"></i> PowerShell Gallery (bubbsy)
-                    </a>
-                    <a href="https://twitter.com/TheBubbsy" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-lg">
-                        <i class="fab fa-x-twitter"></i> Follow @TheBubbsy
-                    </a>
-                </div>
-            </div>
-        </div>
-    </section>
+    </main>
 
     <!-- Footer -->
     <footer>
@@ -1007,13 +231,17 @@
                 </div>
 
                 <ul class="footer-nav">
-                    <li><a href="marksmith.html">MarkSmith Engine</a></li>
-                    <li><a href="#featured-spotlights">Flagship Projects</a></li>
-                    <li><a href="#open-source">Enterprise Tools</a></li>
+                    <li><a href="index.html">Home</a></li>
+                    <li><a href="marksmith.html">MarkSmith</a></li>
+                    <li><a href="teams-chat-exporter.html">Teams Exporter</a></li>
+                    <li><a href="garage-controller.html">Garage Controller</a></li>
+                    <li><a href="cli-tour.html">CLI Tour</a></li>
+                    <li><a href="tools.html">Tools</a></li>
+                    <li><a href="stack.html">Stack</a></li>
                     <li><a href="resources.html">Downloads</a></li>
+                    <li><a href="contact.html">Contact</a></li>
                     <li><a href="https://www.powershellgallery.com/profiles/bubbsy" target="_blank" rel="noopener noreferrer">PSGallery</a></li>
                     <li><a href="https://github.com/thebubbsy" target="_blank" rel="noopener noreferrer">GitHub</a></li>
-                    <li><a href="https://www.buymeacoffee.com/mbubbtechz" target="_blank" rel="noopener noreferrer"><i class="fas fa-mug-hot" style="color: #FFDD00;"></i> Buy Me a Coffee</a></li>
                 </ul>
 
                 <div class="footer-copy">

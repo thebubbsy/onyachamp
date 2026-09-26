@@ -8,15 +8,19 @@ The personal portfolio of **Matthew Bubb** (OnyaChamp), a systems engineer and t
 
 ## What's on the site
 
-- **Home ([`index.html`](index.html))** covers my flagship projects, with screenshots, sample outputs and links to each repo:
-  - **MarkSmith**: an offline Markdown-to-Office compiler that produces native Word and PowerPoint files, editable vector diagrams and native equations.
-  - **TeamsChatExporter Pro**: exports Microsoft Teams chats with compliance-grade audit trails.
-  - **WingetIntune**, **WingetBatch**, **AutopilotFast** and **FindObject**: PowerShell and .NET tooling for Windows fleet management.
-  - **broadlink-garage-controller**: a serverless smart-home controller.
-  - A terminal walkthrough, my PowerShell Gallery modules, my tech stack and contact links.
-- **MarkSmith ([`marksmith.html`](marksmith.html))** is a dedicated product page. It has an interactive Markdown-to-Word demo, side-by-side comparisons with Pandoc and other converters, downloadable sample documents and pricing.
+It's a traditional multi-page site: every page shares the same top menu, and the home page links to each one.
 
-- **Downloads ([`resources.html`](resources.html))** lists the latest `.exe`, `.msi` and `.ps1` files from my public GitHub repos: assets from each repo's latest release, plus `.ps1` files in each repo's root (build/publish helpers and tests are skipped). Files download straight from GitHub. A GitHub Action ([`resources-manifest.yml`](.github/workflows/resources-manifest.yml)) refreshes the list every 6 hours.
+| Page | What's on it |
+| :--- | :--- |
+| [`index.html`](index.html) | Home: about me, plus a directory of every page |
+| [`marksmith.html`](marksmith.html) | MarkSmith, my Markdown-to-Office compiler: live demo, comparisons, pricing |
+| [`teams-chat-exporter.html`](teams-chat-exporter.html) | TeamsChatExporter Pro |
+| [`garage-controller.html`](garage-controller.html) | broadlink-garage-controller |
+| [`cli-tour.html`](cli-tour.html) | Interactive terminal tour of my CLI tools |
+| [`tools.html`](tools.html) | Catalog of my PowerShell modules and utilities, plus my PowerShell Gallery profile |
+| [`stack.html`](stack.html) | My engineering stack |
+| [`resources.html`](resources.html) | Downloads: the latest `.exe`, `.msi` and `.ps1` files from my public repos, straight from GitHub. A GitHub Action ([`resources-manifest.yml`](.github/workflows/resources-manifest.yml)) refreshes the list every 6 hours; build/publish helpers and tests are skipped. |
+| [`contact.html`](contact.html) | Contact links |
 
 ## Tech
 

@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CLI Tour | OnyaChamp</title>
+    <meta name="description" content="Interactive terminal tour of WingetIntune, AutopilotFast, FindObject and the MarkSmith CLI.">
+    <meta name="keywords" content="Matthew Bubb, OnyaChamp, MarkSmith, WingetIntune, AutopilotFast, TeamsChatExporter, WingetBatch, FindObject, broadlink-garage-controller, BroadLink RM4, IoT, PowerShell, C#, OpenXML, Systems Engineer">
+    <meta name="author" content="Matthew Bubb">
+
+    <!-- Open Graph / Social Meta -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://onyachamp.com/cli-tour.html">
+    <meta property="og:title" content="CLI Tour | OnyaChamp">
+    <meta property="og:description" content="Zero-corruption document compilers, cloud infrastructure pipelines, and enterprise systems automation tooling.">
+    <meta property="og:image" content="https://avatars.githubusercontent.com/u/49204026?v=4">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:site" content="@TheBubbsy">
+    <meta name="twitter:title" content="CLI Tour | OnyaChamp">
+    <meta name="twitter:description" content="Zero-corruption document compilers, cloud infrastructure pipelines, and enterprise systems automation tooling.">
+    <meta name="twitter:image" content="https://avatars.githubusercontent.com/u/49204026?v=4">
+
+    <link rel="canonical" href="https://onyachamp.com/cli-tour.html">
+
+    <!-- Fonts & Icons -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <!-- Navigation Bar -->
+    <header class="navbar">
+        <div class="container nav-container">
+            <a href="index.html" class="nav-brand">
+                <div class="brand-icon">
+                    <i class="fas fa-terminal"></i>
+                </div>
+                <span class="brand-title">OnyaChamp</span>
+            </a>
+
+            <nav>
+                <ul class="nav-links">
+                    <li><a href="index.html">Home</a></li>
+                    <li><a href="marksmith.html">MarkSmith</a></li>
+                    <li><a href="teams-chat-exporter.html">Teams Exporter</a></li>
+                    <li><a href="garage-controller.html">Garage Controller</a></li>
+                    <li><a href="cli-tour.html" class="active" aria-current="page">CLI Tour</a></li>
+                    <li><a href="tools.html">Tools</a></li>
+                    <li><a href="stack.html">Stack</a></li>
+                    <li><a href="resources.html">Downloads</a></li>
+                    <li><a href="contact.html">Contact</a></li>
+                </ul>
+            </nav>
+
+            <div class="nav-cta">
+                <a href="https://www.buymeacoffee.com/mbubbtechz" target="_blank" rel="noopener noreferrer" class="btn btn-coffee btn-sm" title="Support on Buy Me a Coffee">
+                    <i class="fas fa-mug-hot"></i> Coffee
+                </a>
+                <a href="https://github.com/thebubbsy" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-sm">
+                    <i class="fab fa-github"></i> GitHub
+                </a>
+            </div>
+
+            <button class="mobile-menu-btn" aria-label="Toggle navigation menu">
+                <i class="fas fa-bars"></i>
+            </button>
+        </div>
+    </header>
+
+    <main class="page-main">
+    <!-- Interactive Live Terminal Showcase -->
+    <section id="terminal-tour" class="section-flagship">
+        <div class="container">
+            <div class="section-header">
+                <span class="badge badge-cyan"><i class="fas fa-terminal"></i> INTERACTIVE TERMINAL TOUR</span>
+                <h2>Inspect the Real Pipeline Execution</h2>
+                <p>Toggle between production command runs across Microsoft Intune packaging, Windows Autopilot OOBE bootstrapping, and SIMD pipeline object filtering.</p>
+            </div>
+
+            <div class="terminal-interactive">
+                <div class="terminal-topbar">
+                    <div class="terminal-dots">
+                        <span class="t-dot t-dot-red"></span>
+                        <span class="t-dot t-dot-yellow"></span>
+                        <span class="t-dot t-dot-green"></span>
+                    </div>
+
+                    <div class="terminal-tabs" role="tablist">
+                        <button type="button" class="terminal-tab-btn active" data-tab="tab-wingetintune">
+                            <i class="fas fa-cloud-arrow-up"></i> WingetIntune.ps1
+                        </button>
+                        <button type="button" class="terminal-tab-btn" data-tab="tab-autopilotfast">
+                            <i class="fas fa-bolt-lightning"></i> AutopilotFast (OOBE)
+                        </button>
+                        <button type="button" class="terminal-tab-btn" data-tab="tab-findobject">
+                            <i class="fas fa-stopwatch"></i> FindObject (Benchmark)
+                        </button>
+                        <button type="button" class="terminal-tab-btn" data-tab="tab-marksmith">
+                            <i class="fas fa-layer-group"></i> MarkSmith.CLI
+                        </button>
+                    </div>
+
+                    <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
+                        <span class="t-muted" style="font-size: 0.75rem; font-family: var(--font-mono);">PowerShell 7.4.5 LTS</span>
+                    </div>
+                </div>
+
+                <div class="terminal-screen">
+                    <!-- Pane 1: WingetIntune -->
+                    <div class="t-pane active" id="tab-wingetintune">
+                        <div class="terminal-line"><span class="t-prompt">PS C:\Engineering&gt;</span> <span class="t-cmd">Publish-IntuneWingetApp -Id "Google.Chrome" -AssignTo "Autopilot-Pilot-Fleet" -Intent Required</span></div>
+                        <div class="terminal-line t-info">[*] Resolving official Winget community manifest for 'Google.Chrome' (v128.0.6613.120)...</div>
+                        <div class="terminal-line t-success">[+] Matched x64 installer: GoogleChromeStandaloneEnterprise64.msi [114.2 MB]</div>
+                        <div class="terminal-line t-accent">[+] Mapping Adapter: WingetInstallerType.MSI (ProductCode: {B55A9B86-3532-358A-9A08-C8873EB2C288})</div>
+                        <div class="terminal-line t-warn">[*] Watchdog Generator: Injecting NT AUTHORITY\SYSTEM Session 0 isolation guard &amp; _MSIExecute mutex wait loop...</div>
+                        <div class="terminal-line t-info">[*] Detection Rule: Emitting OpenBaseKey(LocalMachine, RegistryView.Registry64) dual-view inspection script...</div>
+                        <div class="terminal-line t-success">[+] Packaging: IntuneWinAppUtil.exe compiled 'GoogleChrome.intunewin' in 3.8s</div>
+                        <div class="terminal-line t-info">[*] Microsoft Graph: Authenticating via MSAL Token Cache (Tenant: corp.contoso.com)...</div>
+                        <div class="terminal-line t-accent">[+] Storage: Provisioned Azure Block Blob SAS container (Chunk size: 6MB, 20 parallel blocks)</div>
+                        <div class="t-box">
+                            <div class="terminal-line t-success">[############################################################] 100.0% (114.2 / 114.2 MB)</div>
+                            <div class="terminal-line t-muted">Throughput: 42.6 MB/s | Retries: 0 | Durable JSON session state: COMMITTED</div>
+                        </div>
+                        <div class="terminal-line t-info">[*] Committing mobileAppContentFile with SHA-256 XML encryption metadata...</div>
+                        <div class="terminal-line t-success">[+] Server-side Intune Processing: Succeeded (Elapsed: 18.4s)</div>
+                        <div class="terminal-line t-success">[✓] Assigned to Entra ID Group 'Autopilot-Pilot-Fleet' with Intent: Required</div>
+                        <div style="margin-top: 1rem; display: flex; justify-content: flex-end;">
+                            <a href="media/wingetintune-pipeline.png" class="terminal-shot-link" data-full="media/wingetintune-pipeline.png" data-caption="WingetIntune Production Pipeline — MSI adapter resolution, Session 0 isolation watchdog, and 6MB chunked Azure SAS storage upload.">
+                                <i class="fas fa-magnifying-glass-plus"></i> Inspect High-Res Pipeline Screenshot &rarr;
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Pane 2: AutopilotFast -->
+                    <div class="t-pane" id="tab-autopilotfast">
+                        <div class="terminal-line t-muted"># Windows 11 / Windows 10 OOBE Setup Screen — Pressed Shift + F10</div>
+                        <div class="terminal-line"><span class="t-prompt">X:\windows\system32&gt;</span> <span class="t-cmd">irm https://onyachamp.com/autopilot | iex</span></div>
+                        <div class="terminal-line t-accent">═══════════════════════════════════════════════════════════════════════════════</div>
+                        <div class="terminal-line t-accent">  AUTOPILOTFAST — 7-STAGE HARDWARE PREFLIGHT LADDER</div>
+                        <div class="terminal-line t-accent">═══════════════════════════════════════════════════════════════════════════════</div>
+                        <div class="terminal-line t-success">[1/7] Network Interface: Ethernet 1 (Realtek GbE) [State: Up, 1000 Mbps Full Duplex]</div>
+                        <div class="terminal-line t-success">[2/7] Gateway Connectivity: 10.0.0.1 [RTT: 0.35ms, Packet Loss: 0%]</div>
+                        <div class="terminal-line t-success">[3/7] DNS Attestation: Passed (Resolved ztd.dds.microsoft.com &amp; graph.microsoft.com)</div>
+                        <div class="terminal-line t-success">[4/7] TLS 1.3 Handshake: Passed (Handshake verified with login.microsoftonline.com)</div>
+                        <div class="terminal-line t-success">[5/7] TPM 2.0 Endorsement: Verified (EK cert present, IFX firmware 7.85 compliant)</div>
+                        <div class="terminal-line t-info">[6/7] MDM WMI Harvester: Spooling dmwappushservice... 4096-byte OA3 Hash extracted</div>
+                        <div class="t-box">
+                            <div class="terminal-line t-prompt">Scan terminal QR code or visit https://microsoft.com/devicelogin</div>
+                            <div class="terminal-line t-warn">ENTER AUTHENTICATION CODE: <strong style="color: #fff; background: #2563eb; padding: 2px 6px; border-radius: 4px;">D7X9-KP2M</strong></div>
+                        </div>
+                        <div class="terminal-line t-success">[+] Authenticated: Matthew Bubb (Tenant: corp.contoso.com, ID: a4f8...82c1)</div>
+                        <div class="terminal-line t-info">[*] Graph POST: Registering importedWindowsAutopilotDeviceIdentity... (Serial: 8CZ41209KV)</div>
+                        <div class="terminal-line t-accent">[*] Sync Gate Active: Polling deploymentProfileAssignmentStatus...</div>
+                        <div class="terminal-line t-muted">&nbsp;&nbsp;&nbsp;&nbsp;[+] Status: Pending (Elapsed: 12s)...</div>
+                        <div class="terminal-line t-success">&nbsp;&nbsp;&nbsp;&nbsp;[✓] Status: Assigned! Profile 'Standard Corporate Win11' locked</div>
+                        <div class="terminal-line t-success">[✓] Machine prepared. Initiating immediate reboot into Enrollment Status Page (ESP)...</div>
+                        <div style="margin-top: 1rem; display: flex; justify-content: flex-end;">
+                            <a href="media/autopilotfast-oobe.png" class="terminal-shot-link" data-full="media/autopilotfast-oobe.png" data-caption="AutopilotFast Windows OOBE Setup — 7-stage preflight network diagnostic ladder, terminal ASCII QR code, and Graph sync gate.">
+                                <i class="fas fa-magnifying-glass-plus"></i> Inspect High-Res OOBE Setup Screenshot &rarr;
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Pane 3: FindObject -->
+                    <div class="t-pane" id="tab-findobject">
+                        <div class="terminal-line t-muted"># Benchmark: Filtering 100,000 objects in memory (PowerShell 7.4)</div>
+                        <div class="terminal-line"><span class="t-prompt">PS C:\Engineering&gt;</span> <span class="t-cmd">Measure-Command { $items | Where-Object { $_.Name -like '*chrome*' -or $_.Name -like '*firefox*' } | Where-Object { $_.Name -notlike '*helper*' } }</span></div>
+                        <div class="terminal-line t-warn">TotalSeconds : 14.182471  (PowerShell Wildcard &amp; Regex Engine)</div>
+                        <br>
+                        <div class="terminal-line t-muted"># FindObject (fob) with SIMD-vectorized [String]::IndexOf &amp; boolean parser</div>
+                        <div class="terminal-line"><span class="t-prompt">PS C:\Engineering&gt;</span> <span class="t-cmd">Measure-Command { $items | fob "chrome OR firefox NOT helper" }</span></div>
+                        <div class="terminal-line t-success">TotalSeconds : 2.941829   (4.8x FASTER — zero scriptblock ceremony)</div>
+                        <br>
+                        <div class="terminal-line t-muted"># Early pipeline termination with -First 10</div>
+                        <div class="terminal-line"><span class="t-prompt">PS C:\Engineering&gt;</span> <span class="t-cmd">Measure-Command { $items | fob "chrome OR firefox NOT helper" -First 10 }</span></div>
+                        <div class="terminal-line t-accent">TotalSeconds : 0.041289   (344x FASTER — stops paying for unwanted objects)</div>
+                        <br>
+                        <div class="terminal-line t-info">PS C:\Engineering&gt; Get-Process | fob "chrome OR msedge NOT crashpad" -First 3</div>
+                        <div class="t-box">
+                            <div class="terminal-line t-muted">Handles  NPM(K)    PM(K)      WS(K)     CPU(s)     Id  ProcessName</div>
+                            <div class="terminal-line t-muted">-------  ------    -----      -----     ------     --  -----------</div>
+                            <div class="terminal-line">   1240      84   142100     198420      42.12  14208  <span class="t-success">chrome</span></div>
+                            <div class="terminal-line">    890      62    88400     124500      18.45  18920  <span class="t-success">msedge</span></div>
+                            <div class="terminal-line">    760      48    64200      92100       9.14  21044  <span class="t-success">chrome</span></div>
+                        </div>
+                        <div style="margin-top: 1rem; display: flex; justify-content: flex-end;">
+                            <a href="media/findobject-benchmark.png" class="terminal-shot-link" data-full="media/findobject-benchmark.png" data-caption="FindObject Benchmark &amp; Pipeline Grep — SIMD-vectorized String.IndexOf() running 4.8x to 344x faster than Where-Object.">
+                                <i class="fas fa-magnifying-glass-plus"></i> Inspect High-Res Benchmark Screenshot &rarr;
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Pane 4: MarkSmith CLI -->
+                    <div class="t-pane" id="tab-marksmith">
+                        <div class="terminal-line"><span class="t-prompt">$</span> <span class="t-cmd">marksmith compile technical-spec.md --output spec.docx --template corporate.dotx --strict-schema</span></div>
+                        <div class="terminal-line t-info">[*] Loading AST pipeline: Markdig + DefinitionLists + CriticMarkup...</div>
+                        <div class="terminal-line t-success">[+] Parsed 2,840 Markdown AST nodes in 4.2ms</div>
+                        <div class="terminal-line t-accent">[+] ShapeForge™: 4 Mermaid diagrams parsed &rarr; generated 28 native &lt;wpg:wgp&gt; DrawingML vector shapes</div>
+                        <div class="terminal-line t-info">[+] OMML Math: 18 LaTeX formulas converted to native &lt;m:oMath&gt; (whitespace preserved)</div>
+                        <div class="terminal-line t-success">[+] ContrastGuard: 48 color pairs evaluated &rarr; 100% WCAG 2.1 AA compliant (min ratio 5.1:1)</div>
+                        <div class="terminal-line t-warn">[+] Template Engine: Preserved styles, headers, and footers from 'corporate.dotx'</div>
+                        <div class="terminal-line t-info">[*] SAX Streaming: OpenXmlWriter flushed package with O(1) memory overhead</div>
+                        <div class="terminal-line t-success">[✓] Created spec.docx (148 KB). Schema validation passed: 0 warnings, 0 corruptions.</div>
+                        <div style="margin-top: 1rem; display: flex; justify-content: flex-end;">
+                            <a href="media/desktop-split.png" class="terminal-shot-link" data-full="media/desktop-split.png" data-caption="MarkSmith Studio Split View &amp; Looking Glass Preview — real-time ECMA-376 document compilation.">
+                                <i class="fas fa-magnifying-glass-plus"></i> Inspect High-Res Studio Screenshot &rarr;
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    </main>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <div class="footer-grid">
+                <div class="footer-brand">
+                    <strong>OnyaChamp.com</strong> — Systems Engineering Platform by Matthew Bubb.
+                </div>
+
+                <ul class="footer-nav">
+                    <li><a href="index.html">Home</a></li>
+                    <li><a href="marksmith.html">MarkSmith</a></li>
+                    <li><a href="teams-chat-exporter.html">Teams Exporter</a></li>
+                    <li><a href="garage-controller.html">Garage Controller</a></li>
+                    <li><a href="cli-tour.html">CLI Tour</a></li>
+                    <li><a href="tools.html">Tools</a></li>
+                    <li><a href="stack.html">Stack</a></li>
+                    <li><a href="resources.html">Downloads</a></li>
+                    <li><a href="contact.html">Contact</a></li>
+                    <li><a href="https://www.powershellgallery.com/profiles/bubbsy" target="_blank" rel="noopener noreferrer">PSGallery</a></li>
+                    <li><a href="https://github.com/thebubbsy" target="_blank" rel="noopener noreferrer">GitHub</a></li>
+                </ul>
+
+                <div class="footer-copy">
+                    &copy; 2026 OnyaChamp / Matthew Bubb. All rights reserved.
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Universal Lightbox Modal -->
+    <div id="shot-lightbox" class="shot-lightbox" role="dialog" aria-modal="true" aria-label="Enlarged screenshot" hidden>
+        <button class="lightbox-close" type="button" aria-label="Close screenshot preview">&times;</button>
+        <button class="lightbox-nav-btn lightbox-prev" type="button" aria-label="Previous screenshot">
+            <i class="fas fa-chevron-left"></i>
+        </button>
+        <button class="lightbox-nav-btn lightbox-next" type="button" aria-label="Next screenshot">
+            <i class="fas fa-chevron-right"></i>
+        </button>
+        <div class="shot-lightbox-inner">
+            <img id="lightbox-img" src="" alt="Enlarged screenshot preview">
+            <div id="lightbox-caption" class="lightbox-caption"></div>
+            <div id="lightbox-counter" class="lightbox-counter"></div>
+        </div>
+    </div>
+
+    <!-- JavaScript -->
+    <script src="app.js"></script>
+</body>
+</html>
