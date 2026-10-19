@@ -100,12 +100,19 @@
                 <button type="button" class="filter-btn" data-filter="edge">
                     <i class="fas fa-network-wired"></i> Edge &amp; IoT
                 </button>
-                <button type="button" id="btn-copy-catalog-md" class="btn btn-secondary btn-sm" style="margin-left: auto;" title="Copy visible tools catalog as a Markdown table">
-                    <i class="fas fa-table"></i> Copy MD Table
-                </button>
-                <button type="button" id="btn-export-catalog-csv" class="btn btn-secondary btn-sm" title="Download visible tools catalog as a CSV spreadsheet">
-                    <i class="fas fa-file-csv"></i> Export CSV
-                </button>
+                <div style="display: inline-flex; align-items: center; gap: 0.5rem; margin-left: auto; flex-wrap: wrap;">
+                    <input type="search" id="tools-search-input" placeholder="Filter tools by name, tag, cmd... (/)" aria-label="Filter tools catalog" style="background: rgba(15, 23, 42, 0.75); color: #f8fafc; border: 1px solid rgba(56, 189, 248, 0.35); border-radius: 0.5rem; padding: 0.42rem 0.75rem; font-size: 0.85rem; min-width: 220px; outline: none;">
+                    <span id="tools-visible-count" class="badge badge-cyan" style="font-size: 0.78rem; padding: 0.35rem 0.65rem;" title="Visible tools matching active category and search filter">18 shown</span>
+                    <button type="button" id="btn-copy-catalog-cmds" class="btn btn-secondary btn-sm" title="Copy PowerShell bootstrap / install commands for all visible tools">
+                        <i class="fas fa-terminal"></i> Copy Commands
+                    </button>
+                    <button type="button" id="btn-copy-catalog-md" class="btn btn-secondary btn-sm" title="Copy visible tools catalog as a Markdown table">
+                        <i class="fas fa-table"></i> Copy MD Table
+                    </button>
+                    <button type="button" id="btn-export-catalog-csv" class="btn btn-secondary btn-sm" title="Download visible tools catalog as a CSV spreadsheet">
+                        <i class="fas fa-file-csv"></i> Export CSV
+                    </button>
+                </div>
             </div>
 
             <div class="repos-grid">

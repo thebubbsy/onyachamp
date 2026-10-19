@@ -245,10 +245,37 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // ==========================================
-  // 3. Project Showcase Category Filters
+  // 3. Project Showcase Category & Search Filters
   // ==========================================
   const filterButtons = document.querySelectorAll('.filter-btn');
   const projectCards = document.querySelectorAll('.repo-card, .repo-card-featured');
+  const toolsSearchInput = document.getElementById('tools-search-input');
+  const toolsVisibleCount = document.getElementById('tools-visible-count');
+
+  const applyToolsCatalogFilter = () => {
+    const activeBtn = document.querySelector('.filter-btn.active');
+    const activeFilter = activeBtn ? (activeBtn.getAttribute('data-filter') || 'all') : 'all';
+    const query = toolsSearchInput ? toolsSearchInput.value.trim().toLowerCase() : '';
+    let shownCount = 0;
+
+    projectCards.forEach(card => {
+      const categories = (card.getAttribute('data-category') || '').split(' ');
+      const matchesCat = activeFilter === 'all' || categories.includes(activeFilter);
+      const matchesSearch = !query || (card.textContent || '').toLowerCase().includes(query);
+
+      if (matchesCat && matchesSearch) {
+        card.style.display = '';
+        card.style.opacity = '1';
+        shownCount++;
+      } else {
+        card.style.display = 'none';
+      }
+    });
+
+    if (toolsVisibleCount) {
+      toolsVisibleCount.textContent = `${shownCount} / ${projectCards.length} shown`;
+    }
+  };
 
   if (filterButtons.length > 0 && projectCards.length > 0) {
     filterButtons.forEach(btn => {
@@ -258,18 +285,26 @@ document.addEventListener('DOMContentLoaded', () => {
 
         filterButtons.forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
-
-        projectCards.forEach(card => {
-          const categories = (card.getAttribute('data-category') || '').split(' ');
-          if (filter === 'all' || categories.includes(filter)) {
-            card.style.display = '';
-            card.style.opacity = '1';
-          } else {
-            card.style.display = 'none';
-          }
-        });
+        applyToolsCatalogFilter();
       });
     });
+
+    if (toolsSearchInput) {
+      toolsSearchInput.addEventListener('input', applyToolsCatalogFilter);
+      document.addEventListener('keydown', (e) => {
+        if (e.key === '/' && document.activeElement !== toolsSearchInput && !['INPUT', 'TEXTAREA'].includes((document.activeElement && document.activeElement.tagName) || '')) {
+          e.preventDefault();
+          toolsSearchInput.focus();
+          toolsSearchInput.select();
+        } else if (e.key === 'Escape' && document.activeElement === toolsSearchInput) {
+          toolsSearchInput.value = '';
+          applyToolsCatalogFilter();
+          toolsSearchInput.blur();
+        }
+      });
+    }
+
+    applyToolsCatalogFilter();
   }
 
   // ==========================================
@@ -449,6 +484,33 @@ document.addEventListener('DOMContentLoaded', () => {
       const orig = exportCatalogCsvBtn.innerHTML;
       exportCatalogCsvBtn.innerHTML = '<i class="fas fa-check" style="color: #10b981;"></i> Exported CSV!';
       setTimeout(() => { exportCatalogCsvBtn.innerHTML = orig; }, 1800);
+    });
+  }
+
+  const copyCatalogCmdsBtn = document.getElementById('btn-copy-catalog-cmds');
+  if (copyCatalogCmdsBtn) {
+    copyCatalogCmdsBtn.addEventListener('click', async () => {
+      const visibleCards = Array.from(document.querySelectorAll('.repo-card')).filter(c => c.style.display !== 'none');
+      const cmdBlocks = ['# OnYaChamp Enterprise PowerShell & Cloud Tooling — Bootstrap / Install Commands'];
+
+      visibleCards.forEach(card => {
+        const nameEl = card.querySelector('.repo-name');
+        const codeEl = card.querySelector('.repo-terminal code');
+        const name = nameEl ? nameEl.textContent.trim() : 'Tool';
+        const cmd = codeEl ? codeEl.textContent.trim() : '';
+        if (cmd) {
+          cmdBlocks.push(`\n# ${name}\n${cmd}`);
+        }
+      });
+
+      try {
+        await navigator.clipboard.writeText(cmdBlocks.join('\n'));
+        const orig = copyCatalogCmdsBtn.innerHTML;
+        copyCatalogCmdsBtn.innerHTML = '<i class="fas fa-check" style="color: #10b981;"></i> Copied Cmds!';
+        setTimeout(() => { copyCatalogCmdsBtn.innerHTML = orig; }, 1800);
+      } catch (err) {
+        console.error('Failed to copy catalog commands', err);
+      }
     });
   }
 });
