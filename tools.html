@@ -102,9 +102,15 @@
                 </button>
                 <div style="display: inline-flex; align-items: center; gap: 0.5rem; margin-left: auto; flex-wrap: wrap;">
                     <input type="search" id="tools-search-input" placeholder="Filter tools by name, tag, cmd... (/)" aria-label="Filter tools catalog" style="background: rgba(15, 23, 42, 0.75); color: #f8fafc; border: 1px solid rgba(56, 189, 248, 0.35); border-radius: 0.5rem; padding: 0.42rem 0.75rem; font-size: 0.85rem; min-width: 220px; outline: none;">
+                    <button type="button" id="btn-reset-catalog-filter" class="btn btn-secondary btn-sm" title="Reset active category and search filter to show all tools">
+                        <i class="fas fa-rotate-left"></i> Reset
+                    </button>
                     <span id="tools-visible-count" class="badge badge-cyan" style="font-size: 0.78rem; padding: 0.35rem 0.65rem;" title="Visible tools matching active category and search filter">18 shown</span>
                     <button type="button" id="btn-copy-catalog-cmds" class="btn btn-secondary btn-sm" title="Copy PowerShell bootstrap / install commands for all visible tools">
                         <i class="fas fa-terminal"></i> Copy Commands
+                    </button>
+                    <button type="button" id="btn-copy-catalog-tsv" class="btn btn-secondary btn-sm" title="Copy visible tools catalog as TSV (Excel / Sheets paste-ready)">
+                        <i class="fas fa-clipboard-list"></i> Copy TSV
                     </button>
                     <button type="button" id="btn-copy-catalog-md" class="btn btn-secondary btn-sm" title="Copy visible tools catalog as a Markdown table">
                         <i class="fas fa-table"></i> Copy MD Table

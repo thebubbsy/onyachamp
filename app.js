@@ -513,4 +513,57 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
   }
+
+  const copyCatalogTsvBtn = document.getElementById('btn-copy-catalog-tsv');
+  if (copyCatalogTsvBtn) {
+    copyCatalogTsvBtn.addEventListener('click', async () => {
+      const visibleCards = Array.from(document.querySelectorAll('.repo-card')).filter(c => c.style.display !== 'none');
+      const cleanTsv = (v) => String(v || '').replace(/[\t\r\n]+/g, ' ').trim();
+      const rows = ['Name\tCategory\tTags\tCommand\tDescription\tURL'];
+
+      visibleCards.forEach(card => {
+        const nameEl = card.querySelector('.repo-name');
+        const linkEl = card.querySelector('.repo-name a');
+        const badgeEl = card.querySelector('.repo-header .badge');
+        const descEl = card.querySelector('.repo-desc');
+        const codeEl = card.querySelector('.repo-terminal code');
+        const tags = Array.from(card.querySelectorAll('.repo-tags .badge')).map(t => t.textContent.trim()).join('; ');
+
+        rows.push([
+          cleanTsv(nameEl ? nameEl.textContent : 'Tool'),
+          cleanTsv(badgeEl ? badgeEl.textContent : ''),
+          cleanTsv(tags),
+          cleanTsv(codeEl ? codeEl.textContent : ''),
+          cleanTsv(descEl ? descEl.textContent : ''),
+          cleanTsv(linkEl ? linkEl.getAttribute('href') : '')
+        ].join('\t'));
+      });
+
+      try {
+        await navigator.clipboard.writeText(rows.join('\r\n'));
+        const orig = copyCatalogTsvBtn.innerHTML;
+        copyCatalogTsvBtn.innerHTML = '<i class="fas fa-check" style="color: #10b981;"></i> Copied TSV!';
+        setTimeout(() => { copyCatalogTsvBtn.innerHTML = orig; }, 1800);
+      } catch (err) {
+        console.error('Failed to copy catalog TSV', err);
+      }
+    });
+  }
+
+  const resetCatalogFilterBtn = document.getElementById('btn-reset-catalog-filter');
+  if (resetCatalogFilterBtn) {
+    resetCatalogFilterBtn.addEventListener('click', () => {
+      filterButtons.forEach(b => {
+        if ((b.getAttribute('data-filter') || '') === 'all') {
+          b.classList.add('active');
+        } else {
+          b.classList.remove('active');
+        }
+      });
+      if (toolsSearchInput) {
+        toolsSearchInput.value = '';
+      }
+      applyToolsCatalogFilter();
+    });
+  }
 });
