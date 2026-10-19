@@ -9932,6 +9932,26 @@ function Start-AutopilotHubGui {
                     <Border Background="#E0F2FE" CornerRadius="3" Padding="5,1.5" Margin="4,0,0,0" VerticalAlignment="Center" BorderBrush="#BAE6FD" BorderThickness="1">
                         <TextBlock Text="STANDALONE KERNEL" FontSize="8.5" FontWeight="SemiBold" Foreground="#0284C7"/>
                     </Border>
+                    <!-- One-Click Copy Endpoint Telemetry Pill -->
+                    <Border Name="BadgeCopyTelemetry" Background="#F1F5F9" CornerRadius="3" Padding="6,1.5" Margin="4,0,0,0" VerticalAlignment="Center" BorderBrush="#CBD5E1" BorderThickness="1" Cursor="Hand"
+                            ToolTip="Click to copy endpoint Serial Number, Model, TPM, Power &amp; Graph telemetry summary to the clipboard.">
+                        <TextBlock Name="TxtCopyTelemetry" Text="COPY TELEMETRY" FontSize="8.5" FontWeight="SemiBold" Foreground="#0F172A" VerticalAlignment="Center"/>
+                    </Border>
+                    <!-- One-Click Export Diagnostic JSON Pill -->
+                    <Border Name="BadgeExportDiagJson" Background="#EFF6FF" CornerRadius="3" Padding="6,1.5" Margin="4,0,0,0" VerticalAlignment="Center" BorderBrush="#BFDBFE" BorderThickness="1" Cursor="Hand"
+                            ToolTip="Click to export a full JSON hardware &amp; session diagnostic receipt to USB (or %TEMP%) and copy its path.">
+                        <TextBlock Name="TxtExportDiagJson" Text="EXPORT JSON" FontSize="8.5" FontWeight="SemiBold" Foreground="#1D4ED8" VerticalAlignment="Center"/>
+                    </Border>
+                    <!-- One-Click Copy Markdown Audit Report Pill -->
+                    <Border Name="BadgeCopyMdReport" Background="#F5F3FF" CornerRadius="3" Padding="6,1.5" Margin="4,0,0,0" VerticalAlignment="Center" BorderBrush="#DDD6FE" BorderThickness="1" Cursor="Hand"
+                            ToolTip="Click to copy a formatted Markdown Endpoint Readiness &amp; Audit Log report for tickets/notes.">
+                        <TextBlock Name="TxtCopyMdReport" Text="COPY MD REPORT" FontSize="8.5" FontWeight="SemiBold" Foreground="#6D28D9" VerticalAlignment="Center"/>
+                    </Border>
+                    <!-- One-Click Export Diagnostic CSV Pill -->
+                    <Border Name="BadgeExportDiagCsv" Background="#FEF3C7" CornerRadius="3" Padding="6,1.5" Margin="4,0,0,0" VerticalAlignment="Center" BorderBrush="#FDE68A" BorderThickness="1" Cursor="Hand"
+                            ToolTip="Click to export a flat CSV hardware &amp; session readiness row to USB (or %TEMP%) and copy its path.">
+                        <TextBlock Name="TxtExportDiagCsv" Text="EXPORT CSV" FontSize="8.5" FontWeight="SemiBold" Foreground="#B45309" VerticalAlignment="Center"/>
+                    </Border>
             </StackPanel>
 
             <StackPanel Grid.Row="0" Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
@@ -9972,32 +9992,32 @@ function Start-AutopilotHubGui {
 
                 <StackPanel Grid.Column="0">
                     <TextBlock Text="SERIAL NUMBER" FontSize="8" Foreground="#64748B" FontWeight="SemiBold"/>
-                    <TextBlock Name="TxtSerial" Text="Detecting..." FontSize="10.5" Foreground="#1E293B" FontWeight="Bold" FontFamily="Consolas" Margin="0,1,0,0"/>
+                    <TextBlock Name="TxtSerial" Text="Detecting..." FontSize="10.5" Foreground="#1E293B" FontWeight="Bold" FontFamily="Consolas" Margin="0,1,0,0" Cursor="Hand" ToolTip="Click to copy Serial Number to clipboard"/>
                 </StackPanel>
 
                 <StackPanel Grid.Column="1">
                     <TextBlock Text="MAKE &amp; MODEL" FontSize="8" Foreground="#64748B" FontWeight="SemiBold"/>
-                    <TextBlock Name="TxtModel" Text="Detecting..." FontSize="10.5" Foreground="#1E293B" FontWeight="SemiBold" Margin="0,1,0,0"/>
+                    <TextBlock Name="TxtModel" Text="Detecting..." FontSize="10.5" Foreground="#1E293B" FontWeight="SemiBold" Margin="0,1,0,0" Cursor="Hand" ToolTip="Click to copy Make &amp; Model to clipboard"/>
                 </StackPanel>
 
                 <StackPanel Grid.Column="2">
                     <TextBlock Text="TPM 2.0 STATUS" FontSize="8" Foreground="#64748B" FontWeight="SemiBold"/>
-                    <TextBlock Name="TxtTpm" Text="Probing..." FontSize="10.5" Foreground="#15803D" FontWeight="Bold" Margin="0,1,0,0"/>
+                    <TextBlock Name="TxtTpm" Text="Probing..." FontSize="10.5" Foreground="#15803D" FontWeight="Bold" Margin="0,1,0,0" Cursor="Hand" ToolTip="Click to copy TPM 2.0 status to clipboard"/>
                 </StackPanel>
 
                 <StackPanel Grid.Column="3">
                     <TextBlock Text="SECURE BOOT" FontSize="8" Foreground="#64748B" FontWeight="SemiBold"/>
-                    <TextBlock Name="TxtSecureBoot" Text="Probing..." FontSize="10.5" Foreground="#B45309" FontWeight="Bold" Margin="0,1,0,0"/>
+                    <TextBlock Name="TxtSecureBoot" Text="Probing..." FontSize="10.5" Foreground="#B45309" FontWeight="Bold" Margin="0,1,0,0" Cursor="Hand" ToolTip="Click to copy Secure Boot status to clipboard"/>
                 </StackPanel>
 
                 <StackPanel Grid.Column="4">
                     <TextBlock Text="NETWORK STATUS" FontSize="8" Foreground="#64748B" FontWeight="SemiBold"/>
-                    <TextBlock Name="TxtNetwork" Text="Checking..." FontSize="10.5" Foreground="#0284C7" FontWeight="Bold" Margin="0,1,0,0"/>
+                    <TextBlock Name="TxtNetwork" Text="Checking..." FontSize="10.5" Foreground="#0284C7" FontWeight="Bold" Margin="0,1,0,0" Cursor="Hand" ToolTip="Click to copy Network status to clipboard"/>
                 </StackPanel>
 
                 <StackPanel Grid.Column="5">
                     <TextBlock Text="DEVICE STATE" FontSize="8" Foreground="#64748B" FontWeight="SemiBold"/>
-                    <TextBlock Name="TxtDeviceState" Text="Inspecting..." FontSize="10.5" Foreground="#475569" FontWeight="Bold" Margin="0,1,0,0" TextTrimming="CharacterEllipsis"/>
+                    <TextBlock Name="TxtDeviceState" Text="Inspecting..." FontSize="10.5" Foreground="#475569" FontWeight="Bold" Margin="0,1,0,0" TextTrimming="CharacterEllipsis" Cursor="Hand" ToolTip="Click to copy Device State to clipboard"/>
                 </StackPanel>
             </Grid>
         </Border>
@@ -11398,9 +11418,15 @@ function Start-AutopilotHubGui {
                     </Grid.ColumnDefinitions>
                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                         <TextBlock Text="SYSTEM AUDIT LOG" FontSize="10" FontWeight="SemiBold" Foreground="#64748B" VerticalAlignment="Center"/>
-                        <Button Name="BtnToggleConsole" Content="[-] Hide Log" FontSize="9.5" Padding="6,2" Margin="10,0,0,0" ToolTip="Collapse or expand the system audit log console"/>
+                        <Border Name="BadgeLogStats" Background="#F1F5F9" CornerRadius="3" Padding="6,1" Margin="8,0,0,0" VerticalAlignment="Center" BorderBrush="#CBD5E1" BorderThickness="1" ToolTip="Live count of audit log entries and warnings/errors">
+                            <TextBlock Name="TxtLogStats" Text="0 lines" FontSize="8.5" FontWeight="SemiBold" Foreground="#475569" VerticalAlignment="Center"/>
+                        </Border>
+                        <Button Name="BtnToggleConsole" Content="[-] Hide Log" FontSize="9.5" Padding="6,2" Margin="8,0,0,0" ToolTip="Collapse or expand the system audit log console"/>
                     </StackPanel>
                     <StackPanel Grid.Column="2" Orientation="Horizontal">
+                        <TextBox Name="TxtLogFilter" Width="115" Height="20" FontSize="9.5" Padding="4,1" Margin="0,0,4,0" VerticalContentAlignment="Center" Background="#F8FAFC" BorderBrush="#CBD5E1" BorderThickness="1" ToolTip="Type keyword to filter &amp; copy matching audit log lines (e.g. OA3, TPM, Graph, WARN)"/>
+                        <Button Name="BtnCopyFilteredLog" Content="Copy Match" FontSize="10" Padding="6,2" Margin="0,0,4,0" ToolTip="Copy audit log lines matching the filter box (or all lines if empty)"/>
+                        <Button Name="BtnCopyLogErrors" Content="Copy Warn/Err" FontSize="10" Padding="6,2" Margin="0,0,4,0" ToolTip="Copy only [WARN], [ERROR], and [FAIL] audit log lines to the clipboard"/>
                         <Button Name="BtnCopyLog" Content="Copy Log" FontSize="10" Padding="6,2" Margin="0,0,4,0"/>
                         <Button Name="BtnClearLog" Content="Clear" FontSize="10" Padding="6,2" Margin="0,0,4,0"/>
                         <Button Name="BtnSaveLog" Content="Save Log..." FontSize="10" Padding="6,2" Margin="0,0,4,0"/>
@@ -11803,11 +11829,16 @@ function Start-AutopilotHubGui {
     $lstDiagStages     = $window.FindName('LstDiagStages')
 
     $rowConsoleLog     = $window.FindName('RowConsoleLog')
+    $badgeLogStats     = $window.FindName('BadgeLogStats')
+    $txtLogStats       = $window.FindName('TxtLogStats')
     $btnToggleConsole  = $window.FindName('BtnToggleConsole')
     $btnClearHybOut    = $window.FindName('BtnClearHybOut')
     $hubProgressBar    = $window.FindName('HubProgressBar')
     $txtProgressStatus = $window.FindName('TxtProgressStatus')
     $txtHubLog         = $window.FindName('TxtHubLog')
+    $txtLogFilter      = $window.FindName('TxtLogFilter')
+    $btnCopyFilteredLog = $window.FindName('BtnCopyFilteredLog')
+    $btnCopyLogErrors  = $window.FindName('BtnCopyLogErrors')
     $btnCopyLog        = $window.FindName('BtnCopyLog')
     $btnClearLog       = $window.FindName('BtnClearLog')
     $btnSaveLog        = $window.FindName('BtnSaveLog')
@@ -11835,6 +11866,35 @@ function Start-AutopilotHubGui {
     $txtDellEndDate        = $window.FindName('TxtDellEndDate')
     $txtDellDaysRemaining  = $window.FindName('TxtDellDaysRemaining')
     $lstDellEntitlements   = $window.FindName('LstDellEntitlements')
+
+    $script:HubLogLineCount = 0
+    $script:HubLogWarnErrCount = 0
+    function Update-HubLogStatsBadge {
+        param([string]$Level = '')
+        if ($Level) {
+            $script:HubLogLineCount++
+            if ($Level -match '^(WARN|ERROR|FAIL)$') {
+                $script:HubLogWarnErrCount++
+            }
+        }
+        if ($txtLogStats) {
+            if ($script:HubLogWarnErrCount -gt 0) {
+                $txtLogStats.Text = "$($script:HubLogLineCount) lines · $($script:HubLogWarnErrCount) warn/err"
+                $txtLogStats.Foreground = [System.Windows.Media.BrushConverter]::new().ConvertFromString("#B45309")
+                if ($badgeLogStats) {
+                    $badgeLogStats.Background = [System.Windows.Media.BrushConverter]::new().ConvertFromString("#FEF3C7")
+                    $badgeLogStats.BorderBrush = [System.Windows.Media.BrushConverter]::new().ConvertFromString("#FDE68A")
+                }
+            } else {
+                $txtLogStats.Text = "$($script:HubLogLineCount) lines"
+                $txtLogStats.Foreground = [System.Windows.Media.BrushConverter]::new().ConvertFromString("#475569")
+                if ($badgeLogStats) {
+                    $badgeLogStats.Background = [System.Windows.Media.BrushConverter]::new().ConvertFromString("#F1F5F9")
+                    $badgeLogStats.BorderBrush = [System.Windows.Media.BrushConverter]::new().ConvertFromString("#CBD5E1")
+                }
+            }
+        }
+    }
 
     # Hyperthreaded Asynchronous Background Worker Architecture
     $script:HubAsyncQueue = [System.Collections.Concurrent.ConcurrentQueue[object]]::new()
@@ -11956,6 +12016,7 @@ function Start-AutopilotHubGui {
                         $line = "[$timestamp] [$($msg.Level)] $($msg.Message)"
                         $txtHubLog.AppendText("$line`r`n")
                         $txtHubLog.ScrollToEnd()
+                        Update-HubLogStatsBadge -Level $msg.Level
                     } elseif ($msg.Type -eq 'Progress') {
                         $hubProgressBar.Value = $msg.Percent
                         $txtProgressStatus.Text = $msg.Status
@@ -12035,6 +12096,7 @@ function Start-AutopilotHubGui {
         $script:HubLogEntries.Add([PSCustomObject]@{ Timestamp = (Get-Date); Level = $Level; Message = $Message })
         $txtHubLog.AppendText("$line`r`n")
         $txtHubLog.ScrollToEnd()
+        Update-HubLogStatsBadge -Level $Level
         Update-WpfUI
     }
 
@@ -13563,12 +13625,52 @@ function Start-AutopilotHubGui {
         Invoke-HubSystemReboot -Reason 'Autonomous System Restart'
     })
 
+    if ($btnCopyFilteredLog) {
+        $btnCopyFilteredLog.Add_Click({
+            try {
+                $q = if ($txtLogFilter -and $txtLogFilter.Text) { $txtLogFilter.Text.Trim() } else { '' }
+                $rawLines = if ($txtHubLog -and $txtHubLog.Text) { $txtHubLog.Text -split "`r?`n" } else { @() }
+                if ([string]::IsNullOrWhiteSpace($q)) {
+                    [System.Windows.Clipboard]::SetText($txtHubLog.Text)
+                    Write-HubLog "Copied all audit log lines to clipboard (no filter active)." "SUCCESS"
+                } else {
+                    $matched = @($rawLines | Where-Object { $_ -and ($_.IndexOf($q, [System.StringComparison]::OrdinalIgnoreCase) -ge 0) })
+                    if ($matched.Count -gt 0) {
+                        [System.Windows.Clipboard]::SetText(($matched -join "`r`n"))
+                        Write-HubLog "Copied $($matched.Count) log line(s) matching '$q' to clipboard." "SUCCESS"
+                    } else {
+                        Write-HubLog "No audit log lines matched filter '$q'." "WARN"
+                    }
+                }
+            } catch { }
+        })
+    }
+
+    if ($btnCopyLogErrors) {
+        $btnCopyLogErrors.Add_Click({
+            try {
+                $rawLines = if ($txtHubLog -and $txtHubLog.Text) { $txtHubLog.Text -split "`r?`n" } else { @() }
+                $errLines = @($rawLines | Where-Object { $_ -match '\[(WARN|ERROR|FAIL)\]' })
+                if ($errLines.Count -gt 0) {
+                    [System.Windows.Clipboard]::SetText(($errLines -join "`r`n"))
+                    Write-HubLog "Copied $($errLines.Count) warning/error log line(s) to clipboard." "SUCCESS"
+                } else {
+                    [System.Windows.Clipboard]::SetText("[OK] Zero warnings or errors recorded in System Audit Log.")
+                    Write-HubLog "No [WARN] or [ERROR] lines found in audit log (copied clean status)." "INFO"
+                }
+            } catch { }
+        })
+    }
+
     $btnCopyLog.Add_Click({
         [System.Windows.Clipboard]::SetText($txtHubLog.Text)
     })
 
     $btnClearLog.Add_Click({
         $txtHubLog.Clear()
+        $script:HubLogLineCount = 0
+        $script:HubLogWarnErrCount = 0
+        Update-HubLogStatsBadge
     })
 
     $btnSaveLog.Add_Click({
@@ -13782,6 +13884,202 @@ $($r.Entitlements | ForEach-Object { "| $($_.ServiceLevelDescription) | $($_.Ent
     })
 
     # --- HEADER ACTIONS ---
+    $badgeCopyTelemetry  = $window.FindName('BadgeCopyTelemetry')
+    $txtCopyTelemetry    = $window.FindName('TxtCopyTelemetry')
+    $badgeExportDiagJson = $window.FindName('BadgeExportDiagJson')
+    $txtExportDiagJson   = $window.FindName('TxtExportDiagJson')
+    $badgeCopyMdReport   = $window.FindName('BadgeCopyMdReport')
+    $txtCopyMdReport     = $window.FindName('TxtCopyMdReport')
+    $badgeExportDiagCsv  = $window.FindName('BadgeExportDiagCsv')
+    $txtExportDiagCsv    = $window.FindName('TxtExportDiagCsv')
+
+    if ($txtSerial) {
+        $txtSerial.Add_MouseLeftButtonUp({
+            try {
+                if ($txtSerial.Text) {
+                    [System.Windows.Clipboard]::SetText($txtSerial.Text.Trim())
+                    Write-HubLog "Copied Hardware Serial ($($txtSerial.Text.Trim())) to clipboard." "SUCCESS"
+                }
+            } catch { }
+        })
+    }
+    if ($txtModel) {
+        $txtModel.Add_MouseLeftButtonUp({
+            try {
+                if ($txtModel.Text) {
+                    [System.Windows.Clipboard]::SetText($txtModel.Text.Trim())
+                    Write-HubLog "Copied Hardware Model ($($txtModel.Text.Trim())) to clipboard." "SUCCESS"
+                }
+            } catch { }
+        })
+    }
+    if ($txtTpm) {
+        $txtTpm.Add_MouseLeftButtonUp({
+            try {
+                if ($txtTpm.Text) {
+                    [System.Windows.Clipboard]::SetText($txtTpm.Text.Trim())
+                    Write-HubLog "Copied TPM 2.0 Status ($($txtTpm.Text.Trim())) to clipboard." "SUCCESS"
+                }
+            } catch { }
+        })
+    }
+    if ($txtSecureBoot) {
+        $txtSecureBoot.Add_MouseLeftButtonUp({
+            try {
+                if ($txtSecureBoot.Text) {
+                    [System.Windows.Clipboard]::SetText($txtSecureBoot.Text.Trim())
+                    Write-HubLog "Copied Secure Boot Status ($($txtSecureBoot.Text.Trim())) to clipboard." "SUCCESS"
+                }
+            } catch { }
+        })
+    }
+    if ($txtNetwork) {
+        $txtNetwork.Add_MouseLeftButtonUp({
+            try {
+                if ($txtNetwork.Text) {
+                    [System.Windows.Clipboard]::SetText($txtNetwork.Text.Trim())
+                    Write-HubLog "Copied Network Status ($($txtNetwork.Text.Trim())) to clipboard." "SUCCESS"
+                }
+            } catch { }
+        })
+    }
+    if ($txtDeviceState) {
+        $txtDeviceState.Add_MouseLeftButtonUp({
+            try {
+                if ($txtDeviceState.Text) {
+                    [System.Windows.Clipboard]::SetText($txtDeviceState.Text.Trim())
+                    Write-HubLog "Copied Device State ($($txtDeviceState.Text.Trim())) to clipboard." "SUCCESS"
+                }
+            } catch { }
+        })
+    }
+
+    if ($badgeCopyTelemetry) {
+        $badgeCopyTelemetry.Add_MouseLeftButtonUp({
+            try {
+                $ser = if ($txtSerial) { $txtSerial.Text } else { 'Unknown' }
+                $mod = if ($txtModel) { $txtModel.Text } else { 'Unknown' }
+                $tpm = if ($txtTpm) { $txtTpm.Text } else { 'Unknown' }
+                $pwr = if ($txtPowerStatus) { $txtPowerStatus.Text } else { 'Unknown' }
+                $priv = if ($txtPrivilege) { $txtPrivilege.Text } else { 'Unknown' }
+                $grph = if ($txtGraphStatus) { $txtGraphStatus.Text } else { 'Unknown' }
+                $summary = "Autopilot Hub Telemetry | Serial: $ser | Model: $mod | TPM: $tpm | $pwr | $priv | $grph"
+                [System.Windows.Clipboard]::SetText($summary)
+                if ($txtCopyTelemetry) { $txtCopyTelemetry.Text = "COPIED TO CLIPBOARD" }
+                $badgeCopyTelemetry.Background = [System.Windows.Media.BrushConverter]::new().ConvertFromString("#DCFCE7")
+                $badgeCopyTelemetry.BorderBrush = [System.Windows.Media.BrushConverter]::new().ConvertFromString("#86EFAC")
+                Write-HubLog "Copied endpoint telemetry to clipboard: $summary" "SUCCESS"
+            } catch {
+                Write-HubLog "Could not copy telemetry to clipboard: $($_.Exception.Message)" "WARN"
+            }
+        })
+    }
+
+    if ($badgeExportDiagJson) {
+        $badgeExportDiagJson.Add_MouseLeftButtonUp({
+            try {
+                $diagPayload = [ordered]@{
+                    TimestampUtc     = (Get-Date).ToUniversalTime().ToString("o")
+                    ComputerName     = $env:COMPUTERNAME
+                    SerialNumber     = if ($txtSerial) { $txtSerial.Text } else { 'Unknown' }
+                    HardwareModel    = if ($txtModel) { $txtModel.Text } else { 'Unknown' }
+                    TpmStatus        = if ($txtTpm) { $txtTpm.Text } else { 'Unknown' }
+                    PowerStatus      = if ($txtPowerStatus) { $txtPowerStatus.Text } else { 'Unknown' }
+                    PrivilegeContext = if ($txtPrivilege) { $txtPrivilege.Text } else { 'Unknown' }
+                    GraphStatus      = if ($txtGraphStatus) { $txtGraphStatus.Text } else { 'Unknown' }
+                    OSVersion        = [System.Environment]::OSVersion.VersionString
+                }
+                $jsonStr = $diagPayload | ConvertTo-Json -Depth 4
+                [System.Windows.Clipboard]::SetText($jsonStr)
+                $outDir = if (Test-Path "C:\ProgramData\AutopilotCommandHub") { "C:\ProgramData\AutopilotCommandHub" } else { $env:TEMP }
+                $outFile = Join-Path $outDir ("AutopilotDiag_{0}_{1}.json" -f $env:COMPUTERNAME, (Get-Date -Format "yyyyMMdd_HHmmss"))
+                $jsonStr | Set-Content -Path $outFile -Encoding UTF8 -Force
+                if ($txtExportDiagJson) { $txtExportDiagJson.Text = "JSON SAVED + COPIED" }
+                Write-HubLog "Diagnostic JSON snapshot copied to clipboard and saved to $outFile" "SUCCESS"
+            } catch {
+                Write-HubLog "Could not export diagnostic JSON: $($_.Exception.Message)" "WARN"
+            }
+        })
+    }
+
+    if ($badgeCopyMdReport) {
+        $badgeCopyMdReport.Add_MouseLeftButtonUp({
+            try {
+                $ser  = if ($txtSerial) { $txtSerial.Text } else { 'Unknown' }
+                $mod  = if ($txtModel) { $txtModel.Text } else { 'Unknown' }
+                $tpm  = if ($txtTpm) { $txtTpm.Text } else { 'Unknown' }
+                $sec  = if ($txtSecureBoot) { $txtSecureBoot.Text } else { 'Unknown' }
+                $net  = if ($txtNetwork) { $txtNetwork.Text } else { 'Unknown' }
+                $dev  = if ($txtDeviceState) { $txtDeviceState.Text } else { 'Unknown' }
+                $pwr  = if ($txtPowerStatus) { $txtPowerStatus.Text } else { 'Unknown' }
+                $priv = if ($txtPrivilege) { $txtPrivilege.Text } else { 'Unknown' }
+                $grph = if ($txtGraphStatus) { $txtGraphStatus.Text } else { 'Unknown' }
+                $logTail = if ($txtHubLog -and $txtHubLog.Text) {
+                    (($txtHubLog.Text -split "`r?`n") | Where-Object { -not [string]::IsNullOrWhiteSpace($_) } | Select-Object -Last 15) -join "`r`n"
+                } else { '(No log entries)' }
+                $mdReport = @(
+                    "## Autopilot Command Hub -- Endpoint Readiness Report",
+                    "- **Generated:** $((Get-Date).ToString('yyyy-MM-dd HH:mm:ss zzz'))",
+                    "- **Computer Name:** $($env:COMPUTERNAME)",
+                    "",
+                    "| Metric | Status / Value |",
+                    "| :--- | :--- |",
+                    "| **Serial Number** | $ser |",
+                    "| **Make & Model** | $mod |",
+                    "| **TPM 2.0 Status** | $tpm |",
+                    "| **Secure Boot** | $sec |",
+                    "| **Network Status** | $net |",
+                    "| **Device State** | $dev |",
+                    "| **Power Status** | $pwr |",
+                    "| **Privilege Context** | $priv |",
+                    "| **Graph Session** | $grph |",
+                    "",
+                    "### Recent System Audit Log",
+                    '```text',
+                    $logTail,
+                    '```'
+                ) -join "`r`n"
+                [System.Windows.Clipboard]::SetText($mdReport)
+                if ($txtCopyMdReport) { $txtCopyMdReport.Text = "MD REPORT COPIED" }
+                $badgeCopyMdReport.Background = [System.Windows.Media.BrushConverter]::new().ConvertFromString("#DCFCE7")
+                $badgeCopyMdReport.BorderBrush = [System.Windows.Media.BrushConverter]::new().ConvertFromString("#86EFAC")
+                Write-HubLog "Copied Markdown Endpoint Readiness & Audit Report to clipboard." "SUCCESS"
+            } catch {
+                Write-HubLog "Could not copy Markdown report: $($_.Exception.Message)" "WARN"
+            }
+        })
+    }
+
+    if ($badgeExportDiagCsv) {
+        $badgeExportDiagCsv.Add_MouseLeftButtonUp({
+            try {
+                $rowObj = [PSCustomObject]@{
+                    TimestampUtc     = (Get-Date).ToUniversalTime().ToString("o")
+                    ComputerName     = $env:COMPUTERNAME
+                    SerialNumber     = if ($txtSerial) { $txtSerial.Text } else { 'Unknown' }
+                    HardwareModel    = if ($txtModel) { $txtModel.Text } else { 'Unknown' }
+                    TpmStatus        = if ($txtTpm) { $txtTpm.Text } else { 'Unknown' }
+                    SecureBoot       = if ($txtSecureBoot) { $txtSecureBoot.Text } else { 'Unknown' }
+                    NetworkStatus    = if ($txtNetwork) { $txtNetwork.Text } else { 'Unknown' }
+                    DeviceState      = if ($txtDeviceState) { $txtDeviceState.Text } else { 'Unknown' }
+                    PowerStatus      = if ($txtPowerStatus) { $txtPowerStatus.Text } else { 'Unknown' }
+                    PrivilegeContext = if ($txtPrivilege) { $txtPrivilege.Text } else { 'Unknown' }
+                    GraphStatus      = if ($txtGraphStatus) { $txtGraphStatus.Text } else { 'Unknown' }
+                }
+                $outDir = if (Test-Path "C:\ProgramData\AutopilotCommandHub") { "C:\ProgramData\AutopilotCommandHub" } else { $env:TEMP }
+                $outFile = Join-Path $outDir ("AutopilotDiag_{0}_{1}.csv" -f $env:COMPUTERNAME, (Get-Date -Format "yyyyMMdd_HHmmss"))
+                $rowObj | Export-Csv -Path $outFile -NoTypeInformation -Encoding UTF8 -Force
+                [System.Windows.Clipboard]::SetText($outFile)
+                if ($txtExportDiagCsv) { $txtExportDiagCsv.Text = "CSV SAVED + PATH COPIED" }
+                $badgeExportDiagCsv.Background = [System.Windows.Media.BrushConverter]::new().ConvertFromString("#DCFCE7")
+                $badgeExportDiagCsv.BorderBrush = [System.Windows.Media.BrushConverter]::new().ConvertFromString("#86EFAC")
+                Write-HubLog "Diagnostic CSV row saved to $outFile (path copied to clipboard)." "SUCCESS"
+            } catch {
+                Write-HubLog "Could not export diagnostic CSV: $($_.Exception.Message)" "WARN"
+            }
+        })
+    }
+
     if ($btnDismissMismatch) {
         $btnDismissMismatch.Add_Click({
             if ($bannerTenantMismatch) { $bannerTenantMismatch.Visibility = [System.Windows.Visibility]::Collapsed }
