@@ -821,4 +821,128 @@ document.addEventListener('DOMContentLoaded', () => {
       applyToolsCatalogFilter();
     });
   }
+
+  const exportCatalogMdFileBtn = document.getElementById('btn-export-catalog-md-file');
+  if (exportCatalogMdFileBtn) {
+    exportCatalogMdFileBtn.addEventListener('click', () => {
+      const visibleCards = Array.from(document.querySelectorAll('.repo-card')).filter(c => c.style.display !== 'none');
+      const mdLines = [
+        '# OnYaChamp Enterprise PowerShell & Cloud Tooling Catalog',
+        '',
+        `- **Exported**: ${new Date().toISOString()}`,
+        `- **Visible Tools**: ${visibleCards.length}`,
+        '',
+        '| Project | Category | Tags | Command | Description | GitHub |',
+        '| :--- | :--- | :--- | :--- | :--- | :--- |'
+      ];
+      visibleCards.forEach(card => {
+        const nameEl = card.querySelector('.repo-name');
+        const linkEl = card.querySelector('.repo-name a');
+        const badgeEl = card.querySelector('.repo-header .badge');
+        const descEl = card.querySelector('.repo-desc');
+        const codeEl = card.querySelector('.repo-terminal code');
+        const tags = Array.from(card.querySelectorAll('.repo-tags .badge')).map(t => t.textContent.trim()).join(', ');
+        const esc = (v) => String(v || '').replace(/\|/g, '\\|').replace(/\s+/g, ' ').trim();
+        const name = esc(nameEl ? nameEl.textContent : 'Tool');
+        const cat = esc(badgeEl ? badgeEl.textContent : '');
+        const cmd = esc(codeEl ? codeEl.textContent : '');
+        const desc = esc(descEl ? descEl.textContent : '');
+        const url = esc(linkEl ? linkEl.getAttribute('href') : '');
+        mdLines.push(`| **${name}** | ${cat} | ${esc(tags)} | \`${cmd}\` | ${desc} | ${url} |`);
+      });
+      const blob = new Blob([mdLines.join('\n')], { type: 'text/markdown;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `onyachamp-tools-catalog-${new Date().toISOString().slice(0, 10)}.md`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      const orig = exportCatalogMdFileBtn.innerHTML;
+      exportCatalogMdFileBtn.innerHTML = '<i class="fas fa-check" style="color: #10b981;"></i> Exported MD!';
+      setTimeout(() => { exportCatalogMdFileBtn.innerHTML = orig; }, 1800);
+    });
+  }
+
+  const copyCatalogUrlsBtn = document.getElementById('btn-copy-catalog-urls');
+  if (copyCatalogUrlsBtn) {
+    copyCatalogUrlsBtn.addEventListener('click', async () => {
+      const visibleCards = Array.from(document.querySelectorAll('.repo-card')).filter(c => c.style.display !== 'none');
+      const urls = visibleCards
+        .map(card => {
+          const linkEl = card.querySelector('.repo-name a');
+          return linkEl ? (linkEl.getAttribute('href') || '').trim() : '';
+        })
+        .filter(Boolean);
+      try {
+        await navigator.clipboard.writeText(urls.join('\n'));
+        const orig = copyCatalogUrlsBtn.innerHTML;
+        copyCatalogUrlsBtn.innerHTML = `<i class="fas fa-check" style="color: #10b981;"></i> Copied ${urls.length} URLs!`;
+        setTimeout(() => { copyCatalogUrlsBtn.innerHTML = orig; }, 1800);
+      } catch (err) {
+        console.error('Failed to copy catalog URLs', err);
+      }
+    });
+  }
+
+  const copyTerminalCsvBtn = document.getElementById('btn-copy-terminal-csv');
+  if (copyTerminalCsvBtn) {
+    copyTerminalCsvBtn.addEventListener('click', async () => {
+      const activePane = document.querySelector('.t-pane.active');
+      if (!activePane) return;
+      const activeTabBtn = document.querySelector('.terminal-tab-btn.active');
+      const tabTitle = activeTabBtn ? activeTabBtn.textContent.trim() : activePane.id;
+      const escCsv = (v) => `"${String(v || '').replace(/\r?\n/g, ' ').trim().replace(/"/g, '""')}"`;
+      const rows = ['"LineNumber","Tab","Severity","Content"'];
+      Array.from(activePane.querySelectorAll('.terminal-line')).forEach((el, idx) => {
+        let sev = 'OUTPUT';
+        if (el.classList.contains('t-success')) sev = 'SUCCESS';
+        else if (el.classList.contains('t-warn')) sev = 'WARN';
+        else if (el.classList.contains('t-info')) sev = 'INFO';
+        else if (el.querySelector('.t-cmd')) sev = 'COMMAND';
+        rows.push([escCsv(idx + 1), escCsv(tabTitle), escCsv(sev), escCsv(el.textContent)].join(','));
+      });
+      try {
+        await navigator.clipboard.writeText(rows.join('\r\n'));
+        const orig = copyTerminalCsvBtn.innerHTML;
+        copyTerminalCsvBtn.innerHTML = '<i class="fas fa-check" style="color: #10b981;"></i> Copied CSV!';
+        setTimeout(() => { copyTerminalCsvBtn.innerHTML = orig; }, 1800);
+      } catch (err) {
+        console.error('Failed to copy terminal CSV', err);
+      }
+    });
+  }
+
+  const downloadTerminalCsvBtn = document.getElementById('btn-download-terminal-csv');
+  if (downloadTerminalCsvBtn) {
+    downloadTerminalCsvBtn.addEventListener('click', () => {
+      const activePane = document.querySelector('.t-pane.active');
+      if (!activePane) return;
+      const activeTabBtn = document.querySelector('.terminal-tab-btn.active');
+      const tabTitle = activeTabBtn ? activeTabBtn.textContent.trim() : activePane.id;
+      const escCsv = (v) => `"${String(v || '').replace(/\r?\n/g, ' ').trim().replace(/"/g, '""')}"`;
+      const rows = ['"LineNumber","Tab","Severity","Content"'];
+      Array.from(activePane.querySelectorAll('.terminal-line')).forEach((el, idx) => {
+        let sev = 'OUTPUT';
+        if (el.classList.contains('t-success')) sev = 'SUCCESS';
+        else if (el.classList.contains('t-warn')) sev = 'WARN';
+        else if (el.classList.contains('t-info')) sev = 'INFO';
+        else if (el.querySelector('.t-cmd')) sev = 'COMMAND';
+        rows.push([escCsv(idx + 1), escCsv(tabTitle), escCsv(sev), escCsv(el.textContent)].join(','));
+      });
+      const blob = new Blob([rows.join('\r\n')], { type: 'text/csv;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `onyachamp-terminal-${activePane.id}-${new Date().toISOString().slice(0, 10)}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      const orig = downloadTerminalCsvBtn.innerHTML;
+      downloadTerminalCsvBtn.innerHTML = '<i class="fas fa-check" style="color: #10b981;"></i> Saved CSV!';
+      setTimeout(() => { downloadTerminalCsvBtn.innerHTML = orig; }, 1800);
+    });
+  }
 });
