@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-20T11:45:11Z",
+  "generated": "2026-10-20T17:14:12Z",
   "owner": "thebubbsy",
   "groups": [
     {
@@ -12,8 +12,8 @@
           "name": "autopilot.ps1",
           "kind": "file",
           "version": "main",
-          "size": 1036239,
-          "updated": "2026-10-20T06:14:00Z",
+          "size": 1041310,
+          "updated": "2026-10-20T12:09:35Z",
           "url": "https://raw.githubusercontent.com/thebubbsy/AutopilotCommandHub/main/autopilot.ps1"
         },
         {
@@ -96,8 +96,8 @@
           "name": "cascade.ps1",
           "kind": "file",
           "version": "main",
-          "size": 162963,
-          "updated": "2026-10-20T08:10:52Z",
+          "size": 167721,
+          "updated": "2026-10-20T14:08:56Z",
           "url": "https://raw.githubusercontent.com/thebubbsy/UpdateCascade/main/cascade.ps1"
         }
       ]
