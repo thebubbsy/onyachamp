@@ -550,6 +550,57 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  const copyCatalogJsonBtn = document.getElementById('btn-copy-catalog-json');
+  if (copyCatalogJsonBtn) {
+    copyCatalogJsonBtn.addEventListener('click', async () => {
+      const visibleCards = Array.from(document.querySelectorAll('.repo-card')).filter(c => c.style.display !== 'none');
+      const items = visibleCards.map(card => {
+        const nameEl = card.querySelector('.repo-name');
+        const linkEl = card.querySelector('.repo-name a');
+        const badgeEl = card.querySelector('.repo-header .badge');
+        const descEl = card.querySelector('.repo-desc');
+        const codeEl = card.querySelector('.repo-terminal code');
+        const tags = Array.from(card.querySelectorAll('.repo-tags .badge')).map(t => t.textContent.trim());
+        return {
+          name: nameEl ? nameEl.textContent.trim() : 'Tool',
+          category: badgeEl ? badgeEl.textContent.trim() : '',
+          tags,
+          command: codeEl ? codeEl.textContent.trim() : '',
+          description: descEl ? descEl.textContent.trim().replace(/\s+/g, ' ') : '',
+          githubUrl: linkEl ? linkEl.getAttribute('href') : ''
+        };
+      });
+
+      try {
+        await navigator.clipboard.writeText(JSON.stringify(items, null, 2));
+        const orig = copyCatalogJsonBtn.innerHTML;
+        copyCatalogJsonBtn.innerHTML = '<i class="fas fa-check" style="color: #10b981;"></i> Copied JSON!';
+        setTimeout(() => { copyCatalogJsonBtn.innerHTML = orig; }, 1800);
+      } catch (err) {
+        console.error('Failed to copy catalog JSON', err);
+      }
+    });
+  }
+
+  const copyTerminalCmdBtn = document.getElementById('btn-copy-terminal-cmd');
+  if (copyTerminalCmdBtn) {
+    copyTerminalCmdBtn.addEventListener('click', async () => {
+      const activePane = document.querySelector('.t-pane.active');
+      if (!activePane) return;
+      const cmdEl = activePane.querySelector('.t-cmd');
+      const cmdText = cmdEl ? cmdEl.textContent.trim() : '';
+      if (!cmdText) return;
+      try {
+        await navigator.clipboard.writeText(cmdText);
+        const orig = copyTerminalCmdBtn.innerHTML;
+        copyTerminalCmdBtn.innerHTML = '<i class="fas fa-check" style="color: #10b981;"></i> Copied Cmd!';
+        setTimeout(() => { copyTerminalCmdBtn.innerHTML = orig; }, 1800);
+      } catch (err) {
+        console.error('Failed to copy terminal command', err);
+      }
+    });
+  }
+
   const resetCatalogFilterBtn = document.getElementById('btn-reset-catalog-filter');
   if (resetCatalogFilterBtn) {
     resetCatalogFilterBtn.addEventListener('click', () => {
