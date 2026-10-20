@@ -582,6 +582,42 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  const copyCatalogCsvBtn = document.getElementById('btn-copy-catalog-csv');
+  if (copyCatalogCsvBtn) {
+    copyCatalogCsvBtn.addEventListener('click', async () => {
+      const visibleCards = Array.from(document.querySelectorAll('.repo-card')).filter(c => c.style.display !== 'none');
+      const escCsv = (v) => '"' + String(v || '').replace(/\r?\n/g, ' ').trim().replace(/"/g, '""') + '"';
+      const rows = ['"Name","Category","Tags","Command","Description","URL"'];
+
+      visibleCards.forEach(card => {
+        const nameEl = card.querySelector('.repo-name');
+        const linkEl = card.querySelector('.repo-name a');
+        const badgeEl = card.querySelector('.repo-header .badge');
+        const descEl = card.querySelector('.repo-desc');
+        const codeEl = card.querySelector('.repo-terminal code');
+        const tags = Array.from(card.querySelectorAll('.repo-tags .badge')).map(t => t.textContent.trim()).join('; ');
+
+        rows.push([
+          escCsv(nameEl ? nameEl.textContent : 'Tool'),
+          escCsv(badgeEl ? badgeEl.textContent : ''),
+          escCsv(tags),
+          escCsv(codeEl ? codeEl.textContent : ''),
+          escCsv(descEl ? descEl.textContent : ''),
+          escCsv(linkEl ? linkEl.getAttribute('href') : '')
+        ].join(','));
+      });
+
+      try {
+        await navigator.clipboard.writeText(rows.join('\r\n'));
+        const orig = copyCatalogCsvBtn.innerHTML;
+        copyCatalogCsvBtn.innerHTML = '<i class="fas fa-check" style="color: #10b981;"></i> Copied CSV!';
+        setTimeout(() => { copyCatalogCsvBtn.innerHTML = orig; }, 1800);
+      } catch (err) {
+        console.error('Failed to copy catalog CSV', err);
+      }
+    });
+  }
+
   const copyTerminalCmdBtn = document.getElementById('btn-copy-terminal-cmd');
   if (copyTerminalCmdBtn) {
     copyTerminalCmdBtn.addEventListener('click', async () => {
@@ -597,6 +633,35 @@ document.addEventListener('DOMContentLoaded', () => {
         setTimeout(() => { copyTerminalCmdBtn.innerHTML = orig; }, 1800);
       } catch (err) {
         console.error('Failed to copy terminal command', err);
+      }
+    });
+  }
+
+  const copyTerminalJsonBtn = document.getElementById('btn-copy-terminal-json');
+  if (copyTerminalJsonBtn) {
+    copyTerminalJsonBtn.addEventListener('click', async () => {
+      const activePane = document.querySelector('.t-pane.active');
+      if (!activePane) return;
+      const activeTabBtn = document.querySelector('.terminal-tab-btn.active');
+      const tabTitle = activeTabBtn ? activeTabBtn.textContent.trim() : activePane.id;
+      const cmdEl = activePane.querySelector('.t-cmd');
+      const cmdText = cmdEl ? cmdEl.textContent.trim() : '';
+      const lines = Array.from(activePane.querySelectorAll('.terminal-line')).map(l => l.textContent.trim());
+      const payload = {
+        tabId: activePane.id,
+        title: tabTitle,
+        shell: 'PowerShell 7.4.5 LTS',
+        command: cmdText,
+        lineCount: lines.length,
+        lines
+      };
+      try {
+        await navigator.clipboard.writeText(JSON.stringify(payload, null, 2));
+        const orig = copyTerminalJsonBtn.innerHTML;
+        copyTerminalJsonBtn.innerHTML = '<i class="fas fa-check" style="color: #10b981;"></i> Copied JSON!';
+        setTimeout(() => { copyTerminalJsonBtn.innerHTML = orig; }, 1800);
+      } catch (err) {
+        console.error('Failed to copy terminal JSON', err);
       }
     });
   }
