@@ -666,6 +666,145 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  const copyTerminalTsvBtn = document.getElementById('btn-copy-terminal-tsv');
+  if (copyTerminalTsvBtn) {
+    copyTerminalTsvBtn.addEventListener('click', async () => {
+      const activePane = document.querySelector('.t-pane.active');
+      if (!activePane) return;
+      const activeTabBtn = document.querySelector('.terminal-tab-btn.active');
+      const tabTitle = activeTabBtn ? activeTabBtn.textContent.trim() : activePane.id;
+      const clean = (v) => String(v || '').replace(/[\t\r\n]+/g, ' ').trim();
+      const rows = ['LineNumber\tTab\tSeverity\tContent'];
+      Array.from(activePane.querySelectorAll('.terminal-line')).forEach((el, idx) => {
+        let sev = 'OUTPUT';
+        if (el.classList.contains('t-success')) sev = 'SUCCESS';
+        else if (el.classList.contains('t-warn')) sev = 'WARN';
+        else if (el.classList.contains('t-info')) sev = 'INFO';
+        else if (el.querySelector('.t-cmd')) sev = 'COMMAND';
+        rows.push([idx + 1, clean(tabTitle), sev, clean(el.textContent)].join('\t'));
+      });
+      try {
+        await navigator.clipboard.writeText(rows.join('\r\n'));
+        const orig = copyTerminalTsvBtn.innerHTML;
+        copyTerminalTsvBtn.innerHTML = '<i class="fas fa-check" style="color: #10b981;"></i> Copied TSV!';
+        setTimeout(() => { copyTerminalTsvBtn.innerHTML = orig; }, 1800);
+      } catch (err) {
+        console.error('Failed to copy terminal TSV', err);
+      }
+    });
+  }
+
+  const downloadTerminalJsonBtn = document.getElementById('btn-download-terminal-json');
+  if (downloadTerminalJsonBtn) {
+    downloadTerminalJsonBtn.addEventListener('click', () => {
+      const activePane = document.querySelector('.t-pane.active');
+      if (!activePane) return;
+      const activeTabBtn = document.querySelector('.terminal-tab-btn.active');
+      const tabTitle = activeTabBtn ? activeTabBtn.textContent.trim() : activePane.id;
+      const cmdEl = activePane.querySelector('.t-cmd');
+      const cmdText = cmdEl ? cmdEl.textContent.trim() : '';
+      const lines = Array.from(activePane.querySelectorAll('.terminal-line')).map(l => l.textContent.trim());
+      const payload = {
+        exportedAt: new Date().toISOString(),
+        tabId: activePane.id,
+        title: tabTitle,
+        shell: 'PowerShell 7.4.5 LTS',
+        command: cmdText,
+        lineCount: lines.length,
+        lines
+      };
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `onyachamp-terminal-${activePane.id}-${new Date().toISOString().slice(0, 10)}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      const orig = downloadTerminalJsonBtn.innerHTML;
+      downloadTerminalJsonBtn.innerHTML = '<i class="fas fa-check" style="color: #10b981;"></i> Saved JSON!';
+      setTimeout(() => { downloadTerminalJsonBtn.innerHTML = orig; }, 1800);
+    });
+  }
+
+  const exportCatalogTsvFileBtn = document.getElementById('btn-export-catalog-tsv-file');
+  if (exportCatalogTsvFileBtn) {
+    exportCatalogTsvFileBtn.addEventListener('click', () => {
+      const visibleCards = Array.from(document.querySelectorAll('.repo-card')).filter(c => c.style.display !== 'none');
+      const clean = (v) => String(v || '').replace(/[\t\r\n]+/g, ' ').trim();
+      const rows = ['Name\tCategory\tTags\tCommand\tDescription\tURL'];
+      visibleCards.forEach(card => {
+        const nameEl = card.querySelector('.repo-name');
+        const linkEl = card.querySelector('.repo-name a');
+        const badgeEl = card.querySelector('.repo-header .badge');
+        const descEl = card.querySelector('.repo-desc');
+        const codeEl = card.querySelector('.repo-terminal code');
+        const tags = Array.from(card.querySelectorAll('.repo-tags .badge')).map(t => t.textContent.trim()).join('; ');
+        rows.push([
+          clean(nameEl ? nameEl.textContent : 'Tool'),
+          clean(badgeEl ? badgeEl.textContent : ''),
+          clean(tags),
+          clean(codeEl ? codeEl.textContent : ''),
+          clean(descEl ? descEl.textContent : ''),
+          clean(linkEl ? linkEl.getAttribute('href') : '')
+        ].join('\t'));
+      });
+      const blob = new Blob([rows.join('\r\n')], { type: 'text/tab-separated-values;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `onyachamp-tools-catalog-${new Date().toISOString().slice(0, 10)}.tsv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      const orig = exportCatalogTsvFileBtn.innerHTML;
+      exportCatalogTsvFileBtn.innerHTML = '<i class="fas fa-check" style="color: #10b981;"></i> Exported TSV!';
+      setTimeout(() => { exportCatalogTsvFileBtn.innerHTML = orig; }, 1800);
+    });
+  }
+
+  const exportCatalogJsonFileBtn = document.getElementById('btn-export-catalog-json-file');
+  if (exportCatalogJsonFileBtn) {
+    exportCatalogJsonFileBtn.addEventListener('click', () => {
+      const visibleCards = Array.from(document.querySelectorAll('.repo-card')).filter(c => c.style.display !== 'none');
+      const items = visibleCards.map(card => {
+        const nameEl = card.querySelector('.repo-name');
+        const linkEl = card.querySelector('.repo-name a');
+        const badgeEl = card.querySelector('.repo-header .badge');
+        const descEl = card.querySelector('.repo-desc');
+        const codeEl = card.querySelector('.repo-terminal code');
+        const tags = Array.from(card.querySelectorAll('.repo-tags .badge')).map(t => t.textContent.trim());
+        return {
+          name: nameEl ? nameEl.textContent.trim() : 'Tool',
+          category: badgeEl ? badgeEl.textContent.trim() : '',
+          tags,
+          command: codeEl ? codeEl.textContent.trim() : '',
+          description: descEl ? descEl.textContent.trim() : '',
+          url: linkEl ? linkEl.getAttribute('href') : ''
+        };
+      });
+      const payload = {
+        exportedAt: new Date().toISOString(),
+        toolCount: items.length,
+        tools: items
+      };
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `onyachamp-tools-catalog-${new Date().toISOString().slice(0, 10)}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      const orig = exportCatalogJsonFileBtn.innerHTML;
+      exportCatalogJsonFileBtn.innerHTML = '<i class="fas fa-check" style="color: #10b981;"></i> Exported JSON!';
+      setTimeout(() => { exportCatalogJsonFileBtn.innerHTML = orig; }, 1800);
+    });
+  }
+
   const resetCatalogFilterBtn = document.getElementById('btn-reset-catalog-filter');
   if (resetCatalogFilterBtn) {
     resetCatalogFilterBtn.addEventListener('click', () => {
