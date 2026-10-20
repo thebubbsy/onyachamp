@@ -9952,6 +9952,11 @@ function Start-AutopilotHubGui {
                             ToolTip="Click to export a flat CSV hardware &amp; session readiness row to USB (or %TEMP%) and copy its path.">
                         <TextBlock Name="TxtExportDiagCsv" Text="EXPORT CSV" FontSize="8.5" FontWeight="SemiBold" Foreground="#B45309" VerticalAlignment="Center"/>
                     </Border>
+                    <!-- One-Click Copy TSV Row Pill (Excel/Sheets Instant Paste) -->
+                    <Border Name="BadgeCopyDiagTsv" Background="#ECFDF5" CornerRadius="3" Padding="6,1.5" Margin="4,0,0,0" VerticalAlignment="Center" BorderBrush="#A7F3D0" BorderThickness="1" Cursor="Hand"
+                            ToolTip="Click to copy tab-separated (TSV) readiness metrics (headers + values) for instant paste into Excel or Google Sheets.">
+                        <TextBlock Name="TxtCopyDiagTsv" Text="COPY TSV" FontSize="8.5" FontWeight="SemiBold" Foreground="#047857" VerticalAlignment="Center"/>
+                    </Border>
             </StackPanel>
 
             <StackPanel Grid.Row="0" Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
@@ -11424,9 +11429,12 @@ function Start-AutopilotHubGui {
                         <Button Name="BtnToggleConsole" Content="[-] Hide Log" FontSize="9.5" Padding="6,2" Margin="8,0,0,0" ToolTip="Collapse or expand the system audit log console"/>
                     </StackPanel>
                     <StackPanel Grid.Column="2" Orientation="Horizontal">
-                        <TextBox Name="TxtLogFilter" Width="115" Height="20" FontSize="9.5" Padding="4,1" Margin="0,0,4,0" VerticalContentAlignment="Center" Background="#F8FAFC" BorderBrush="#CBD5E1" BorderThickness="1" ToolTip="Type keyword to filter &amp; copy matching audit log lines (e.g. OA3, TPM, Graph, WARN)"/>
+                        <TextBox Name="TxtLogFilter" Width="115" Height="20" FontSize="9.5" Padding="4,1" Margin="0,0,2,0" VerticalContentAlignment="Center" Background="#F8FAFC" BorderBrush="#CBD5E1" BorderThickness="1" ToolTip="Type keyword to filter &amp; copy matching audit log lines (e.g. OA3, TPM, Graph, WARN)"/>
+                        <Button Name="BtnClearLogFilter" Content="✕" FontSize="9" Padding="4,1" Margin="0,0,4,0" ToolTip="Clear log keyword filter box"/>
                         <Button Name="BtnCopyFilteredLog" Content="Copy Match" FontSize="10" Padding="6,2" Margin="0,0,4,0" ToolTip="Copy audit log lines matching the filter box (or all lines if empty)"/>
                         <Button Name="BtnCopyLogErrors" Content="Copy Warn/Err" FontSize="10" Padding="6,2" Margin="0,0,4,0" ToolTip="Copy only [WARN], [ERROR], and [FAIL] audit log lines to the clipboard"/>
+                        <Button Name="BtnCopyLogTsv" Content="Copy TSV" FontSize="10" Padding="6,2" Margin="0,0,4,0" ToolTip="Copy structured System Audit Log rows (Timestamp, Severity, Message) as TSV for Excel/Sheets"/>
+                        <Button Name="BtnExportLogCsv" Content="Export CSV" FontSize="10" Padding="6,2" Margin="0,0,4,0" ToolTip="Export System Audit Log entries as a structured CSV file and copy its path to the clipboard"/>
                         <Button Name="BtnCopyLog" Content="Copy Log" FontSize="10" Padding="6,2" Margin="0,0,4,0"/>
                         <Button Name="BtnClearLog" Content="Clear" FontSize="10" Padding="6,2" Margin="0,0,4,0"/>
                         <Button Name="BtnSaveLog" Content="Save Log..." FontSize="10" Padding="6,2" Margin="0,0,4,0"/>
@@ -11837,8 +11845,11 @@ function Start-AutopilotHubGui {
     $txtProgressStatus = $window.FindName('TxtProgressStatus')
     $txtHubLog         = $window.FindName('TxtHubLog')
     $txtLogFilter      = $window.FindName('TxtLogFilter')
+    $btnClearLogFilter = $window.FindName('BtnClearLogFilter')
     $btnCopyFilteredLog = $window.FindName('BtnCopyFilteredLog')
     $btnCopyLogErrors  = $window.FindName('BtnCopyLogErrors')
+    $btnCopyLogTsv     = $window.FindName('BtnCopyLogTsv')
+    $btnExportLogCsv   = $window.FindName('BtnExportLogCsv')
     $btnCopyLog        = $window.FindName('BtnCopyLog')
     $btnClearLog       = $window.FindName('BtnClearLog')
     $btnSaveLog        = $window.FindName('BtnSaveLog')
@@ -13625,6 +13636,15 @@ function Start-AutopilotHubGui {
         Invoke-HubSystemReboot -Reason 'Autonomous System Restart'
     })
 
+    if ($btnClearLogFilter) {
+        $btnClearLogFilter.Add_Click({
+            if ($txtLogFilter) {
+                $txtLogFilter.Text = ""
+                $txtLogFilter.Focus() | Out-Null
+            }
+        })
+    }
+
     if ($btnCopyFilteredLog) {
         $btnCopyFilteredLog.Add_Click({
             try {
@@ -13659,6 +13679,60 @@ function Start-AutopilotHubGui {
                     Write-HubLog "No [WARN] or [ERROR] lines found in audit log (copied clean status)." "INFO"
                 }
             } catch { }
+        })
+    }
+
+    if ($btnCopyLogTsv) {
+        $btnCopyLogTsv.Add_Click({
+            try {
+                $q = if ($txtLogFilter -and $txtLogFilter.Text) { $txtLogFilter.Text.Trim() } else { '' }
+                $rawLines = if ($txtHubLog -and $txtHubLog.Text) { $txtHubLog.Text -split "`r?`n" } else { @() }
+                $targetLines = @($rawLines | Where-Object { -not [string]::IsNullOrWhiteSpace($_) -and ([string]::IsNullOrWhiteSpace($q) -or $_.IndexOf($q, [System.StringComparison]::OrdinalIgnoreCase) -ge 0) })
+                $tsvOut = [System.Collections.Generic.List[string]]::new()
+                $tsvOut.Add("Line`tTimestamp`tSeverity`tMessage")
+                $idx = 0
+                foreach ($ln in $targetLines) {
+                    $idx++
+                    $cleanLn = ($ln -replace "[\t\r\n]+", " ").Trim()
+                    if ($cleanLn -match '^\[(?<ts>[^\]]+)\]\s*\[(?<sev>[^\]]+)\]\s*(?<msg>.*)$') {
+                        $tsvOut.Add("$idx`t$($Matches['ts'])`t$($Matches['sev'])`t$($Matches['msg'])")
+                    } else {
+                        $tsvOut.Add("$idx`t`tINFO`t$cleanLn")
+                    }
+                }
+                [System.Windows.Clipboard]::SetText(($tsvOut -join "`r`n"))
+                Write-HubLog "Copied $($idx) audit log row(s) as TSV for Excel/Sheets." "SUCCESS"
+            } catch {
+                Write-HubLog "Could not copy audit log TSV: $($_.Exception.Message)" "WARN"
+            }
+        })
+    }
+
+    if ($btnExportLogCsv) {
+        $btnExportLogCsv.Add_Click({
+            try {
+                $q = if ($txtLogFilter -and $txtLogFilter.Text) { $txtLogFilter.Text.Trim() } else { '' }
+                $rawLines = if ($txtHubLog -and $txtHubLog.Text) { $txtHubLog.Text -split "`r?`n" } else { @() }
+                $targetLines = @($rawLines | Where-Object { -not [string]::IsNullOrWhiteSpace($_) -and ([string]::IsNullOrWhiteSpace($q) -or $_.IndexOf($q, [System.StringComparison]::OrdinalIgnoreCase) -ge 0) })
+                $rows = [System.Collections.Generic.List[object]]::new()
+                $idx = 0
+                foreach ($ln in $targetLines) {
+                    $idx++
+                    $cleanLn = ($ln -replace "[\r\n]+", " ").Trim()
+                    if ($cleanLn -match '^\[(?<ts>[^\]]+)\]\s*\[(?<sev>[^\]]+)\]\s*(?<msg>.*)$') {
+                        $rows.Add([PSCustomObject]@{ Line = $idx; Timestamp = $Matches['ts']; Severity = $Matches['sev']; Message = $Matches['msg'] })
+                    } else {
+                        $rows.Add([PSCustomObject]@{ Line = $idx; Timestamp = ''; Severity = 'INFO'; Message = $cleanLn })
+                    }
+                }
+                $outDir = if (Test-Path "C:\ProgramData\AutopilotCommandHub") { "C:\ProgramData\AutopilotCommandHub" } else { $env:TEMP }
+                $outFile = Join-Path $outDir ("AutopilotAuditLog_{0}_{1}.csv" -f $env:COMPUTERNAME, (Get-Date -Format "yyyyMMdd_HHmmss"))
+                $rows | Export-Csv -Path $outFile -NoTypeInformation -Encoding UTF8 -Force
+                [System.Windows.Clipboard]::SetText($outFile)
+                Write-HubLog "Exported $($idx) audit log row(s) to CSV: $outFile (path copied)." "SUCCESS"
+            } catch {
+                Write-HubLog "Could not export audit log CSV: $($_.Exception.Message)" "WARN"
+            }
         })
     }
 
@@ -13892,6 +13966,8 @@ $($r.Entitlements | ForEach-Object { "| $($_.ServiceLevelDescription) | $($_.Ent
     $txtCopyMdReport     = $window.FindName('TxtCopyMdReport')
     $badgeExportDiagCsv  = $window.FindName('BadgeExportDiagCsv')
     $txtExportDiagCsv    = $window.FindName('TxtExportDiagCsv')
+    $badgeCopyDiagTsv    = $window.FindName('BadgeCopyDiagTsv')
+    $txtCopyDiagTsv      = $window.FindName('TxtCopyDiagTsv')
 
     if ($txtSerial) {
         $txtSerial.Add_MouseLeftButtonUp({
@@ -14076,6 +14152,34 @@ $($r.Entitlements | ForEach-Object { "| $($_.ServiceLevelDescription) | $($_.Ent
                 Write-HubLog "Diagnostic CSV row saved to $outFile (path copied to clipboard)." "SUCCESS"
             } catch {
                 Write-HubLog "Could not export diagnostic CSV: $($_.Exception.Message)" "WARN"
+            }
+        })
+    }
+
+    if ($badgeCopyDiagTsv) {
+        $badgeCopyDiagTsv.Add_MouseLeftButtonUp({
+            try {
+                $headers = @('TimestampUtc','ComputerName','SerialNumber','HardwareModel','TpmStatus','SecureBoot','NetworkStatus','DeviceState','PowerStatus','PrivilegeContext','GraphStatus') -join "`t"
+                $vals = @(
+                    (Get-Date).ToUniversalTime().ToString("o"),
+                    $env:COMPUTERNAME,
+                    $(if ($txtSerial) { $txtSerial.Text } else { 'Unknown' }),
+                    $(if ($txtModel) { $txtModel.Text } else { 'Unknown' }),
+                    $(if ($txtTpm) { $txtTpm.Text } else { 'Unknown' }),
+                    $(if ($txtSecureBoot) { $txtSecureBoot.Text } else { 'Unknown' }),
+                    $(if ($txtNetwork) { $txtNetwork.Text } else { 'Unknown' }),
+                    $(if ($txtDeviceState) { $txtDeviceState.Text } else { 'Unknown' }),
+                    $(if ($txtPowerStatus) { $txtPowerStatus.Text } else { 'Unknown' }),
+                    $(if ($txtPrivilege) { $txtPrivilege.Text } else { 'Unknown' }),
+                    $(if ($txtGraphStatus) { $txtGraphStatus.Text } else { 'Unknown' })
+                ) -join "`t"
+                [System.Windows.Clipboard]::SetText("$headers`r`n$vals")
+                if ($txtCopyDiagTsv) { $txtCopyDiagTsv.Text = "TSV COPIED" }
+                $badgeCopyDiagTsv.Background = [System.Windows.Media.BrushConverter]::new().ConvertFromString("#DCFCE7")
+                $badgeCopyDiagTsv.BorderBrush = [System.Windows.Media.BrushConverter]::new().ConvertFromString("#86EFAC")
+                Write-HubLog "Copied TSV endpoint readiness row (headers + values) to clipboard for Excel/Sheets." "SUCCESS"
+            } catch {
+                Write-HubLog "Could not copy diagnostic TSV: $($_.Exception.Message)" "WARN"
             }
         })
     }
