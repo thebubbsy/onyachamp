@@ -945,4 +945,139 @@ document.addEventListener('DOMContentLoaded', () => {
       setTimeout(() => { downloadTerminalCsvBtn.innerHTML = orig; }, 1800);
     });
   }
+
+  const exportCatalogUrlsFileBtn = document.getElementById('btn-export-catalog-urls-file');
+  if (exportCatalogUrlsFileBtn) {
+    exportCatalogUrlsFileBtn.addEventListener('click', () => {
+      const visibleCards = Array.from(document.querySelectorAll('.repo-card')).filter(c => c.style.display !== 'none');
+      const lines = [
+        `# OnYaChamp Visible Tools URLs & Quick-Start Commands (${visibleCards.length} tools)`,
+        `# Exported: ${new Date().toISOString()}`,
+        ''
+      ];
+      visibleCards.forEach(card => {
+        const nameEl = card.querySelector('.repo-name');
+        const linkEl = card.querySelector('.repo-name a');
+        const codeEl = card.querySelector('.code-snippet code');
+        const name = nameEl ? nameEl.textContent.trim() : 'Tool';
+        const url = linkEl ? linkEl.getAttribute('href') : '';
+        const cmd = codeEl ? codeEl.textContent.trim() : '';
+        lines.push(`${name}\t${url}\t${cmd}`);
+      });
+      const blob = new Blob([lines.join('\r\n')], { type: 'text/plain;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `onyachamp-tools-urls-${new Date().toISOString().slice(0, 10)}.txt`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      const orig = exportCatalogUrlsFileBtn.innerHTML;
+      exportCatalogUrlsFileBtn.innerHTML = '<i class="fas fa-check" style="color: #10b981;"></i> Saved URLs!';
+      setTimeout(() => { exportCatalogUrlsFileBtn.innerHTML = orig; }, 1800);
+    });
+  }
+
+  const copyCatalogTagsBtn = document.getElementById('btn-copy-catalog-tags');
+  if (copyCatalogTagsBtn) {
+    copyCatalogTagsBtn.addEventListener('click', async () => {
+      const visibleCards = Array.from(document.querySelectorAll('.repo-card')).filter(c => c.style.display !== 'none');
+      const tagCounts = {};
+      visibleCards.forEach(card => {
+        Array.from(card.querySelectorAll('.repo-tag')).forEach(t => {
+          const tag = t.textContent.trim();
+          if (tag) tagCounts[tag] = (tagCounts[tag] || 0) + 1;
+        });
+      });
+      const sorted = Object.entries(tagCounts).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
+      const mdLines = [
+        `# OnYaChamp Visible Catalog Tag Breakdown (${visibleCards.length} tools, ${sorted.length} unique tags)`,
+        '',
+        '| Tag | Tool Count |',
+        '| :--- | ---: |',
+        ...sorted.map(([tag, cnt]) => `| \`${tag}\` | ${cnt} |`)
+      ];
+      try {
+        await navigator.clipboard.writeText(mdLines.join('\n'));
+        const orig = copyCatalogTagsBtn.innerHTML;
+        copyCatalogTagsBtn.innerHTML = `<i class="fas fa-check" style="color: #10b981;"></i> Copied ${sorted.length} Tags!`;
+        setTimeout(() => { copyCatalogTagsBtn.innerHTML = orig; }, 1800);
+      } catch (err) {
+        console.error('Failed to copy catalog tags', err);
+      }
+    });
+  }
+
+  const downloadTerminalTsvBtn = document.getElementById('btn-download-terminal-tsv');
+  if (downloadTerminalTsvBtn) {
+    downloadTerminalTsvBtn.addEventListener('click', () => {
+      const activePane = document.querySelector('.t-pane.active');
+      if (!activePane) return;
+      const activeTabBtn = document.querySelector('.terminal-tab-btn.active');
+      const tabTitle = activeTabBtn ? activeTabBtn.textContent.trim() : activePane.id;
+      const cleanTsv = (v) => String(v || '').replace(/[\t\r\n]+/g, ' ').trim();
+      const rows = ['LineNumber\tTab\tSeverity\tContent'];
+      Array.from(activePane.querySelectorAll('.terminal-line')).forEach((el, idx) => {
+        let sev = 'OUTPUT';
+        if (el.classList.contains('t-success')) sev = 'SUCCESS';
+        else if (el.classList.contains('t-warn')) sev = 'WARN';
+        else if (el.classList.contains('t-info')) sev = 'INFO';
+        else if (el.querySelector('.t-cmd')) sev = 'COMMAND';
+        rows.push([idx + 1, cleanTsv(tabTitle), sev, cleanTsv(el.textContent)].join('\t'));
+      });
+      const blob = new Blob([rows.join('\r\n')], { type: 'text/tab-separated-values;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `onyachamp-terminal-${activePane.id}-${new Date().toISOString().slice(0, 10)}.tsv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      const orig = downloadTerminalTsvBtn.innerHTML;
+      downloadTerminalTsvBtn.innerHTML = '<i class="fas fa-check" style="color: #10b981;"></i> Saved TSV!';
+      setTimeout(() => { downloadTerminalTsvBtn.innerHTML = orig; }, 1800);
+    });
+  }
+
+  const downloadTerminalMdBtn = document.getElementById('btn-download-terminal-md');
+  if (downloadTerminalMdBtn) {
+    downloadTerminalMdBtn.addEventListener('click', () => {
+      const activePane = document.querySelector('.t-pane.active');
+      if (!activePane) return;
+      const activeTabBtn = document.querySelector('.terminal-tab-btn.active');
+      const tabTitle = activeTabBtn ? activeTabBtn.textContent.trim() : activePane.id;
+      const escMd = (v) => String(v || '').replace(/\r?\n/g, ' ').replace(/\|/g, '\\|').trim();
+      const mdLines = [
+        `# OnYaChamp Interactive CLI Session — ${tabTitle}`,
+        '',
+        `- **Exported**: ${new Date().toISOString()}`,
+        `- **Session Pane**: \`${activePane.id}\``,
+        '',
+        '| # | Severity | Output / Command |',
+        '| ---: | :---: | :--- |'
+      ];
+      Array.from(activePane.querySelectorAll('.terminal-line')).forEach((el, idx) => {
+        let sev = 'OUTPUT';
+        if (el.classList.contains('t-success')) sev = 'SUCCESS';
+        else if (el.classList.contains('t-warn')) sev = 'WARN';
+        else if (el.classList.contains('t-info')) sev = 'INFO';
+        else if (el.querySelector('.t-cmd')) sev = 'COMMAND';
+        mdLines.push(`| ${idx + 1} | **${sev}** | \`${escMd(el.textContent)}\` |`);
+      });
+      const blob = new Blob([mdLines.join('\n')], { type: 'text/markdown;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `onyachamp-terminal-${activePane.id}-${new Date().toISOString().slice(0, 10)}.md`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      const orig = downloadTerminalMdBtn.innerHTML;
+      downloadTerminalMdBtn.innerHTML = '<i class="fas fa-check" style="color: #10b981;"></i> Saved MD!';
+      setTimeout(() => { downloadTerminalMdBtn.innerHTML = orig; }, 1800);
+    });
+  }
 });
