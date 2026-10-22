@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-21T04:56:00Z",
+  "generated": "2026-10-22T04:56:05Z",
   "owner": "thebubbsy",
   "groups": [
     {
@@ -70,19 +70,19 @@
           "id": "marksmith/release/marksmith-setup-arm64.exe",
           "name": "Marksmith-Setup-arm64.exe",
           "kind": "release",
-          "version": "v3.35.0",
-          "size": 106916567,
-          "updated": "2026-10-15T05:43:21Z",
-          "url": "https://github.com/thebubbsy/marksmith/releases/download/v3.35.0/Marksmith-Setup-arm64.exe"
+          "version": "v3.40.0",
+          "size": 108053218,
+          "updated": "2026-10-22T01:44:16Z",
+          "url": "https://github.com/thebubbsy/marksmith/releases/download/v3.40.0/Marksmith-Setup-arm64.exe"
         },
         {
           "id": "marksmith/release/marksmith-setup-x64.exe",
           "name": "Marksmith-Setup-x64.exe",
           "kind": "release",
-          "version": "v3.35.0",
-          "size": 110063662,
-          "updated": "2026-10-15T05:42:51Z",
-          "url": "https://github.com/thebubbsy/marksmith/releases/download/v3.35.0/Marksmith-Setup-x64.exe"
+          "version": "v3.40.0",
+          "size": 111211643,
+          "updated": "2026-10-22T01:43:17Z",
+          "url": "https://github.com/thebubbsy/marksmith/releases/download/v3.40.0/Marksmith-Setup-x64.exe"
         }
       ]
     },
