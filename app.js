@@ -1293,4 +1293,116 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
   }
+
+  const copyCatalogHtmlBtn = document.getElementById('btn-copy-catalog-html');
+  if (copyCatalogHtmlBtn) {
+    copyCatalogHtmlBtn.addEventListener('click', async () => {
+      const visibleCards = Array.from(document.querySelectorAll('.repo-card')).filter(c => c.style.display !== 'none');
+      const escHtml = s => String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+      const rows = [];
+      visibleCards.forEach(card => {
+        const nameEl = card.querySelector('.repo-name');
+        const linkEl = card.querySelector('.repo-name a');
+        const descEl = card.querySelector('.repo-desc');
+        const codeEl = card.querySelector('.code-snippet code');
+        const tags = Array.from(card.querySelectorAll('.repo-tag')).map(t => escHtml(t.textContent.trim())).filter(Boolean);
+        const name = escHtml(nameEl ? nameEl.textContent.trim() : 'Tool');
+        const url = linkEl ? linkEl.getAttribute('href') : '';
+        const desc = escHtml(descEl ? descEl.textContent.trim() : '');
+        const cmd = escHtml(codeEl ? codeEl.textContent.trim() : '');
+        const tagBadges = tags.map(t => `<span style="background: rgba(56,189,248,0.12); color: #38bdf8; border: 1px solid rgba(56,189,248,0.25); border-radius: 4px; padding: 2px 6px; font-size: 0.72rem; margin-right: 4px; display: inline-block;">${t}</span>`).join(' ');
+        rows.push(`
+          <tr>
+            <td style="font-weight: 600; color: #f8fafc; padding: 10px 12px; border-bottom: 1px solid rgba(255,255,255,0.06);"><a href="${escHtml(url)}" target="_blank" style="color: #38bdf8; text-decoration: none;">${name}</a></td>
+            <td style="padding: 10px 12px; border-bottom: 1px solid rgba(255,255,255,0.06);">${tagBadges}</td>
+            <td style="font-size: 0.85rem; color: #cbd5e1; padding: 10px 12px; border-bottom: 1px solid rgba(255,255,255,0.06);">${desc}</td>
+            <td style="padding: 10px 12px; border-bottom: 1px solid rgba(255,255,255,0.06);"><code style="background: #0f172a; padding: 3px 6px; border-radius: 4px; font-size: 0.75rem; color: #4ade80;">${cmd}</code></td>
+          </tr>
+        `);
+      });
+
+      const htmlSnippet = `<div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0b0f19; color: #e2e8f0; padding: 1.5rem; border-radius: 8px; border: 1px solid #1e293b;">
+  <div style="color: #f8fafc; font-weight: 700; font-size: 1.1rem; margin-bottom: 4px;">OnYaChamp Tools Catalog Snapshot</div>
+  <div style="color: #94a3b8; font-size: 0.8rem; margin-bottom: 12px; border-bottom: 1px solid #1e293b; padding-bottom: 6px;">Exported: ${new Date().toISOString()} &bull; <strong>${visibleCards.length}</strong> visible tools</div>
+  <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem;">
+    <thead>
+      <tr style="background: #1e293b; color: #94a3b8; text-align: left; text-transform: uppercase; font-size: 0.75rem;">
+        <th style="padding: 8px 12px; border-bottom: 1px solid #334155;">Tool</th>
+        <th style="padding: 8px 12px; border-bottom: 1px solid #334155;">Tags</th>
+        <th style="padding: 8px 12px; border-bottom: 1px solid #334155;">Description</th>
+        <th style="padding: 8px 12px; border-bottom: 1px solid #334155;">Quick Command</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${rows.join('\n')}
+    </tbody>
+  </table>
+</div>`;
+
+      try {
+        await navigator.clipboard.writeText(htmlSnippet);
+        const orig = copyCatalogHtmlBtn.innerHTML;
+        copyCatalogHtmlBtn.innerHTML = '<i class="fas fa-check" style="color: #10b981;"></i> Copied HTML!';
+        setTimeout(() => { copyCatalogHtmlBtn.innerHTML = orig; }, 1800);
+      } catch (err) {
+        console.error('Failed to copy catalog HTML', err);
+      }
+    });
+  }
+
+  const copyCatalogTagsHtmlBtn = document.getElementById('btn-copy-catalog-tags-html');
+  if (copyCatalogTagsHtmlBtn) {
+    copyCatalogTagsHtmlBtn.addEventListener('click', async () => {
+      const visibleCards = Array.from(document.querySelectorAll('.repo-card')).filter(c => c.style.display !== 'none');
+      const escHtml = s => String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+      const tagCounts = {};
+      let totalTags = 0;
+      visibleCards.forEach(card => {
+        Array.from(card.querySelectorAll('.repo-tag')).forEach(t => {
+          const tag = t.textContent.trim();
+          if (tag) {
+            tagCounts[tag] = (tagCounts[tag] || 0) + 1;
+            totalTags++;
+          }
+        });
+      });
+      const sorted = Object.entries(tagCounts).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
+      const rows = sorted.map(([tag, cnt]) => {
+        const pct = ((cnt / Math.max(1, visibleCards.length)) * 100).toFixed(1) + '%';
+        return `
+          <tr>
+            <td style="padding: 8px 12px; border-bottom: 1px solid rgba(255,255,255,0.06); font-weight: 600;"><span style="background: rgba(56,189,248,0.12); color: #38bdf8; border: 1px solid rgba(56,189,248,0.25); border-radius: 4px; padding: 2px 6px; font-size: 0.75rem;">${escHtml(tag)}</span></td>
+            <td style="padding: 8px 12px; border-bottom: 1px solid rgba(255,255,255,0.06); text-align: right; font-weight: 600; color: #f8fafc;">${cnt}</td>
+            <td style="padding: 8px 12px; border-bottom: 1px solid rgba(255,255,255,0.06); text-align: right; color: #34d399;">${pct}</td>
+          </tr>
+        `;
+      });
+
+      const htmlSnippet = `<div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0b0f19; color: #e2e8f0; padding: 1.5rem; border-radius: 8px; border: 1px solid #1e293b; max-width: 600px;">
+  <div style="color: #f8fafc; font-weight: 700; font-size: 1.1rem; margin-bottom: 4px;">OnYaChamp Tag &amp; Category Frequency Breakdown</div>
+  <div style="color: #94a3b8; font-size: 0.8rem; margin-bottom: 12px; border-bottom: 1px solid #1e293b; padding-bottom: 6px;">Exported: ${new Date().toISOString()} &bull; <strong>${visibleCards.length}</strong> visible tools &bull; <strong>${sorted.length}</strong> unique tags</div>
+  <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem;">
+    <thead>
+      <tr style="background: #1e293b; color: #94a3b8; text-align: left; text-transform: uppercase; font-size: 0.75rem;">
+        <th style="padding: 8px 12px; border-bottom: 1px solid #334155;">Tag / Category</th>
+        <th style="padding: 8px 12px; border-bottom: 1px solid #334155; text-align: right;">Tools</th>
+        <th style="padding: 8px 12px; border-bottom: 1px solid #334155; text-align: right;">Share</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${rows.join('\n')}
+    </tbody>
+  </table>
+</div>`;
+
+      try {
+        await navigator.clipboard.writeText(htmlSnippet);
+        const orig = copyCatalogTagsHtmlBtn.innerHTML;
+        copyCatalogTagsHtmlBtn.innerHTML = '<i class="fas fa-check" style="color: #10b981;"></i> Copied Tags HTML!';
+        setTimeout(() => { copyCatalogTagsHtmlBtn.innerHTML = orig; }, 1800);
+      } catch (err) {
+        console.error('Failed to copy catalog tags HTML', err);
+      }
+    });
+  }
 });
