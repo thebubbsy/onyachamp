@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-26T13:11:01Z",
+  "generated": "2026-10-26T22:43:41Z",
   "owner": "thebubbsy",
   "groups": [
     {
@@ -12,8 +12,8 @@
           "name": "autopilot.ps1",
           "kind": "file",
           "version": "main",
-          "size": 1069619,
-          "updated": "2026-10-26T08:20:36Z",
+          "size": 1076930,
+          "updated": "2026-10-26T20:22:24Z",
           "url": "https://raw.githubusercontent.com/thebubbsy/AutopilotCommandHub/main/autopilot.ps1"
         },
         {
@@ -70,19 +70,19 @@
           "id": "marksmith/release/marksmith-setup-arm64.exe",
           "name": "Marksmith-Setup-arm64.exe",
           "kind": "release",
-          "version": "v3.92.0",
-          "size": 108096151,
-          "updated": "2026-10-26T12:48:23Z",
-          "url": "https://github.com/thebubbsy/marksmith/releases/download/v3.92.0/Marksmith-Setup-arm64.exe"
+          "version": "v3.97.0",
+          "size": 108110910,
+          "updated": "2026-10-26T22:31:04Z",
+          "url": "https://github.com/thebubbsy/marksmith/releases/download/v3.97.0/Marksmith-Setup-arm64.exe"
         },
         {
           "id": "marksmith/release/marksmith-setup-x64.exe",
           "name": "Marksmith-Setup-x64.exe",
           "kind": "release",
-          "version": "v3.92.0",
-          "size": 111250095,
-          "updated": "2026-10-26T12:47:19Z",
-          "url": "https://github.com/thebubbsy/marksmith/releases/download/v3.92.0/Marksmith-Setup-x64.exe"
+          "version": "v3.97.0",
+          "size": 111243914,
+          "updated": "2026-10-26T22:31:27Z",
+          "url": "https://github.com/thebubbsy/marksmith/releases/download/v3.97.0/Marksmith-Setup-x64.exe"
         }
       ]
     },
