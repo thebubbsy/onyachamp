@@ -1080,4 +1080,217 @@ document.addEventListener('DOMContentLoaded', () => {
       setTimeout(() => { downloadTerminalMdBtn.innerHTML = orig; }, 1800);
     });
   }
+
+  const exportCatalogTagsFileBtn = document.getElementById('btn-export-catalog-tags-file');
+  if (exportCatalogTagsFileBtn) {
+    exportCatalogTagsFileBtn.addEventListener('click', () => {
+      const visibleCards = Array.from(document.querySelectorAll('.repo-card')).filter(c => c.style.display !== 'none');
+      const tagCounts = {};
+      let totalTags = 0;
+      visibleCards.forEach(card => {
+        Array.from(card.querySelectorAll('.repo-tag')).forEach(t => {
+          const tag = t.textContent.trim();
+          if (tag) {
+            tagCounts[tag] = (tagCounts[tag] || 0) + 1;
+            totalTags++;
+          }
+        });
+      });
+      const sorted = Object.entries(tagCounts).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
+      const lines = [
+        `# OnYaChamp Tag & Category Frequency Breakdown`,
+        `# Exported: ${new Date().toISOString()}`,
+        `# Total Visible Tools: ${visibleCards.length}`,
+        `# Total Tag References: ${totalTags}`,
+        `# Unique Tags: ${sorted.length}`,
+        'Tag,ToolCount,SharePercentage'
+      ];
+      sorted.forEach(([tag, cnt]) => {
+        const pct = ((cnt / Math.max(1, visibleCards.length)) * 100).toFixed(1) + '%';
+        lines.push(`"${tag.replace(/"/g, '""')}",${cnt},"${pct}"`);
+      });
+      const blob = new Blob([lines.join('\r\n')], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `onyachamp-tools-tags-${new Date().toISOString().slice(0, 10)}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      const orig = exportCatalogTagsFileBtn.innerHTML;
+      exportCatalogTagsFileBtn.innerHTML = '<i class="fas fa-check" style="color: #10b981;"></i> Saved Tags CSV!';
+      setTimeout(() => { exportCatalogTagsFileBtn.innerHTML = orig; }, 1800);
+    });
+  }
+
+  const exportCatalogHtmlFileBtn = document.getElementById('btn-export-catalog-html-file');
+  if (exportCatalogHtmlFileBtn) {
+    exportCatalogHtmlFileBtn.addEventListener('click', () => {
+      const visibleCards = Array.from(document.querySelectorAll('.repo-card')).filter(c => c.style.display !== 'none');
+      const escHtml = s => String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+      const rows = [];
+      visibleCards.forEach(card => {
+        const nameEl = card.querySelector('.repo-name');
+        const linkEl = card.querySelector('.repo-name a');
+        const descEl = card.querySelector('.repo-desc');
+        const codeEl = card.querySelector('.code-snippet code');
+        const tags = Array.from(card.querySelectorAll('.repo-tag')).map(t => escHtml(t.textContent.trim())).filter(Boolean);
+        const name = escHtml(nameEl ? nameEl.textContent.trim() : 'Tool');
+        const url = linkEl ? linkEl.getAttribute('href') : '';
+        const desc = escHtml(descEl ? descEl.textContent.trim() : '');
+        const cmd = escHtml(codeEl ? codeEl.textContent.trim() : '');
+        const tagBadges = tags.map(t => `<span class="badge" style="background: rgba(56,189,248,0.12); color: #38bdf8; border: 1px solid rgba(56,189,248,0.25); border-radius: 4px; padding: 2px 6px; font-size: 0.72rem; margin-right: 4px; display: inline-block;">${t}</span>`).join(' ');
+        rows.push(`
+          <tr>
+            <td style="font-weight: 600; color: #f8fafc;"><a href="${escHtml(url)}" target="_blank" style="color: #38bdf8; text-decoration: none;">${name}</a></td>
+            <td>${tagBadges}</td>
+            <td style="font-size: 0.85rem; color: #cbd5e1;">${desc}</td>
+            <td><code style="background: #0f172a; padding: 3px 6px; border-radius: 4px; font-size: 0.75rem; color: #4ade80;">${cmd}</code></td>
+          </tr>
+        `);
+      });
+
+      const htmlContent = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>OnYaChamp Tools Catalog Snapshot</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background: #0b0f19; color: #e2e8f0; margin: 0; padding: 2rem; }
+    .container { max-width: 1200px; margin: 0 auto; }
+    h1 { color: #f8fafc; margin-bottom: 0.25rem; }
+    .meta { color: #94a3b8; font-size: 0.9rem; margin-bottom: 1.5rem; }
+    table { width: 100%; border-collapse: collapse; margin-top: 1rem; background: #131b2e; border: 1px solid #1e293b; border-radius: 8px; overflow: hidden; }
+    th { background: #1e293b; color: #94a3b8; text-align: left; padding: 10px 14px; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid #334155; }
+    td { padding: 12px 14px; border-bottom: 1px solid rgba(255,255,255,0.06); vertical-align: top; }
+    tr:hover td { background: rgba(255,255,255,0.02); }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>OnYaChamp Tools Catalog Snapshot</h1>
+    <div class="meta">Exported ${new Date().toISOString()} &bull; <strong>${visibleCards.length}</strong> tools shown</div>
+    <table>
+      <thead>
+        <tr>
+          <th>Tool Name</th>
+          <th>Tags / Category</th>
+          <th>Description</th>
+          <th>Quick Install / Run</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${rows.join('\n')}
+      </tbody>
+    </table>
+  </div>
+</body>
+</html>`;
+
+      const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `onyachamp-tools-catalog-${new Date().toISOString().slice(0, 10)}.html`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      const orig = exportCatalogHtmlFileBtn.innerHTML;
+      exportCatalogHtmlFileBtn.innerHTML = '<i class="fas fa-check" style="color: #10b981;"></i> Saved HTML!';
+      setTimeout(() => { exportCatalogHtmlFileBtn.innerHTML = orig; }, 1800);
+    });
+  }
+
+  const downloadTerminalHtmlBtn = document.getElementById('btn-download-terminal-html');
+  if (downloadTerminalHtmlBtn) {
+    downloadTerminalHtmlBtn.addEventListener('click', () => {
+      const activePane = document.querySelector('.t-pane.active');
+      if (!activePane) return;
+      const activeTabBtn = document.querySelector('.terminal-tab-btn.active');
+      const tabTitle = activeTabBtn ? activeTabBtn.textContent.trim() : activePane.id;
+      const escHtml = s => String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      const lines = [];
+      Array.from(activePane.querySelectorAll('.terminal-line')).forEach(el => {
+        let color = '#e2e8f0';
+        if (el.classList.contains('t-success')) color = '#4ade80';
+        else if (el.classList.contains('t-warn')) color = '#fbbf24';
+        else if (el.classList.contains('t-info')) color = '#38bdf8';
+        else if (el.querySelector('.t-cmd')) color = '#a78bfa';
+        lines.push(`<div style="color: ${color}; line-height: 1.6; font-family: Consolas, 'Cascadia Code', monospace; font-size: 13px;">${escHtml(el.textContent)}</div>`);
+      });
+
+      const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>CLI Tour Transcript — ${escHtml(tabTitle)}</title>
+  <style>
+    body { font-family: Consolas, 'Cascadia Code', monospace; background: #0c1017; color: #e2e8f0; padding: 2rem; margin: 0; }
+    .window { max-width: 1000px; margin: 0 auto; background: #161b22; border: 1px solid #30363d; border-radius: 8px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+    .header { background: #21262d; padding: 8px 16px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #30363d; }
+    .title { color: #f0f6fc; font-weight: 600; font-size: 13px; }
+    .body { padding: 1rem 1.5rem; overflow-x: auto; }
+  </style>
+</head>
+<body>
+  <div class="window">
+    <div class="header">
+      <span class="title">PowerShell 7.4.5 &bull; ${escHtml(tabTitle)}</span>
+      <span style="font-size: 11px; color: #8b949e;">Exported ${new Date().toISOString()}</span>
+    </div>
+    <div class="body">
+      ${lines.join('\n')}
+    </div>
+  </div>
+</body>
+</html>`;
+
+      const blob = new Blob([html], { type: 'text/html;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `onyachamp-terminal-${activePane.id}-${new Date().toISOString().slice(0, 10)}.html`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      const orig = downloadTerminalHtmlBtn.innerHTML;
+      downloadTerminalHtmlBtn.innerHTML = '<i class="fas fa-check" style="color: #10b981;"></i> Saved HTML!';
+      setTimeout(() => { downloadTerminalHtmlBtn.innerHTML = orig; }, 1800);
+    });
+  }
+
+  const copyTerminalHtmlBtn = document.getElementById('btn-copy-terminal-html');
+  if (copyTerminalHtmlBtn) {
+    copyTerminalHtmlBtn.addEventListener('click', async () => {
+      const activePane = document.querySelector('.t-pane.active');
+      if (!activePane) return;
+      const activeTabBtn = document.querySelector('.terminal-tab-btn.active');
+      const tabTitle = activeTabBtn ? activeTabBtn.textContent.trim() : activePane.id;
+      const escHtml = s => String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      const lines = [];
+      Array.from(activePane.querySelectorAll('.terminal-line')).forEach(el => {
+        let color = '#e2e8f0';
+        if (el.classList.contains('t-success')) color = '#4ade80';
+        else if (el.classList.contains('t-warn')) color = '#fbbf24';
+        else if (el.classList.contains('t-info')) color = '#38bdf8';
+        else if (el.querySelector('.t-cmd')) color = '#a78bfa';
+        lines.push(`<div style="color: ${color}; line-height: 1.5;">${escHtml(el.textContent)}</div>`);
+      });
+      const htmlSnippet = `<div style="background: #0f172a; color: #e2e8f0; font-family: Consolas, 'Cascadia Code', monospace; font-size: 13px; padding: 14px; border-radius: 6px; border: 1px solid #1e293b;">
+  <div style="color: #94a3b8; font-size: 11px; margin-bottom: 8px; border-bottom: 1px solid #334155; padding-bottom: 4px;"><strong>PowerShell 7.4.5</strong> &bull; ${escHtml(tabTitle)} &bull; ${new Date().toISOString()}</div>
+  ${lines.join('\n')}
+</div>`;
+      try {
+        await navigator.clipboard.writeText(htmlSnippet);
+        const orig = copyTerminalHtmlBtn.innerHTML;
+        copyTerminalHtmlBtn.innerHTML = '<i class="fas fa-check" style="color: #10b981;"></i> Copied HTML!';
+        setTimeout(() => { copyTerminalHtmlBtn.innerHTML = orig; }, 1800);
+      } catch (err) {
+        console.error('Failed to copy terminal HTML', err);
+      }
+    });
+  }
 });
