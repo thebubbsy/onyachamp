@@ -1405,4 +1405,124 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
   }
+
+  const generateCatalogXml = () => {
+    const visibleCards = Array.from(document.querySelectorAll('.repo-card')).filter(c => c.style.display !== 'none');
+    const escXml = s => String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&apos;');
+    const toolsXml = visibleCards.map(card => {
+      const nameEl = card.querySelector('.repo-name');
+      const linkEl = card.querySelector('.repo-name a');
+      const descEl = card.querySelector('.repo-desc');
+      const codeEl = card.querySelector('.code-snippet code');
+      const category = card.getAttribute('data-category') || '';
+      const badgeEl = card.querySelector('.badge');
+      const badge = badgeEl ? badgeEl.textContent.trim() : '';
+      const tags = Array.from(card.querySelectorAll('.repo-tag')).map(t => t.textContent.trim()).filter(Boolean);
+      const name = nameEl ? nameEl.textContent.trim() : 'Tool';
+      const url = linkEl ? linkEl.getAttribute('href') : '';
+      const desc = descEl ? descEl.textContent.trim() : '';
+      const cmd = codeEl ? codeEl.textContent.trim() : '';
+      const tagsXml = tags.map(t => `      <tag>${escXml(t)}</tag>`).join('\n');
+      return `    <tool name="${escXml(name)}" url="${escXml(url)}" category="${escXml(category)}">
+      <badge>${escXml(badge)}</badge>
+      <description>${escXml(desc)}</description>
+      <command>${escXml(cmd)}</command>
+      <tags>
+${tagsXml}
+      </tags>
+    </tool>`;
+    }).join('\n');
+
+    return `<?xml version="1.0" encoding="UTF-8"?>\n<catalog generated="${new Date().toISOString()}" totalTools="${visibleCards.length}">\n${toolsXml}\n</catalog>`;
+  };
+
+  const exportCatalogXmlBtn = document.getElementById('btn-export-catalog-xml-file');
+  if (exportCatalogXmlBtn) {
+    exportCatalogXmlBtn.addEventListener('click', () => {
+      const xml = generateCatalogXml();
+      const blob = new Blob([xml], { type: 'application/xml;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `onyachamp-tools-catalog-${new Date().toISOString().slice(0, 10)}.xml`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      const orig = exportCatalogXmlBtn.innerHTML;
+      exportCatalogXmlBtn.innerHTML = '<i class="fas fa-check" style="color: #10b981;"></i> Saved XML!';
+      setTimeout(() => { exportCatalogXmlBtn.innerHTML = orig; }, 1800);
+    });
+  }
+
+  const copyCatalogXmlBtn = document.getElementById('btn-copy-catalog-xml');
+  if (copyCatalogXmlBtn) {
+    copyCatalogXmlBtn.addEventListener('click', async () => {
+      const xml = generateCatalogXml();
+      try {
+        await navigator.clipboard.writeText(xml);
+        const orig = copyCatalogXmlBtn.innerHTML;
+        copyCatalogXmlBtn.innerHTML = '<i class="fas fa-check" style="color: #10b981;"></i> Copied XML!';
+        setTimeout(() => { copyCatalogXmlBtn.innerHTML = orig; }, 1800);
+      } catch (err) {
+        console.error('Failed to copy catalog XML', err);
+      }
+    });
+  }
+
+  const generateTerminalXml = () => {
+    const activePane = document.querySelector('.t-pane.active');
+    if (!activePane) return '';
+    const activeTabBtn = document.querySelector('.terminal-tab-btn.active');
+    const tabTitle = activeTabBtn ? activeTabBtn.textContent.trim() : activePane.id;
+    const escXml = s => String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&apos;');
+    const lines = [];
+    Array.from(activePane.querySelectorAll('.terminal-line')).forEach(el => {
+      let type = 'text';
+      if (el.classList.contains('t-success')) type = 'success';
+      else if (el.classList.contains('t-warn')) type = 'warning';
+      else if (el.classList.contains('t-info')) type = 'info';
+      else if (el.classList.contains('t-accent')) type = 'accent';
+      else if (el.querySelector('.t-cmd')) type = 'command';
+      lines.push(`    <line type="${type}"><![CDATA[${el.textContent}]]></line>`);
+    });
+    return `<?xml version="1.0" encoding="UTF-8"?>\n<terminalSession tab="${escXml(tabTitle)}" exported="${new Date().toISOString()}">\n${lines.join('\n')}\n</terminalSession>`;
+  };
+
+  const downloadTerminalXmlBtn = document.getElementById('btn-download-terminal-xml');
+  if (downloadTerminalXmlBtn) {
+    downloadTerminalXmlBtn.addEventListener('click', () => {
+      const activePane = document.querySelector('.t-pane.active');
+      if (!activePane) return;
+      const xml = generateTerminalXml();
+      const blob = new Blob([xml], { type: 'application/xml;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `onyachamp-terminal-${activePane.id}-${new Date().toISOString().slice(0, 10)}.xml`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      const orig = downloadTerminalXmlBtn.innerHTML;
+      downloadTerminalXmlBtn.innerHTML = '<i class="fas fa-check" style="color: #10b981;"></i> Saved XML!';
+      setTimeout(() => { downloadTerminalXmlBtn.innerHTML = orig; }, 1800);
+    });
+  }
+
+  const copyTerminalXmlBtn = document.getElementById('btn-copy-terminal-xml');
+  if (copyTerminalXmlBtn) {
+    copyTerminalXmlBtn.addEventListener('click', async () => {
+      const xml = generateTerminalXml();
+      if (!xml) return;
+      try {
+        await navigator.clipboard.writeText(xml);
+        const orig = copyTerminalXmlBtn.innerHTML;
+        copyTerminalXmlBtn.innerHTML = '<i class="fas fa-check" style="color: #10b981;"></i> Copied XML!';
+        setTimeout(() => { copyTerminalXmlBtn.innerHTML = orig; }, 1800);
+      } catch (err) {
+        console.error('Failed to copy terminal XML', err);
+      }
+    });
+  }
 });
