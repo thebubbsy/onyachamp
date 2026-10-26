@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-25T20:55:26Z",
+  "generated": "2026-10-26T04:53:58Z",
   "owner": "thebubbsy",
   "groups": [
     {
@@ -12,8 +12,8 @@
           "name": "autopilot.ps1",
           "kind": "file",
           "version": "main",
-          "size": 1054004,
-          "updated": "2026-10-21T00:09:20Z",
+          "size": 1064523,
+          "updated": "2026-10-26T02:23:30Z",
           "url": "https://raw.githubusercontent.com/thebubbsy/AutopilotCommandHub/main/autopilot.ps1"
         },
         {
@@ -70,19 +70,19 @@
           "id": "marksmith/release/marksmith-setup-arm64.exe",
           "name": "Marksmith-Setup-arm64.exe",
           "kind": "release",
-          "version": "v3.79.0",
-          "size": 108086176,
-          "updated": "2026-10-25T20:48:07Z",
-          "url": "https://github.com/thebubbsy/marksmith/releases/download/v3.79.0/Marksmith-Setup-arm64.exe"
+          "version": "v3.84.0",
+          "size": 108097893,
+          "updated": "2026-10-26T04:44:40Z",
+          "url": "https://github.com/thebubbsy/marksmith/releases/download/v3.84.0/Marksmith-Setup-arm64.exe"
         },
         {
           "id": "marksmith/release/marksmith-setup-x64.exe",
           "name": "Marksmith-Setup-x64.exe",
           "kind": "release",
-          "version": "v3.79.0",
-          "size": 111251133,
-          "updated": "2026-10-25T20:48:35Z",
-          "url": "https://github.com/thebubbsy/marksmith/releases/download/v3.79.0/Marksmith-Setup-x64.exe"
+          "version": "v3.84.0",
+          "size": 111235879,
+          "updated": "2026-10-26T04:43:35Z",
+          "url": "https://github.com/thebubbsy/marksmith/releases/download/v3.84.0/Marksmith-Setup-x64.exe"
         }
       ]
     },
@@ -96,8 +96,8 @@
           "name": "cascade.ps1",
           "kind": "file",
           "version": "main",
-          "size": 181744,
-          "updated": "2026-10-21T02:10:24Z",
+          "size": 188826,
+          "updated": "2026-10-26T04:15:58Z",
           "url": "https://raw.githubusercontent.com/thebubbsy/UpdateCascade/main/cascade.ps1"
         }
       ]
