@@ -1525,4 +1525,124 @@ ${tagsXml}
       }
     });
   }
+
+  const generateCatalogYaml = () => {
+    const visibleCards = Array.from(document.querySelectorAll('.repo-card')).filter(c => c.style.display !== 'none');
+    const yamlEscape = s => JSON.stringify(String(s || ''));
+    const toolsYaml = visibleCards.map(card => {
+      const nameEl = card.querySelector('.repo-name');
+      const linkEl = card.querySelector('.repo-name a');
+      const descEl = card.querySelector('.repo-desc');
+      const codeEl = card.querySelector('.code-snippet code');
+      const category = card.getAttribute('data-category') || '';
+      const badgeEl = card.querySelector('.badge');
+      const badge = badgeEl ? badgeEl.textContent.trim() : '';
+      const tags = Array.from(card.querySelectorAll('.repo-tag')).map(t => t.textContent.trim()).filter(Boolean);
+      const name = nameEl ? nameEl.textContent.trim() : 'Tool';
+      const url = linkEl ? linkEl.getAttribute('href') : '';
+      const desc = descEl ? descEl.textContent.trim() : '';
+      const cmd = codeEl ? codeEl.textContent.trim() : '';
+      const tagsYaml = tags.length > 0 ? tags.map(t => `      - ${yamlEscape(t)}`).join('\n') : '      []';
+      return `  - name: ${yamlEscape(name)}
+    url: ${yamlEscape(url)}
+    category: ${yamlEscape(category)}
+    badge: ${yamlEscape(badge)}
+    description: ${yamlEscape(desc)}
+    command: ${yamlEscape(cmd)}
+    tags:
+${tagsYaml}`;
+    }).join('\n');
+
+    return `# OnYaChamp Tools Catalog\n# Generated: ${new Date().toISOString()}\ntotalTools: ${visibleCards.length}\ntools:\n${toolsYaml}\n`;
+  };
+
+  const exportCatalogYamlBtn = document.getElementById('btn-export-catalog-yaml-file');
+  if (exportCatalogYamlBtn) {
+    exportCatalogYamlBtn.addEventListener('click', () => {
+      const yaml = generateCatalogYaml();
+      const blob = new Blob([yaml], { type: 'text/yaml;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `onyachamp-tools-catalog-${new Date().toISOString().slice(0, 10)}.yaml`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      const orig = exportCatalogYamlBtn.innerHTML;
+      exportCatalogYamlBtn.innerHTML = '<i class="fas fa-check" style="color: #10b981;"></i> Saved YAML!';
+      setTimeout(() => { exportCatalogYamlBtn.innerHTML = orig; }, 1800);
+    });
+  }
+
+  const copyCatalogYamlBtn = document.getElementById('btn-copy-catalog-yaml');
+  if (copyCatalogYamlBtn) {
+    copyCatalogYamlBtn.addEventListener('click', async () => {
+      const yaml = generateCatalogYaml();
+      try {
+        await navigator.clipboard.writeText(yaml);
+        const orig = copyCatalogYamlBtn.innerHTML;
+        copyCatalogYamlBtn.innerHTML = '<i class="fas fa-check" style="color: #10b981;"></i> Copied YAML!';
+        setTimeout(() => { copyCatalogYamlBtn.innerHTML = orig; }, 1800);
+      } catch (err) {
+        console.error('Failed to copy catalog YAML', err);
+      }
+    });
+  }
+
+  const generateTerminalYaml = () => {
+    const activePane = document.querySelector('.t-pane.active');
+    if (!activePane) return '';
+    const activeTabBtn = document.querySelector('.terminal-tab-btn.active');
+    const tabTitle = activeTabBtn ? activeTabBtn.textContent.trim() : activePane.id;
+    const yamlEscape = s => JSON.stringify(String(s || ''));
+    const lines = [];
+    Array.from(activePane.querySelectorAll('.terminal-line')).forEach(el => {
+      let type = 'text';
+      if (el.classList.contains('t-success')) type = 'success';
+      else if (el.classList.contains('t-warn')) type = 'warning';
+      else if (el.classList.contains('t-info')) type = 'info';
+      else if (el.classList.contains('t-accent')) type = 'accent';
+      else if (el.querySelector('.t-cmd')) type = 'command';
+      lines.push(`    - type: ${yamlEscape(type)}\n      text: ${yamlEscape(el.textContent.trim())}`);
+    });
+    return `# OnYaChamp Terminal Session\n# Tab: ${tabTitle}\n# Exported: ${new Date().toISOString()}\nsession:\n  tab: ${yamlEscape(tabTitle)}\n  runtime: "PowerShell 7.4.5 LTS"\n  totalLines: ${lines.length}\n  lines:\n${lines.join('\n')}\n`;
+  };
+
+  const downloadTerminalYamlBtn = document.getElementById('btn-download-terminal-yaml');
+  if (downloadTerminalYamlBtn) {
+    downloadTerminalYamlBtn.addEventListener('click', () => {
+      const activePane = document.querySelector('.t-pane.active');
+      if (!activePane) return;
+      const yaml = generateTerminalYaml();
+      const blob = new Blob([yaml], { type: 'text/yaml;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `onyachamp-terminal-${activePane.id}-${new Date().toISOString().slice(0, 10)}.yaml`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      const orig = downloadTerminalYamlBtn.innerHTML;
+      downloadTerminalYamlBtn.innerHTML = '<i class="fas fa-check" style="color: #10b981;"></i> Saved YAML!';
+      setTimeout(() => { downloadTerminalYamlBtn.innerHTML = orig; }, 1800);
+    });
+  }
+
+  const copyTerminalYamlBtn = document.getElementById('btn-copy-terminal-yaml');
+  if (copyTerminalYamlBtn) {
+    copyTerminalYamlBtn.addEventListener('click', async () => {
+      const yaml = generateTerminalYaml();
+      if (!yaml) return;
+      try {
+        await navigator.clipboard.writeText(yaml);
+        const orig = copyTerminalYamlBtn.innerHTML;
+        copyTerminalYamlBtn.innerHTML = '<i class="fas fa-check" style="color: #10b981;"></i> Copied YAML!';
+        setTimeout(() => { copyTerminalYamlBtn.innerHTML = orig; }, 1800);
+      } catch (err) {
+        console.error('Failed to copy terminal YAML', err);
+      }
+    });
+  }
 });
