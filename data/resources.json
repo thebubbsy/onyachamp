@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-26T22:43:41Z",
+  "generated": "2026-10-27T12:19:29Z",
   "owner": "thebubbsy",
   "groups": [
     {
@@ -12,8 +12,8 @@
           "name": "autopilot.ps1",
           "kind": "file",
           "version": "main",
-          "size": 1076930,
-          "updated": "2026-10-26T20:22:24Z",
+          "size": 1084479,
+          "updated": "2026-10-27T12:16:37Z",
           "url": "https://raw.githubusercontent.com/thebubbsy/AutopilotCommandHub/main/autopilot.ps1"
         },
         {
