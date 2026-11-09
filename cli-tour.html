@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CLI Tour | OnyaChamp</title>
-    <meta name="description" content="Interactive terminal tour of WingetIntune, AutopilotFast, FindObject and the MarkSmith CLI.">
-    <meta name="keywords" content="Matthew Bubb, OnyaChamp, MarkSmith, WingetIntune, AutopilotFast, TeamsChatExporter, WingetBatch, FindObject, broadlink-garage-controller, BroadLink RM4, IoT, PowerShell, C#, OpenXML, Systems Engineer">
+    <meta name="description" content="Interactive terminal tour of WingetIntune, AutopilotFast, FindObject, MarkSmith CLI, UpdateCascade, and AutopilotCommandHub.">
+    <meta name="keywords" content="Matthew Bubb, OnyaChamp, MarkSmith, WingetIntune, AutopilotFast, AutopilotCommandHub, UpdateCascade, TeamsChatExporter, WingetBatch, FindObject, broadlink-garage-controller, PowerShell, C#, OpenXML">
     <meta name="author" content="Matthew Bubb">
 
     <!-- Open Graph / Social Meta -->
@@ -48,6 +48,7 @@
                 <ul class="nav-links">
                     <li><a href="index.html">Home</a></li>
                     <li><a href="marksmith.html">MarkSmith</a></li>
+                    <li><a href="fuelahead.html">FuelAhead</a></li>
                     <li><a href="teams-chat-exporter.html">Teams Exporter</a></li>
                     <li><a href="garage-controller.html">Garage Controller</a></li>
                     <li><a href="cli-tour.html" class="active" aria-current="page">CLI Tour</a></li>
@@ -78,9 +79,9 @@
     <section id="terminal-tour" class="section-flagship">
         <div class="container">
             <div class="section-header">
-                <span class="badge badge-cyan"><i class="fas fa-terminal"></i> INTERACTIVE TERMINAL TOUR</span>
+                <span class="badge badge-cyan"><i class="fas fa-terminal"></i> INTERACTIVE TERMINAL TOUR (6 PIPELINES)</span>
                 <h2>Inspect the Real Pipeline Execution</h2>
-                <p>Toggle between production command runs across Microsoft Intune packaging, Windows Autopilot OOBE bootstrapping, and SIMD pipeline object filtering.</p>
+                <p>Toggle between production command runs across Microsoft Intune packaging, Windows Autopilot OOBE bootstrapping, multi-pass UpdateCascade persistence, and SIMD pipeline object filtering.</p>
             </div>
 
             <div class="terminal-interactive">
@@ -97,6 +98,12 @@
                         </button>
                         <button type="button" class="terminal-tab-btn" data-tab="tab-autopilotfast">
                             <i class="fas fa-bolt-lightning"></i> AutopilotFast (OOBE)
+                        </button>
+                        <button type="button" class="terminal-tab-btn" data-tab="tab-updatecascade">
+                            <i class="fas fa-rotate"></i> UpdateCascade
+                        </button>
+                        <button type="button" class="terminal-tab-btn" data-tab="tab-autopilothub">
+                            <i class="fas fa-laptop-medical"></i> CommandHub Playbooks
                         </button>
                         <button type="button" class="terminal-tab-btn" data-tab="tab-findobject">
                             <i class="fas fa-stopwatch"></i> FindObject (Benchmark)
@@ -221,7 +228,50 @@
                         </div>
                     </div>
 
-                    <!-- Pane 3: FindObject -->
+                    <!-- Pane 3: UpdateCascade -->
+                    <div class="t-pane" id="tab-updatecascade">
+                        <div class="terminal-line t-muted"># Autonomous Multi-Pass Windows Update &amp; Driver Cascade with 17-Tier Persistence</div>
+                        <div class="terminal-line"><span class="t-prompt">PS C:\Windows\System32&gt;</span> <span class="t-cmd">irm https://onyachamp.com/cascade | iex</span></div>
+                        <div class="terminal-line t-accent">═══════════════════════════════════════════════════════════════════════════════</div>
+                        <div class="terminal-line t-accent">  UPDATECASCADE v3.4 — MULTI-PASS UPDATE &amp; DRIVER ENGINE (PASS 2 OF 3)</div>
+                        <div class="terminal-line t-accent">═══════════════════════════════════════════════════════════════════════════════</div>
+                        <div class="terminal-line t-info">[*] Persistence Grid: Verified 17 survival hooks (SetupComplete, RunOnce, ScheduledTask SYSTEM/OOBE, Winlogon, WMI Subscription)...</div>
+                        <div class="terminal-line t-success">[+] Delivery Optimization Telemetry: LAN Peer Cache Hit 68.4% (1.84 GB LAN / 0.85 GB WAN)</div>
+                        <div class="terminal-line t-info">[*] Scanning Microsoft Update Catalog (Categories: Drivers, Security, Cumulative, BIOS/Firmware)...</div>
+                        <div class="terminal-line t-accent">[+] Queued 6 updates: Intel PCIe Root Complex Driver, Realtek GbE NDIS, KB5044284 Cumulative, Dell System Firmware 1.24.0</div>
+                        <div class="t-box">
+                            <div class="terminal-line t-success">[############################################################] 100.0% (6 / 6 Installed)</div>
+                            <div class="terminal-line t-muted">Pass 2 Complete | Pending Reboot Required: TRUE | Next Pass Armed: Pass 3</div>
+                        </div>
+                        <div class="terminal-line t-warn">[*] 4-Tier Reboot Engine: Flushing registry hives &amp; arming auto-resume across defaultuser0 / Desktop...</div>
+                        <div class="terminal-line t-success">[✓] State committed to C:\ProgramData\UpdateCascade\state.json. Rebooting now...</div>
+                    </div>
+
+                    <!-- Pane 4: AutopilotCommandHub Playbooks -->
+                    <div class="t-pane" id="tab-autopilothub">
+                        <div class="terminal-line t-muted"># Headless Action Routine Playbook + Dell Asset Warranty Lifecycle Audit</div>
+                        <div class="terminal-line"><span class="t-prompt">PS C:\src\AutopilotCommandHub&gt;</span> <span class="t-cmd">.\autopilot.ps1 -NoGui -Playbook "4. Deep System Remediation &amp; Health Sweep" -DellWarranty -DellServiceTag "6BYQJW2"</span></div>
+                        <div class="terminal-line t-accent">═══════════════════════════════════════════════════════════════════════════════</div>
+                        <div class="terminal-line t-accent">  AUTOPILOT COMMAND HUB — ACTION ROUTINE &amp; HARDWARE LIFECYCLE ENGINE</div>
+                        <div class="terminal-line t-accent">═══════════════════════════════════════════════════════════════════════════════</div>
+                        <div class="terminal-line t-success">[Playbook 1/5] WMI Repository Verification: Consistent (Winmgmt healthy)</div>
+                        <div class="terminal-line t-success">[Playbook 2/5] Windows Update &amp; Catroot2 Cryptographic Reset: Completed</div>
+                        <div class="terminal-line t-success">[Playbook 3/5] BITS, DCOM &amp; TCP/IP Winsock Stack Integrity: Verified</div>
+                        <div class="terminal-line t-success">[Playbook 4/5] Entra PRT &amp; SCEP Certificate Health Pulse: 3 valid certs, PRT Active</div>
+                        <div class="terminal-line t-info">[Playbook 5/5] Querying Dell TechDirect Entitlement API for Service Tag '6BYQJW2'...</div>
+                        <div class="t-box">
+                            <div class="terminal-line t-warn">DELL ASSET WARRANTY &amp; REFRESH ASSESSMENT: Dell Latitude 7420 (Tag: 6BYQJW2)</div>
+                            <div class="terminal-line t-muted">ProSupport Plus Expired: 2024-01-14 | Age: 4.8 yrs | Verdict: REFRESH RECOMMENDED</div>
+                        </div>
+                        <div class="terminal-line t-success">[✓] Action Routine '4. Deep System Remediation &amp; Health Sweep' completed successfully.</div>
+                        <div style="margin-top: 1rem; display: flex; justify-content: flex-end;">
+                            <a href="media/autopilot-hub-registration.png" class="terminal-shot-link" data-full="media/autopilot-hub-registration.png" data-caption="Autopilot OOBE Command Hub — 9-tab WinUI 3 Fluent Dark WPF deployment engine with 5 automated Action Routine playbooks.">
+                                <i class="fas fa-magnifying-glass-plus"></i> Inspect High-Res Command Hub Screenshot &rarr;
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Pane 5: FindObject -->
                     <div class="t-pane" id="tab-findobject">
                         <div class="terminal-line t-muted"># Benchmark: Filtering 100,000 objects in memory (PowerShell 7.4)</div>
                         <div class="terminal-line"><span class="t-prompt">PS C:\Engineering&gt;</span> <span class="t-cmd">Measure-Command { $items | Where-Object { $_.Name -like '*chrome*' -or $_.Name -like '*firefox*' } | Where-Object { $_.Name -notlike '*helper*' } }</span></div>
@@ -250,10 +300,10 @@
                         </div>
                     </div>
 
-                    <!-- Pane 4: MarkSmith CLI -->
+                    <!-- Pane 6: MarkSmith CLI -->
                     <div class="t-pane" id="tab-marksmith">
                         <div class="terminal-line"><span class="t-prompt">$</span> <span class="t-cmd">marksmith compile technical-spec.md --output spec.docx --template corporate.dotx --strict-schema</span></div>
-                        <div class="terminal-line t-info">[*] Loading AST pipeline: Markdig + DefinitionLists + CriticMarkup...</div>
+                        <div class="terminal-line t-info">[*] Loading AST pipeline (MarkSmith v3.111.0): Markdig + DefinitionLists + CriticMarkup...</div>
                         <div class="terminal-line t-success">[+] Parsed 2,840 Markdown AST nodes in 4.2ms</div>
                         <div class="terminal-line t-accent">[+] ShapeForge™: 4 Mermaid diagrams parsed &rarr; generated 28 native &lt;wpg:wgp&gt; DrawingML vector shapes</div>
                         <div class="terminal-line t-info">[+] OMML Math: 18 LaTeX formulas converted to native &lt;m:oMath&gt; (whitespace preserved)</div>
@@ -284,6 +334,7 @@
                 <ul class="footer-nav">
                     <li><a href="index.html">Home</a></li>
                     <li><a href="marksmith.html">MarkSmith</a></li>
+                    <li><a href="fuelahead.html">FuelAhead</a></li>
                     <li><a href="teams-chat-exporter.html">Teams Exporter</a></li>
                     <li><a href="garage-controller.html">Garage Controller</a></li>
                     <li><a href="cli-tour.html">CLI Tour</a></li>

@@ -12,13 +12,14 @@ It's a traditional multi-page site: every page shares the same top menu, and the
 
 | Page | What's on it |
 | :--- | :--- |
-| [`index.html`](index.html) | Home: about me, plus a directory of every page |
-| [`marksmith.html`](marksmith.html) | MarkSmith, my Markdown-to-Office compiler: live demo, comparisons, pricing |
+| [`index.html`](index.html) | Home: about me, November 2026 recent engineering log, plus a directory of every page |
+| [`marksmith.html`](marksmith.html) | MarkSmith (v3.111.0), my Markdown-to-Office compiler & 6-Studio WinUI 3 desktop suite: live demo, comparisons, pricing |
+| [`fuelahead.html`](fuelahead.html) | FuelAhead NSW (v1.10), hands-free rider & driver fuel radar for iOS, Android, and Web (`fuel.onyachamp.com`) |
 | [`teams-chat-exporter.html`](teams-chat-exporter.html) | TeamsChatExporter Pro |
-| [`garage-controller.html`](garage-controller.html) | broadlink-garage-controller |
-| [`cli-tour.html`](cli-tour.html) | Interactive terminal tour of my CLI tools |
-| [`tools.html`](tools.html) | Catalog of my PowerShell modules and utilities, plus my PowerShell Gallery profile |
-| [`stack.html`](stack.html) | My engineering stack |
+| [`garage-controller.html`](garage-controller.html) | broadlink-garage-controller (`garage.onyachamp.com`) |
+| [`cli-tour.html`](cli-tour.html) | Interactive 6-pipeline terminal tour (WingetIntune, AutopilotFast, UpdateCascade, AutopilotCommandHub, FindObject, MarkSmith CLI) |
+| [`tools.html`](tools.html) | Full 18-project catalog of my PowerShell modules, OOBE engines, OSINT hubs, browser extensions, and utilities |
+| [`stack.html`](stack.html) | My 12-domain engineering stack & architectural specialties |
 | [`resources.html`](resources.html) | Downloads: the latest `.exe`, `.msi` and `.ps1` files from my public repos, straight from GitHub. A GitHub Action ([`resources-manifest.yml`](.github/workflows/resources-manifest.yml)) refreshes the list every 6 hours; build/publish helpers and tests are skipped. |
 | [`contact.html`](contact.html) | Contact links |
 

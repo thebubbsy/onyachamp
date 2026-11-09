@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FuelAhead NSW | OnyaChamp — Hands-Free Rider &amp; Driver Fuel Radar</title>
+    <meta name="description" content="FuelAhead NSW (v1.10): hands-free iOS, Android, and Web fuel radar powered by Cloudflare Workers, D1, and NSW FuelCheck API v2 with a 90-degree forward spatial cone and helmet intercom TTS.">
+    <meta name="keywords" content="FuelAhead NSW, Matthew Bubb, OnyaChamp, NSW FuelCheck API, Capacitor, React, Cloudflare Workers, Motorcycle Intercom TTS, Siri Shortcuts, AltStore, Android Fuel App">
+    <meta name="author" content="Matthew Bubb">
+
+    <!-- Open Graph / Social Meta -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://onyachamp.com/fuelahead.html">
+    <meta property="og:title" content="FuelAhead NSW | OnyaChamp — Hands-Free Rider &amp; Driver Fuel Radar">
+    <meta property="og:description" content="Hands-free NSW fuel price radar for motorcycle riders and drivers with 90-degree forward heading cones, true detour fuel-burn math, and helmet intercom TTS.">
+    <meta property="og:image" content="https://avatars.githubusercontent.com/u/49204026?v=4">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:site" content="@TheBubbsy">
+    <meta name="twitter:title" content="FuelAhead NSW | OnyaChamp — Hands-Free Rider &amp; Driver Fuel Radar">
+    <meta name="twitter:description" content="Hands-free NSW fuel price radar for motorcycle riders and drivers with 90-degree forward heading cones, true detour fuel-burn math, and helmet intercom TTS.">
+    <meta name="twitter:image" content="https://avatars.githubusercontent.com/u/49204026?v=4">
+
+    <link rel="canonical" href="https://onyachamp.com/fuelahead.html">
+
+    <!-- Fonts & Icons -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <!-- Navigation Bar -->
+    <header class="navbar">
+        <div class="container nav-container">
+            <a href="index.html" class="nav-brand">
+                <div class="brand-icon">
+                    <i class="fas fa-terminal"></i>
+                </div>
+                <span class="brand-title">OnyaChamp</span>
+            </a>
+
+            <nav>
+                <ul class="nav-links">
+                    <li><a href="index.html">Home</a></li>
+                    <li><a href="marksmith.html">MarkSmith</a></li>
+                    <li><a href="fuelahead.html" class="active" aria-current="page">FuelAhead</a></li>
+                    <li><a href="teams-chat-exporter.html">Teams Exporter</a></li>
+                    <li><a href="garage-controller.html">Garage Controller</a></li>
+                    <li><a href="cli-tour.html">CLI Tour</a></li>
+                    <li><a href="tools.html">Tools</a></li>
+                    <li><a href="stack.html">Stack</a></li>
+                    <li><a href="resources.html">Downloads</a></li>
+                    <li><a href="contact.html">Contact</a></li>
+                </ul>
+            </nav>
+
+            <div class="nav-cta">
+                <a href="https://www.buymeacoffee.com/mbubbtechz" target="_blank" rel="noopener noreferrer" class="btn btn-coffee btn-sm" title="Support on Buy Me a Coffee">
+                    <i class="fas fa-mug-hot"></i> Coffee
+                </a>
+                <a href="https://github.com/thebubbsy" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-sm">
+                    <i class="fab fa-github"></i> GitHub
+                </a>
+            </div>
+
+            <button class="mobile-menu-btn" aria-label="Toggle navigation menu">
+                <i class="fas fa-bars"></i>
+            </button>
+        </div>
+    </header>
+
+    <main class="page-main">
+    <!-- Deep-Dive Spotlight: FuelAhead NSW -->
+    <section class="section-flagship">
+        <div class="container">
+            <div class="repo-card-featured">
+                <div class="featured-project-layout">
+                    <div>
+                        <div style="display: flex; gap: 0.5rem; margin-bottom: 0.75rem; flex-wrap: wrap;">
+                            <span class="badge badge-emerald"><i class="fas fa-gas-pump"></i> HANDS-FREE RIDER &amp; DRIVER RADAR</span>
+                            <span class="badge badge-cyan">iOS &bull; Android &bull; Web (v1.10)</span>
+                            <span class="badge badge-purple">Cloudflare Edge + NSW FuelCheck v2</span>
+                        </div>
+                        <h1 style="font-size: clamp(1.8rem, 3vw, 2.4rem); margin-bottom: 0.75rem;">FuelAhead NSW</h1>
+                        <p style="font-size: 1.05rem; color: var(--text-secondary); margin-bottom: 1.25rem;">
+                            <strong>The set-and-forget fuel radar built for motorcycle helmets and car dashboards.</strong> Automatically detects when you start driving, scans a 90&deg; forward spatial cone along your heading or typed route, calculates true detour fuel burn per 100&nbsp;km, and speaks the cheapest station ahead over Cardo, Sena, AirPods, or CarPlay without touching your phone.
+                        </p>
+
+                        <div class="benchmark-grid" style="margin: 1.25rem 0;">
+                            <div class="benchmark-metric-card" style="padding: 1rem 1.25rem;">
+                                <div class="benchmark-val-row">
+                                    <span class="benchmark-val val-green">90&deg;</span>
+                                    <span class="benchmark-val-badge">&plusmn;45&deg; Forward Cone</span>
+                                </div>
+                                <div class="benchmark-desc">Haversine &amp; forward azimuth filtering excludes stations behind you and calculates true detour minutes.</div>
+                            </div>
+                            <div class="benchmark-metric-card" style="padding: 1rem 1.25rem;">
+                                <div class="benchmark-val-row">
+                                    <span class="benchmark-val">72/day</span>
+                                    <span class="benchmark-val-badge">Cron Circuit Breaker</span>
+                                </div>
+                                <div class="benchmark-desc">Variable NSW FuelCheck API v2 polling (10m peak, 30m shoulder, 60m overnight) stays under the 2,500/mo cap.</div>
+                            </div>
+                        </div>
+
+                        <ul class="feature-checklist">
+                            <li><i class="fas fa-check-circle"></i> <strong>Coordinate-Delta Auto-Start:</strong> Transitions into Driving Mode automatically once ground speed exceeds 15&nbsp;km/h for 60s, and stops GPS while parked on iPhone to save battery.</li>
+                            <li><i class="fas fa-check-circle"></i> <strong>True Detour Cost Math:</strong> Factors in your vehicle's exact tank size (L) and fuel use per 100&nbsp;km so a cheaper price never loses money on the detour drive.</li>
+                            <li><i class="fas fa-check-circle"></i> <strong>Typed Routes &amp; Price Alerts:</strong> Save usual commutes with part-way alerts, or watch specific stations and map circles for price drops.</li>
+                            <li><i class="fas fa-check-circle"></i> <strong>Helmet Intercom &amp; Siri TTS:</strong> Emits iOS <code>timeSensitive</code> and Android <code>IMPORTANCE_HIGH</code> navigation alerts read aloud hands-free.</li>
+                        </ul>
+
+                        <div class="hero-actions" style="justify-content: flex-start; margin-top: 1.5rem; margin-bottom: 0; flex-wrap: wrap;">
+                            <a href="https://fuel.onyachamp.com" target="_blank" rel="noopener noreferrer" class="btn btn-primary btn-md">
+                                <i class="fas fa-compass"></i> Open Live Web App
+                            </a>
+                            <a href="https://fuel.onyachamp.com/android" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-md">
+                                <i class="fab fa-android"></i> Download Android APK
+                            </a>
+                            <a href="tools.html" class="btn btn-secondary btn-md">
+                                <i class="fas fa-layer-group"></i> All Tools
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Visual Screenshots for FuelAhead NSW -->
+                    <div>
+                        <div class="lead-screenshot-box" data-full="media/fuelahead-main.jpg" data-caption="FuelAhead NSW v1.10 Live Radar — forward-facing station map, net savings after detour fuel burn, and one-tap route controls.">
+                            <img src="media/fuelahead-main.jpg" alt="FuelAhead NSW main radar screen showing cheapest fuel stations ahead" loading="lazy">
+                            <div class="lead-shot-caption">
+                                <span><strong>FuelAhead NSW v1.10</strong> &bull; Live Forward Cone Radar</span>
+                                <span class="zoom-icon"><i class="fas fa-magnifying-glass-plus"></i> Click to Enlarge</span>
+                            </div>
+                        </div>
+
+                        <div class="project-media-strip" style="margin-top: 1rem;">
+                            <div class="project-shot-thumb" data-full="media/fuelahead-guide.jpg" data-caption="Set-and-Forget Setup Guide — configure fuel grade, exact tank capacity, L/100km consumption, and hands-free alert rules.">
+                                <img src="media/fuelahead-guide.jpg" alt="FuelAhead set-and-forget interactive setup guide" loading="lazy">
+                                <div class="shot-overlay-tag">
+                                    <span>Setup Guide</span>
+                                    <i class="fas fa-magnifying-glass-plus zoom-icon"></i>
+                                </div>
+                            </div>
+                            <div class="project-shot-thumb" data-full="media/fuelahead-search.jpg" data-caption="Search Area &amp; Usual Routes — configure forward cone radius, typed-in routes with part-way alerts, and detour thresholds.">
+                                <img src="media/fuelahead-search.jpg" alt="FuelAhead search area and route configuration sheet" loading="lazy">
+                                <div class="shot-overlay-tag">
+                                    <span>Routes &amp; Cone</span>
+                                    <i class="fas fa-magnifying-glass-plus zoom-icon"></i>
+                                </div>
+                            </div>
+                            <div class="project-shot-thumb" data-full="media/fuelahead-alerts.jpg" data-caption="Station &amp; Map Circle Price Alerts — monitor favourite servos or custom radius circles and receive instant drop notifications.">
+                                <img src="media/fuelahead-alerts.jpg" alt="FuelAhead station and map circle price alerts sheet" loading="lazy">
+                                <div class="shot-overlay-tag">
+                                    <span>Price Alerts</span>
+                                    <i class="fas fa-magnifying-glass-plus zoom-icon"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    </main>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <div class="footer-grid">
+                <div class="footer-brand">
+                    <strong>OnyaChamp.com</strong> — Systems Engineering Platform by Matthew Bubb.
+                </div>
+
+                <ul class="footer-nav">
+                    <li><a href="index.html">Home</a></li>
+                    <li><a href="marksmith.html">MarkSmith</a></li>
+                    <li><a href="fuelahead.html">FuelAhead</a></li>
+                    <li><a href="teams-chat-exporter.html">Teams Exporter</a></li>
+                    <li><a href="garage-controller.html">Garage Controller</a></li>
+                    <li><a href="cli-tour.html">CLI Tour</a></li>
+                    <li><a href="tools.html">Tools</a></li>
+                    <li><a href="stack.html">Stack</a></li>
+                    <li><a href="resources.html">Downloads</a></li>
+                    <li><a href="contact.html">Contact</a></li>
+                    <li><a href="https://www.powershellgallery.com/profiles/bubbsy" target="_blank" rel="noopener noreferrer">PSGallery</a></li>
+                    <li><a href="https://github.com/thebubbsy" target="_blank" rel="noopener noreferrer">GitHub</a></li>
+                </ul>
+
+                <div class="footer-copy">
+                    &copy; 2026 OnyaChamp / Matthew Bubb. All rights reserved.
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Universal Lightbox Modal -->
+    <div id="shot-lightbox" class="shot-lightbox" role="dialog" aria-modal="true" aria-label="Enlarged screenshot" hidden>
+        <button class="lightbox-close" type="button" aria-label="Close screenshot preview">&times;</button>
+        <button class="lightbox-nav-btn lightbox-prev" type="button" aria-label="Previous screenshot">
+            <i class="fas fa-chevron-left"></i>
+        </button>
+        <button class="lightbox-nav-btn lightbox-next" type="button" aria-label="Next screenshot">
+            <i class="fas fa-chevron-right"></i>
+        </button>
+        <div class="shot-lightbox-inner">
+            <img id="lightbox-img" src="" alt="Enlarged screenshot preview">
+            <div id="lightbox-caption" class="lightbox-caption"></div>
+            <div id="lightbox-counter" class="lightbox-counter"></div>
+        </div>
+    </div>
+
+    <!-- JavaScript -->
+    <script src="app.js"></script>
+</body>
+</html>
