@@ -6,8 +6,6 @@ from playwright.sync_api import sync_playwright
 PAGES = [
     'index.html',
     'marksmith.html',
-    'fuelahead.html',
-    'teams-chat-exporter.html',
     'garage-controller.html',
     'cli-tour.html',
     'tools.html',
@@ -16,21 +14,44 @@ PAGES = [
     'contact.html'
 ]
 
+FORBIDDEN_PRIVATE_TERMS = [
+    'fuelahead',
+    'bubbsy-flipper-vault',
+    'flipper zero',
+    'bubbsyflip',
+    'pocketdesk',
+    'pii-viewer',
+    'pii defensibility',
+    'm365-canary',
+    'm365 canary',
+    'teamschatexporter',
+    'teams-chat-exporter',
+    'bunkrdownloader',
+    'mappinglsp',
+    'md_to_pdf_tui',
+    'deepseek-ocr-client'
+]
+
 def verify_static():
     print("========================================")
-    print("1. STATIC ASSET & DOM INTEGRITY AUDIT")
+    print("1. STATIC ASSET & PRIVACY BOUNDARY AUDIT")
     print("========================================")
     
     for page in PAGES:
         with open(page, 'r', encoding='utf-8') as f:
             content = f.read()
+            lower_content = content.lower()
             soup = BeautifulSoup(content, 'html.parser')
+        
+        # Enforce strict no-private-repo boundary
+        leaked = [term for term in FORBIDDEN_PRIVATE_TERMS if term in lower_content]
+        assert len(leaked) == 0, f"PRIVACY VIOLATION in {page}: leaked private repo terms {leaked}"
         
         # Check IDs
         ids = [tag['id'] for tag in soup.find_all(id=True)]
         dupes = [item for item, count in collections.Counter(ids).items() if count > 1]
         assert len(dupes) == 0, f"Duplicate IDs found in {page}: {dupes}"
-        print(f"[{page}] DOM IDs: {len(ids)} unique IDs, 0 duplicates.")
+        print(f"[{page}] DOM IDs: {len(ids)} unique IDs, 0 duplicates, 0 private leaks.")
         
         # Check img elements
         imgs = soup.find_all('img')
@@ -137,11 +158,11 @@ def verify_browser():
                 assert not lightbox.is_visible(), f"[{page_name}] Lightbox did not close on Escape"
                 print(f"[{page_name}] Universal Lightbox open, next-slide, and Escape dismiss: OK.")
             
-            # If on tools.html, test Category Filter across all 18 tools
+            # If on tools.html, test Category Filter across all 12 public tools
             if page_name == 'tools.html':
-                print("[tools.html] Testing Category Filters across 18 tools...")
+                print("[tools.html] Testing Category Filters across 12 public tools...")
                 total_cards = page.evaluate("document.querySelectorAll('.repo-card').length")
-                assert total_cards == 18, f"Expected 18 tool cards on tools.html, got {total_cards}"
+                assert total_cards == 12, f"Expected 12 tool cards on tools.html, got {total_cards}"
                 
                 page.click('.filter-btn[data-filter="powershell"]')
                 page.wait_for_timeout(150)

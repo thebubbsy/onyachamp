@@ -3,23 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tools (18) | OnyaChamp</title>
-    <meta name="description" content="All 18 enterprise PowerShell modules, Windows Autopilot OOBE engines, edge/mobile apps, OSINT hubs, and developer utilities by Matthew Bubb (OnyaChamp).">
-    <meta name="keywords" content="Matthew Bubb, OnyaChamp, MarkSmith, FuelAhead NSW, AutopilotCommandHub, UpdateCascade, BubbsyFlip, Bubbsy Start Page, WingetIntune, AutopilotFast, IntuneShared, LocalPilot, TeamsChatExporter, WingetBatch, FindObject, broadlink-garage-controller, PowerShell, C#, OpenXML">
+    <title>Tools (12) | OnyaChamp</title>
+    <meta name="description" content="All 12 public open-source PowerShell modules, Windows Autopilot OOBE engines, OSINT hubs, and developer utilities by Matthew Bubb (OnyaChamp).">
+    <meta name="keywords" content="Matthew Bubb, OnyaChamp, MarkSmith, marksmith-plugins, AutopilotCommandHub, UpdateCascade, Bubbsy Start Page, WingetIntune, AutopilotFast, IntuneShared, LocalPilot, LocalPilotFleet, WingetBatch, PSGalleryBatch, FindObject, broadlink-garage-controller, universal-element-cloner, PowerShell, C#, OpenXML">
     <meta name="author" content="Matthew Bubb">
 
     <!-- Open Graph / Social Meta -->
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://onyachamp.com/tools.html">
-    <meta property="og:title" content="Tools (18) | OnyaChamp">
-    <meta property="og:description" content="Zero-corruption document compilers, cloud infrastructure pipelines, edge radars, and enterprise systems automation tooling.">
+    <meta property="og:title" content="Tools (12) | OnyaChamp">
+    <meta property="og:description" content="Zero-corruption document compilers, cloud infrastructure pipelines, OOBE provisioning engines, and enterprise systems automation tooling.">
     <meta property="og:image" content="https://avatars.githubusercontent.com/u/49204026?v=4">
 
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:site" content="@TheBubbsy">
-    <meta name="twitter:title" content="Tools (18) | OnyaChamp">
-    <meta name="twitter:description" content="Zero-corruption document compilers, cloud infrastructure pipelines, edge radars, and enterprise systems automation tooling.">
+    <meta name="twitter:title" content="Tools (12) | OnyaChamp">
+    <meta name="twitter:description" content="Zero-corruption document compilers, cloud infrastructure pipelines, OOBE provisioning engines, and enterprise systems automation tooling.">
     <meta name="twitter:image" content="https://avatars.githubusercontent.com/u/49204026?v=4">
 
     <link rel="canonical" href="https://onyachamp.com/tools.html">
@@ -48,8 +48,6 @@
                 <ul class="nav-links">
                     <li><a href="index.html">Home</a></li>
                     <li><a href="marksmith.html">MarkSmith</a></li>
-                    <li><a href="fuelahead.html">FuelAhead</a></li>
-                    <li><a href="teams-chat-exporter.html">Teams Exporter</a></li>
                     <li><a href="garage-controller.html">Garage Controller</a></li>
                     <li><a href="cli-tour.html">CLI Tour</a></li>
                     <li><a href="tools.html" class="active" aria-current="page">Tools</a></li>
@@ -79,15 +77,15 @@
     <section id="open-source" class="repos-section">
         <div class="container">
             <div class="section-header">
-                <span class="badge badge-cyan"><i class="fab fa-github"></i> PRODUCTION-GRADE TOOLING (18 REPOSITORIES)</span>
-                <h2>Enterprise Cloud, Packaging, Edge &amp; Automation Tools</h2>
-                <p>A curated catalog of battle-tested PowerShell 7+ modules, Windows Autopilot OOBE engines, edge/mobile telemetry radars, OSINT command centers, and developer utilities created by Matthew Bubb.</p>
+                <span class="badge badge-cyan"><i class="fab fa-github"></i> PUBLIC OPEN-SOURCE TOOLING (12 REPOSITORIES)</span>
+                <h2>Enterprise Cloud, Packaging, OOBE &amp; Automation Tools</h2>
+                <p>A curated catalog of public, open-source PowerShell 7+ modules, Windows Autopilot OOBE engines, OSINT command centers, and developer utilities created by Matthew Bubb.</p>
             </div>
 
             <!-- Category Filter -->
             <div class="filter-bar">
                 <button type="button" class="filter-btn active" data-filter="all">
-                    <i class="fas fa-list-check"></i> All Tooling (18)
+                    <i class="fas fa-list-check"></i> All Tooling (12)
                 </button>
                 <button type="button" class="filter-btn" data-filter="flagship">
                     <i class="fas fa-crown"></i> Flagship &amp; Apps
@@ -99,14 +97,14 @@
                     <i class="fas fa-terminal"></i> PowerShell &amp; CLI
                 </button>
                 <button type="button" class="filter-btn" data-filter="edge">
-                    <i class="fas fa-network-wired"></i> Edge, OSINT &amp; Hardware
+                    <i class="fas fa-network-wired"></i> Edge, OSINT &amp; Web
                 </button>
                 <div style="display: inline-flex; align-items: center; gap: 0.5rem; margin-left: auto; flex-wrap: wrap;">
                     <input type="search" id="tools-search-input" placeholder="Filter tools by name, tag, cmd... (/)" aria-label="Filter tools catalog" style="background: rgba(15, 23, 42, 0.75); color: #f8fafc; border: 1px solid rgba(56, 189, 248, 0.35); border-radius: 0.5rem; padding: 0.42rem 0.75rem; font-size: 0.85rem; min-width: 220px; outline: none;">
                     <button type="button" id="btn-reset-catalog-filter" class="btn btn-secondary btn-sm" title="Reset active category and search filter to show all tools">
                         <i class="fas fa-rotate-left"></i> Reset
                     </button>
-                    <span id="tools-visible-count" class="badge badge-cyan" style="font-size: 0.78rem; padding: 0.35rem 0.65rem;" title="Visible tools matching active category and search filter">18 / 18 shown</span>
+                    <span id="tools-visible-count" class="badge badge-cyan" style="font-size: 0.78rem; padding: 0.35rem 0.65rem;" title="Visible tools matching active category and search filter">12 / 12 shown</span>
                     <button type="button" id="btn-copy-catalog-cmds" class="btn btn-secondary btn-sm" title="Copy PowerShell bootstrap / install commands for all visible tools">
                         <i class="fas fa-terminal"></i> Copy Commands
                     </button>
@@ -177,7 +175,7 @@
             </div>
 
             <div class="repos-grid">
-                <!-- 1. AutopilotCommandHub -->
+                <!-- 1. AutopilotCommandHub (PUBLIC) -->
                 <div class="repo-card" data-category="cloud powershell flagship">
                     <div class="repo-card-media" data-full="media/autopilot-hub-registration.png" data-caption="Autopilot OOBE Command Hub — 9-tab WinUI 3 Fluent Dark WPF provisioning console with 5 automated Action Routine playbooks, Skip Autopilot OOBE bypass, and Dell Warranty API refresh.">
                         <img src="media/autopilot-hub-registration.png" alt="Autopilot OOBE Command Hub provisioning console" loading="lazy">
@@ -222,7 +220,7 @@
                     </div>
                 </div>
 
-                <!-- 2. UpdateCascade -->
+                <!-- 2. UpdateCascade (PUBLIC) -->
                 <div class="repo-card" data-category="cloud powershell">
                     <div class="repo-header">
                         <div class="repo-title-group">
@@ -259,152 +257,7 @@
                     </div>
                 </div>
 
-                <!-- 3. FuelAhead NSW -->
-                <div class="repo-card" data-category="flagship edge">
-                    <div class="repo-card-media" data-full="media/fuelahead-main.jpg" data-caption="FuelAhead NSW v1.10 — Hands-free rider &amp; driver fuel radar with 90-degree forward cone, L/100km detour cost math, and helmet intercom TTS.">
-                        <img src="media/fuelahead-main.jpg" alt="FuelAhead NSW mobile fuel radar" loading="lazy">
-                        <div class="repo-shot-overlay">
-                            <span class="repo-shot-tag"><i class="fas fa-gas-pump"></i> v1.10 Spatial Radar</span>
-                            <span class="repo-zoom-hint"><i class="fas fa-magnifying-glass-plus"></i> Enlarge</span>
-                        </div>
-                    </div>
-
-                    <div class="repo-header">
-                        <div class="repo-title-group">
-                            <i class="fas fa-gas-pump repo-icon" style="color: #34d399;"></i>
-                            <h4 class="repo-name"><a href="fuelahead.html">FuelAhead NSW</a></h4>
-                        </div>
-                        <span class="badge badge-emerald">iOS &bull; Android &bull; Web</span>
-                    </div>
-                    <p class="repo-desc">Hands-free rider and driver fuel price radar backed by Cloudflare Workers/D1 and a 72-call/day NSW FuelCheck API v2 cron circuit breaker. Scans a 90&deg; forward heading cone (&le;5&nbsp;km), computes L/100km detour fuel burn, auto-starts at &gt;15&nbsp;km/h, and speaks alerts over Cardo/Sena helmet intercoms and Siri.</p>
-                    
-                    <div class="repo-tags">
-                        <span class="badge">React + Capacitor</span>
-                        <span class="badge">90&deg; Forward Cone</span>
-                        <span class="badge">L/100km Detour Math</span>
-                        <span class="badge">Helmet Intercom TTS</span>
-                    </div>
-
-                    <div class="repo-terminal">
-                        <code>https://fuel.onyachamp.com/android</code>
-                        <button class="copy-btn" data-copy="https://fuel.onyachamp.com/android" title="Copy APK URL">
-                            <i class="far fa-copy"></i>
-                        </button>
-                    </div>
-
-                    <div class="repo-footer">
-                        <div class="repo-meta">
-                            <span><i class="fas fa-globe"></i> fuel.onyachamp.com</span>
-                            <span><i class="fas fa-code-branch"></i> v1.10</span>
-                        </div>
-                        <a href="fuelahead.html">View Details &rarr;</a>
-                    </div>
-                </div>
-
-                <!-- 4. BubbsyFlip -->
-                <div class="repo-card" data-category="flagship edge">
-                    <div class="repo-header">
-                        <div class="repo-title-group">
-                            <i class="fas fa-rotate repo-icon" style="color: #f472b6;"></i>
-                            <h4 class="repo-name"><a href="https://github.com/thebubbsy" target="_blank" rel="noopener noreferrer">BubbsyFlip</a></h4>
-                        </div>
-                        <span class="badge badge-purple">Chrome Manifest V3</span>
-                    </div>
-                    <p class="repo-desc">100% free &amp; unlocked Screen, Image &amp; Video Rotator, Mirror &amp; Dance Study Chrome Extension. Features a vector mouse-wheel transform engine so natural vertical scrolling works at 90&deg;, 180&deg;, 270&deg;, or any continuous 0&deg;&ndash;360&deg; angle, 2-point Horizon Leveler, Dance Study rehearsal suite (Mirror Choreo, <code>0.5x&ndash;1.0x</code> slow-mo, <code>[</code> / <code>]</code> A-B phrase looping), Live Pin (<code>Alt+S</code>), and Teleprompter mode.</p>
-                    
-                    <div class="repo-tags">
-                        <span class="badge">Vector Scroll Engine</span>
-                        <span class="badge">Dance Study A-B Loop</span>
-                        <span class="badge">2-Pt Horizon Leveler</span>
-                        <span class="badge">Live Pin (Alt+S)</span>
-                        <span class="badge">Teleprompter</span>
-                    </div>
-
-                    <div class="repo-terminal">
-                        <code>Alt+X (Mirror) | Alt+R (Rotate 90&deg;) | Alt+S (Live Pin)</code>
-                        <button class="copy-btn" data-copy="chrome://extensions" title="Copy extensions URL">
-                            <i class="far fa-copy"></i>
-                        </button>
-                    </div>
-
-                    <div class="repo-footer">
-                        <div class="repo-meta">
-                            <span><i class="fab fa-chrome"></i> Manifest V3</span>
-                            <span><i class="fab fa-js"></i> Canvas + DOM</span>
-                        </div>
-                        <a href="https://github.com/thebubbsy" target="_blank" rel="noopener noreferrer">GitHub Profile &rarr;</a>
-                    </div>
-                </div>
-
-                <!-- 5. Bubbsy Start Page & Tactical OSINT Hub -->
-                <div class="repo-card" data-category="edge cloud">
-                    <div class="repo-header">
-                        <div class="repo-title-group">
-                            <i class="fas fa-satellite-dish repo-icon" style="color: #38bdf8;"></i>
-                            <h4 class="repo-name"><a href="https://github.com/thebubbsy/bubbsy-start-page" target="_blank" rel="noopener noreferrer">Bubbsy Start Page &amp; OSINT Hub</a></h4>
-                        </div>
-                        <span class="badge badge-cyan">2,000+ OSINT Tools</span>
-                    </div>
-                    <p class="repo-desc">Tactical cyber intelligence command center on Cloudflare Pages + D1 featuring 2,000+ curated OSINT links across 113 modules (including 20 dedicated <code>[AUS]</code> Australian intelligence modules and 5 Hacker Search Engine modules), a Live CISA KEV / ASD Essential Eight CVE Threat Radar, and 35-platform Visual Identity Disambiguation.</p>
-                    
-                    <div class="repo-tags">
-                        <span class="badge">113 OSINT Modules</span>
-                        <span class="badge">20 [AUS] Intel Modules</span>
-                        <span class="badge">CISA KEV CVE Radar</span>
-                        <span class="badge">35-Platform Recon</span>
-                    </div>
-
-                    <div class="repo-terminal">
-                        <code>git clone https://github.com/thebubbsy/bubbsy-start-page</code>
-                        <button class="copy-btn" data-copy="git clone https://github.com/thebubbsy/bubbsy-start-page" title="Copy command">
-                            <i class="far fa-copy"></i>
-                        </button>
-                    </div>
-
-                    <div class="repo-footer">
-                        <div class="repo-meta">
-                            <span><i class="fas fa-bolt"></i> Cloudflare D1</span>
-                            <span><i class="fas fa-shield-halved"></i> OSINT</span>
-                        </div>
-                        <a href="https://github.com/thebubbsy/bubbsy-start-page" target="_blank" rel="noopener noreferrer">View Repo &rarr;</a>
-                    </div>
-                </div>
-
-                <!-- 6. Bubbsy Flipper Vault -->
-                <div class="repo-card" data-category="edge">
-                    <div class="repo-header">
-                        <div class="repo-title-group">
-                            <i class="fas fa-wave-square repo-icon" style="color: #fbbf24;"></i>
-                            <h4 class="repo-name"><a href="https://github.com/thebubbsy/bubbsy-flipper-vault" target="_blank" rel="noopener noreferrer">Bubbsy Flipper Vault</a></h4>
-                        </div>
-                        <span class="badge badge-emerald">Momentum API 88.2</span>
-                    </div>
-                    <p class="repo-desc">Curated AU/NZ &amp; Global Flipper Zero library for Momentum Firmware (<code>mntm-dev</code>, Target 7, API 88.2) with 100% Line-1 header validation across 9,397 assets: 446 <code>.fap</code> binaries (including 8 custom-engineered native C <code>BubbsyTools</code> RFID apps), 5,295 Sub-GHz <code>.sub</code> signals covering 107+ protocols, 2,012 IR remotes, and 980,000+ cryptographic dictionary keys.</p>
-                    
-                    <div class="repo-tags">
-                        <span class="badge">8 Custom C RFID FAPs</span>
-                        <span class="badge">5,295 Sub-GHz Signals</span>
-                        <span class="badge">AU 433.92MHz &amp; KeeLoq</span>
-                        <span class="badge">980k+ Crypto Keys</span>
-                    </div>
-
-                    <div class="repo-terminal">
-                        <code>git clone https://github.com/thebubbsy/bubbsy-flipper-vault</code>
-                        <button class="copy-btn" data-copy="git clone https://github.com/thebubbsy/bubbsy-flipper-vault" title="Copy command">
-                            <i class="far fa-copy"></i>
-                        </button>
-                    </div>
-
-                    <div class="repo-footer">
-                        <div class="repo-meta">
-                            <span><i class="fas fa-microchip"></i> Target 7 &bull; C / RF</span>
-                            <span><i class="fas fa-check-circle"></i> 9,397 Assets</span>
-                        </div>
-                        <a href="https://github.com/thebubbsy/bubbsy-flipper-vault" target="_blank" rel="noopener noreferrer">View Repo &rarr;</a>
-                    </div>
-                </div>
-
-                <!-- 7. WingetIntune -->
+                <!-- 3. WingetIntune (PUBLIC) -->
                 <div class="repo-card" data-category="cloud powershell">
                     <div class="repo-card-media" data-full="media/wingetintune-pipeline.png" data-caption="WingetIntune Production Pipeline — MSI adapter resolution, Session 0 isolation watchdog, and 6MB chunked Azure SAS storage upload.">
                         <img src="media/wingetintune-pipeline.png" alt="WingetIntune packaging and cloud publishing terminal output" loading="lazy">
@@ -446,7 +299,7 @@
                     </div>
                 </div>
 
-                <!-- 8. AutopilotFast -->
+                <!-- 4. AutopilotFast (PUBLIC) -->
                 <div class="repo-card" data-category="cloud powershell">
                     <div class="repo-card-media" data-full="media/autopilotfast-oobe.png" data-caption="AutopilotFast Windows OOBE Setup — 7-stage preflight network diagnostic ladder, terminal ASCII QR code, and Graph sync gate.">
                         <img src="media/autopilotfast-oobe.png" alt="AutopilotFast Windows OOBE hardware harvester and Graph sync gate" loading="lazy">
@@ -488,7 +341,7 @@
                     </div>
                 </div>
 
-                <!-- 9. IntuneShared -->
+                <!-- 5. IntuneShared (PUBLIC) -->
                 <div class="repo-card" data-category="cloud powershell">
                     <div class="repo-header">
                         <div class="repo-title-group">
@@ -522,7 +375,41 @@
                     </div>
                 </div>
 
-                <!-- 10. FindObject -->
+                <!-- 6. LocalPilot & LocalPilotFleet (PUBLIC) -->
+                <div class="repo-card" data-category="cloud powershell">
+                    <div class="repo-header">
+                        <div class="repo-title-group">
+                            <i class="fas fa-server repo-icon" style="color: #34d399;"></i>
+                            <h4 class="repo-name"><a href="https://github.com/thebubbsy/LocalPilot" target="_blank" rel="noopener noreferrer">LocalPilot &amp; LocalPilotFleet</a></h4>
+                        </div>
+                        <span class="badge badge-emerald">Machine-as-Code</span>
+                    </div>
+                    <p class="repo-desc">Zero-cloud workstation provisioning, declarative Machine-as-Code recipes, cryptographic hardware birth certificates, and proactive local self-healing endpoint remediations paired with the <a href="https://github.com/thebubbsy/LocalPilotFleet" target="_blank" rel="noopener noreferrer">LocalPilotFleet</a> orchestration server.</p>
+                    
+                    <div class="repo-tags">
+                        <span class="badge">Zero-Cloud Provisioning</span>
+                        <span class="badge">Machine-as-Code</span>
+                        <span class="badge">Self-Healing</span>
+                        <span class="badge">Birth Certificates</span>
+                    </div>
+
+                    <div class="repo-terminal">
+                        <code>git clone https://github.com/thebubbsy/LocalPilot</code>
+                        <button class="copy-btn" data-copy="git clone https://github.com/thebubbsy/LocalPilot" title="Copy command">
+                            <i class="far fa-copy"></i>
+                        </button>
+                    </div>
+
+                    <div class="repo-footer">
+                        <div class="repo-meta">
+                            <span><i class="fas fa-code-branch"></i> LocalPilotFleet</span>
+                            <span><i class="fas fa-shield-halved"></i> MIT</span>
+                        </div>
+                        <a href="https://github.com/thebubbsy/LocalPilot" target="_blank" rel="noopener noreferrer">View Repo &rarr;</a>
+                    </div>
+                </div>
+
+                <!-- 7. FindObject (PUBLIC) -->
                 <div class="repo-card" data-category="powershell">
                     <div class="repo-card-media" data-full="media/findobject-benchmark.png" data-caption="FindObject Benchmark &amp; Pipeline Grep — SIMD-vectorized String.IndexOf() running 4.8x to 344x faster than Where-Object.">
                         <img src="media/findobject-benchmark.png" alt="FindObject SIMD benchmark comparing against Where-Object in PowerShell 7" loading="lazy">
@@ -563,7 +450,7 @@
                     </div>
                 </div>
 
-                <!-- 11. WingetBatch -->
+                <!-- 8. WingetBatch (PUBLIC) -->
                 <div class="repo-card" data-category="powershell">
                     <div class="repo-card-media" data-full="media/wingetbatch-tui.png" data-caption="WingetBatch Spectre.Console TUI — interactive multi-select package installer with real-time download and install progress meters.">
                         <img src="media/wingetbatch-tui.png" alt="WingetBatch Spectre.Console interactive terminal UI" loading="lazy">
@@ -604,7 +491,7 @@
                     </div>
                 </div>
 
-                <!-- 12. PSGalleryBatch -->
+                <!-- 9. PSGalleryBatch (PUBLIC) -->
                 <div class="repo-card" data-category="powershell">
                     <div class="repo-header">
                         <div class="repo-title-group">
@@ -636,174 +523,75 @@
                     </div>
                 </div>
 
-                <!-- 13. LocalPilot & LocalPilotFleet -->
-                <div class="repo-card" data-category="cloud powershell">
+                <!-- 10. Bubbsy Start Page & Tactical OSINT Hub (PUBLIC) -->
+                <div class="repo-card" data-category="edge cloud">
                     <div class="repo-header">
                         <div class="repo-title-group">
-                            <i class="fas fa-server repo-icon" style="color: #34d399;"></i>
-                            <h4 class="repo-name"><a href="https://github.com/thebubbsy/LocalPilot" target="_blank" rel="noopener noreferrer">LocalPilot &amp; LocalPilotFleet</a></h4>
+                            <i class="fas fa-satellite-dish repo-icon" style="color: #38bdf8;"></i>
+                            <h4 class="repo-name"><a href="https://github.com/thebubbsy/bubbsy-start-page" target="_blank" rel="noopener noreferrer">Bubbsy Start Page &amp; OSINT Hub</a></h4>
                         </div>
-                        <span class="badge badge-emerald">Machine-as-Code</span>
+                        <span class="badge badge-cyan">1,904+ OSINT Tools</span>
                     </div>
-                    <p class="repo-desc">Zero-cloud workstation provisioning, declarative Machine-as-Code recipes, cryptographic hardware birth certificates, and proactive local self-healing endpoint remediations with fleet server orchestration.</p>
+                    <p class="repo-desc">Tactical cyber intelligence command center on Cloudflare Pages + D1 featuring 1,904+ curated OSINT links across 101 modules (including Australian intelligence modules and Hacker Search Engine modules), a Live CISA KEV / ASD Essential Eight CVE Threat Radar, and 35-platform Visual Identity Disambiguation.</p>
                     
                     <div class="repo-tags">
-                        <span class="badge">Zero-Cloud Provisioning</span>
-                        <span class="badge">Machine-as-Code</span>
-                        <span class="badge">Self-Healing</span>
-                        <span class="badge">Birth Certificates</span>
+                        <span class="badge">101 OSINT Modules</span>
+                        <span class="badge">Australian Intel</span>
+                        <span class="badge">CISA KEV CVE Radar</span>
+                        <span class="badge">35-Platform Recon</span>
                     </div>
 
                     <div class="repo-terminal">
-                        <code>git clone https://github.com/thebubbsy/LocalPilot</code>
-                        <button class="copy-btn" data-copy="git clone https://github.com/thebubbsy/LocalPilot" title="Copy command">
+                        <code>git clone https://github.com/thebubbsy/bubbsy-start-page</code>
+                        <button class="copy-btn" data-copy="git clone https://github.com/thebubbsy/bubbsy-start-page" title="Copy command">
                             <i class="far fa-copy"></i>
                         </button>
                     </div>
 
                     <div class="repo-footer">
                         <div class="repo-meta">
-                            <span><i class="fas fa-code-branch"></i> LocalPilotFleet</span>
-                            <span><i class="fas fa-shield-halved"></i> MIT</span>
+                            <span><i class="fas fa-bolt"></i> Cloudflare D1</span>
+                            <span><i class="fas fa-shield-halved"></i> OSINT</span>
                         </div>
-                        <a href="https://github.com/thebubbsy/LocalPilot" target="_blank" rel="noopener noreferrer">View Repo &rarr;</a>
+                        <a href="https://github.com/thebubbsy/bubbsy-start-page" target="_blank" rel="noopener noreferrer">View Repo &rarr;</a>
                     </div>
                 </div>
 
-                <!-- 14. PocketDesk -->
-                <div class="repo-card" data-category="cloud edge">
+                <!-- 11. marksmith-plugins (PUBLIC) -->
+                <div class="repo-card" data-category="flagship powershell">
                     <div class="repo-header">
                         <div class="repo-title-group">
-                            <i class="fas fa-mobile-screen-button repo-icon" style="color: #818cf8;"></i>
-                            <h4 class="repo-name"><a href="https://github.com/thebubbsy" target="_blank" rel="noopener noreferrer">PocketDesk</a></h4>
+                            <i class="fas fa-plug repo-icon" style="color: #c084fc;"></i>
+                            <h4 class="repo-name"><a href="https://github.com/thebubbsy/marksmith-plugins" target="_blank" rel="noopener noreferrer">marksmith-plugins</a></h4>
                         </div>
-                        <span class="badge badge-cyan">Zero-Trust Fleet UX</span>
+                        <span class="badge badge-purple">Plugin Registry &amp; Spec</span>
                     </div>
-                    <p class="repo-desc">Mobile-first Zero-Trust remote desktop gateway and Intune fleet rollout companion. Combines TLS 1.3 low-latency session streaming with live Autopilot provisioning posture, Defender security badges, and ring compliance telemetry.</p>
+                    <p class="repo-desc">Official plugin registry, authoring specification, and starter templates for extending the MarkSmith ECMA-376 OpenXML compiler with custom AST transforms, enterprise document compliance validators, and custom directive renderers.</p>
                     
                     <div class="repo-tags">
-                        <span class="badge">Zero-Trust Stream</span>
-                        <span class="badge">Intune Rings</span>
-                        <span class="badge">Defender Posture</span>
-                        <span class="badge">TLS 1.3 HUD</span>
+                        <span class="badge">MarkSmith SDK</span>
+                        <span class="badge">Plugin Registry</span>
+                        <span class="badge">AST Transforms</span>
+                        <span class="badge">OpenXML</span>
                     </div>
 
                     <div class="repo-terminal">
-                        <code>python app.py --host 0.0.0.0 --port 8090</code>
-                        <button class="copy-btn" data-copy="python app.py --host 0.0.0.0 --port 8090" title="Copy command">
+                        <code>git clone https://github.com/thebubbsy/marksmith-plugins</code>
+                        <button class="copy-btn" data-copy="git clone https://github.com/thebubbsy/marksmith-plugins" title="Copy command">
                             <i class="far fa-copy"></i>
                         </button>
                     </div>
 
                     <div class="repo-footer">
                         <div class="repo-meta">
-                            <span><i class="fab fa-python"></i> FastAPI + WebSockets</span>
+                            <span><i class="fas fa-code-branch"></i> Public SDK</span>
+                            <span><i class="fas fa-file-word"></i> MarkSmith</span>
                         </div>
-                        <a href="https://github.com/thebubbsy" target="_blank" rel="noopener noreferrer">GitHub Profile &rarr;</a>
+                        <a href="https://github.com/thebubbsy/marksmith-plugins" target="_blank" rel="noopener noreferrer">View Repo &rarr;</a>
                     </div>
                 </div>
 
-                <!-- 15. M365 Canary TUI -->
-                <div class="repo-card" data-category="cloud powershell">
-                    <div class="repo-header">
-                        <div class="repo-title-group">
-                            <i class="fas fa-user-shield repo-icon" style="color: #f59e0b;"></i>
-                            <h4 class="repo-name"><a href="https://github.com/thebubbsy/m365" target="_blank" rel="noopener noreferrer">M365 Canary &amp; Admin Suite</a></h4>
-                        </div>
-                        <span class="badge badge-purple">Entra ID &amp; M365</span>
-                    </div>
-                    <p class="repo-desc">Interactive M365 tenant reconnaissance TUI and read-only Microsoft Graph administration toolkit across Intune, Entra ID, Defender, Exchange Online, Purview, and SharePoint with federation, DNS, and posture auditing.</p>
-                    
-                    <div class="repo-tags">
-                        <span class="badge">M365 Tenant Recon</span>
-                        <span class="badge">Entra ID Posture</span>
-                        <span class="badge">Textual TUI</span>
-                        <span class="badge">Graph Read-Only</span>
-                    </div>
-
-                    <div class="repo-terminal">
-                        <code>python m365_canary_tui.py --domains domains.txt</code>
-                        <button class="copy-btn" data-copy="python m365_canary_tui.py --domains domains.txt" title="Copy command">
-                            <i class="far fa-copy"></i>
-                        </button>
-                    </div>
-
-                    <div class="repo-footer">
-                        <div class="repo-meta">
-                            <span><i class="fas fa-lock"></i> SecOps</span>
-                            <span><i class="fab fa-python"></i> Python + PS7</span>
-                        </div>
-                        <a href="https://github.com/thebubbsy/m365" target="_blank" rel="noopener noreferrer">View Repo &rarr;</a>
-                    </div>
-                </div>
-
-                <!-- 16. PII Viewer & Defensibility Auditor -->
-                <div class="repo-card" data-category="cloud edge">
-                    <div class="repo-header">
-                        <div class="repo-title-group">
-                            <i class="fas fa-scale-balanced repo-icon" style="color: #ec4899;"></i>
-                            <h4 class="repo-name"><a href="https://github.com/thebubbsy" target="_blank" rel="noopener noreferrer">PII Defensibility Auditor</a></h4>
-                        </div>
-                        <span class="badge badge-emerald">Privacy &amp; Compliance</span>
-                    </div>
-                    <p class="repo-desc">Executive privacy and data-governance triage console calculating statutory liability exposure, remediation SLA countdowns, and defensibility compliance scores across exposed file shares, M365 repositories, and data owners.</p>
-                    
-                    <div class="repo-tags">
-                        <span class="badge">PII Triage</span>
-                        <span class="badge">Statutory Liability</span>
-                        <span class="badge">Remediation SLA</span>
-                        <span class="badge">Audit Exports</span>
-                    </div>
-
-                    <div class="repo-terminal">
-                        <code>npx serve pii-viewer --single</code>
-                        <button class="copy-btn" data-copy="npx serve pii-viewer --single" title="Copy command">
-                            <i class="far fa-copy"></i>
-                        </button>
-                    </div>
-
-                    <div class="repo-footer">
-                        <div class="repo-meta">
-                            <span><i class="fas fa-file-shield"></i> Governance</span>
-                        </div>
-                        <a href="https://github.com/thebubbsy" target="_blank" rel="noopener noreferrer">GitHub Profile &rarr;</a>
-                    </div>
-                </div>
-
-                <!-- 17. whisper-writer -->
-                <div class="repo-card" data-category="flagship edge">
-                    <div class="repo-header">
-                        <div class="repo-title-group">
-                            <i class="fas fa-microphone-lines repo-icon"></i>
-                            <h4 class="repo-name"><a href="https://github.com/thebubbsy/whisper-writer" target="_blank" rel="noopener noreferrer">whisper-writer</a></h4>
-                        </div>
-                        <span class="badge badge-emerald">AI / Speech</span>
-                    </div>
-                    <p class="repo-desc">High-speed local voice dictation and speech-to-text utility powered by OpenAI's Whisper model with global system keyboard injection for hands-free typing across any active window.</p>
-                    
-                    <div class="repo-tags">
-                        <span class="badge">Whisper AI</span>
-                        <span class="badge">Local Speech</span>
-                        <span class="badge">Keyboard Injection</span>
-                    </div>
-
-                    <div class="repo-terminal">
-                        <code>git clone https://github.com/thebubbsy/whisper-writer</code>
-                        <button class="copy-btn" data-copy="git clone https://github.com/thebubbsy/whisper-writer" title="Copy command">
-                            <i class="far fa-copy"></i>
-                        </button>
-                    </div>
-
-                    <div class="repo-footer">
-                        <div class="repo-meta">
-                            <span><i class="far fa-star"></i> AI Tooling</span>
-                            <span><i class="fab fa-python"></i> Python</span>
-                        </div>
-                        <a href="https://github.com/thebubbsy/whisper-writer" target="_blank" rel="noopener noreferrer">View Repo &rarr;</a>
-                    </div>
-                </div>
-
-                <!-- 18. universal-element-cloner -->
+                <!-- 12. universal-element-cloner (PUBLIC) -->
                 <div class="repo-card" data-category="edge">
                     <div class="repo-header">
                         <div class="repo-title-group">
@@ -868,8 +656,6 @@
                 <ul class="footer-nav">
                     <li><a href="index.html">Home</a></li>
                     <li><a href="marksmith.html">MarkSmith</a></li>
-                    <li><a href="fuelahead.html">FuelAhead</a></li>
-                    <li><a href="teams-chat-exporter.html">Teams Exporter</a></li>
                     <li><a href="garage-controller.html">Garage Controller</a></li>
                     <li><a href="cli-tour.html">CLI Tour</a></li>
                     <li><a href="tools.html">Tools</a></li>
