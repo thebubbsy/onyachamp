@@ -1,5 +1,5 @@
 {
-  "generated": "2026-11-17T07:59:48Z",
+  "generated": "2026-11-17T20:59:30Z",
   "owner": "thebubbsy",
   "groups": [
     {
@@ -121,8 +121,8 @@
           "name": "WingetBatch_Standalone.ps1",
           "kind": "file",
           "version": "main",
-          "size": 477451,
-          "updated": "2026-11-17T07:05:43Z",
+          "size": 481339,
+          "updated": "2026-11-17T13:47:53Z",
           "url": "https://raw.githubusercontent.com/thebubbsy/WingetBatch/main/WingetBatch_Standalone.ps1"
         }
       ]
