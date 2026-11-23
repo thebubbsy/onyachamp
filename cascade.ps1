@@ -1,0 +1,4004 @@
+<#
+.SYNOPSIS
+    UpdateCascade - Autonomous Multi-Pass Windows Update & Driver Engine with Bulletproof Reboot Persistence.
+.DESCRIPTION
+    UpdateCascade is a standalone, single-file Windows Update and Driver cascade utility engineered
+    for Windows 11, Windows 10, Windows Server, and Windows Setup (OOBE Shift+F10).
+
+    Features:
+    - 1-Click Autonomous Multi-Pass Cascade: Scans, downloads, installs, countdown reboots,
+      and persistently relaunches across reboots until 0 updates remain or -MaxPasses is reached.
+    - Bulletproof Multi-Tier Relaunch Persistence across ALL Windows lifecycle phases:
+      * HKLM RunOnce (Standard + Elevated '*' priority prefix)
+      * HKLM Run
+      * HKCU RunOnce & Run
+      * Default User Profile Hive (C:\Users\Default\NTUSER.DAT) RunOnce/Run injection
+      * Scheduled Task (AtLogOn for BUILTIN\Administrators & BUILTIN\Users)
+      * Scheduled Task (AtStartup as NT AUTHORITY\SYSTEM)
+      * Winlogon Userinit Key Hook
+      * Winlogon AppSetup Key Hook
+      * Active Setup Component
+      * SetupComplete.cmd & ErrorHandler.cmd in %windir%\Setup\Scripts
+      * All Users & Default User Startup Folders
+      * RunOnceEx Registry Keys
+      * Ephemeral Windows Boot Service (UpdateCascadeSvc)
+      * Dedicated Bootstrap Launchers (resume.cmd, resume.vbs, launch.cmd)
+    - 4-Tier Bulletproof Reboot Execution (shutdown.exe, Win32 InitiateSystemShutdownEx/ExitWindowsEx,
+      Restart-Computer -Force, WMI/CIM Win32Shutdown).
+    - Modern Win11 Cyber-Dark Lightweight WPF GUI + Headless / Autonomous CLI Automation.
+    - Zero external module dependencies: Native COM (Microsoft.Update.Session) & USO Client.
+
+.PARAMETER Autonomous
+    Run the cascade completely unattended in headless CLI mode.
+.PARAMETER MaxPasses
+    Maximum cascade passes (scans/installs/reboots) before completing (default: 5).
+.PARAMETER IncludeDrivers
+    Include hardware device drivers and firmware updates from Microsoft Update catalog (default: $true).
+.PARAMETER RebootDelay
+    Reboot countdown delay in seconds (default: 5).
+.PARAMETER NoReboot
+    Install updates but suppress automatic system reboot.
+.PARAMETER ScanOnly
+    Query pending updates and drivers without installing.
+.PARAMETER ResumeFromRestart
+    Internal parameter triggered by persistence launchers to resume the active cascade pass.
+.PARAMETER Unregister
+    Cleanly remove and unregister all 17 persistence mechanisms and temporary state files.
+.PARAMETER Status
+    Output the current cascade state as JSON.
+
+.EXAMPLE
+    # One-line web bootstrap launch (GUI)
+    irm https://onyachamp.com/cascade | iex
+
+.EXAMPLE
+    # CLI unattended 5-pass cascade with drivers
+    powershell.exe -ExecutionPolicy Bypass -File .\cascade.ps1 -Autonomous -MaxPasses 5 -IncludeDrivers
+
+.EXAMPLE
+    # Scan only
+    powershell.exe -ExecutionPolicy Bypass -File .\cascade.ps1 -ScanOnly
+
+.EXAMPLE
+    # Emergency unregister / cleanup
+    powershell.exe -ExecutionPolicy Bypass -File .\cascade.ps1 -Unregister
+
+.NOTES
+    Author:  Matthew Bubb <matt@onyachamp.com>
+    License: MIT
+#>
+
+[CmdletBinding(DefaultParameterSetName = 'Default')]
+param(
+    [Parameter(ParameterSetName = 'Default')]
+    [Parameter(ParameterSetName = 'Interactive')]
+    [switch]$Gui,
+
+    [Parameter(ParameterSetName = 'Autonomous')]
+    [switch]$Autonomous,
+
+    [Parameter(ParameterSetName = 'Autonomous')]
+    [Parameter(ParameterSetName = 'Interactive')]
+    [Alias('PatchCascade')]
+    [switch]$Cascade,
+
+    [Parameter(ParameterSetName = 'Default')]
+    [Parameter(ParameterSetName = 'Autonomous')]
+    [Parameter(ParameterSetName = 'Interactive')]
+    [int]$MaxPasses = 5,
+
+    [Parameter(ParameterSetName = 'Default')]
+    [Parameter(ParameterSetName = 'Autonomous')]
+    [Parameter(ParameterSetName = 'Interactive')]
+    [switch]$IncludeDrivers = $true,
+
+    [Parameter(ParameterSetName = 'Default')]
+    [Parameter(ParameterSetName = 'Autonomous')]
+    [Parameter(ParameterSetName = 'Interactive')]
+    [int]$RebootDelay = 5,
+
+    [Parameter(ParameterSetName = 'Default')]
+    [Parameter(ParameterSetName = 'Autonomous')]
+    [Parameter(ParameterSetName = 'Interactive')]
+    [switch]$NoReboot,
+
+    [Parameter(ParameterSetName = 'ScanOnly')]
+    [switch]$ScanOnly,
+
+    [Parameter(ParameterSetName = 'Resume')]
+    [Parameter(ParameterSetName = 'BootWorker')]
+    [switch]$ResumeFromRestart,
+
+    [Parameter(ParameterSetName = 'BootWorker')]
+    [Parameter(ParameterSetName = 'Resume')]
+    [switch]$BootWorker,
+
+    [Parameter(ParameterSetName = 'Unregister')]
+    [Alias('Cleanup')]
+    [switch]$Unregister,
+
+    [Parameter(ParameterSetName = 'Status')]
+    [switch]$Status,
+
+    [string]$LogPath
+)
+
+Set-StrictMode -Off
+$ErrorActionPreference = 'Continue'
+
+# --- 1. GLOBAL CONSTANTS & DIRECTORIES ---
+$script:AppName            = 'UpdateCascade'
+$script:AppVersion        = '1.0.0'
+$script:PersistDir         = Join-Path $env:ProgramData 'UpdateCascade'
+$script:StateFile          = Join-Path $script:PersistDir 'cascade_state.json'
+$script:LogFile            = if ($LogPath) { $LogPath } else { Join-Path $script:PersistDir 'cascade.log' }
+$script:ScriptSelfCopy     = Join-Path $script:PersistDir 'UpdateCascade.ps1'
+$script:ResumeCmd          = Join-Path $script:PersistDir 'resume.cmd'
+$script:ResumeVbs          = Join-Path $script:PersistDir 'resume.vbs'
+$script:LaunchCmd          = Join-Path $script:PersistDir 'launch.cmd'
+$script:MutexName          = 'Global\UpdateCascade_Master_Mutex'
+$script:TaskLogonName      = 'UpdateCascade_Logon'
+$script:TaskBootName       = 'UpdateCascade_Boot'
+$script:ServiceName        = 'UpdateCascadeSvc'
+$script:RunOnceName        = '*UpdateCascade'
+$script:RunName            = 'UpdateCascade'
+$script:ActiveSetupGuid    = '{D8F9A5B2-7C34-4C2E-8E9F-1A2B3C4D5E6F}'
+$script:RebootAborted      = $false
+$script:GuiLogCallback     = $null
+
+# --- 2. LOGGING ENGINE ---
+function Write-CascadeLog {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$Message,
+        [ValidateSet('INFO', 'SUCCESS', 'WARN', 'ERROR', 'STEP')]
+        [string]$Level = 'INFO'
+    )
+
+    $timestamp = (Get-Date).ToString('yyyy-MM-dd HH:mm:ss')
+    $prefix = "[$timestamp] [$Level]"
+    $line = "$prefix $Message"
+
+    $fgColor = switch ($Level) {
+        'SUCCESS' { [ConsoleColor]::Green }
+        'WARN'    { [ConsoleColor]::Yellow }
+        'ERROR'   { [ConsoleColor]::Red }
+        'STEP'    { [ConsoleColor]::Cyan }
+        default   { [ConsoleColor]::Gray }
+    }
+
+    try {
+        Write-Host $line -ForegroundColor $fgColor
+    } catch {
+        [Console]::WriteLine($line)
+    }
+
+    try {
+        if (-not (Test-Path $script:PersistDir)) {
+            New-Item -Path $script:PersistDir -ItemType Directory -Force -ErrorAction SilentlyContinue | Out-Null
+        }
+        [System.IO.File]::AppendAllText($script:LogFile, "$line`r`n", [System.Text.Encoding]::UTF8)
+    } catch { }
+
+    if ($script:GuiLogCallback) {
+        try { & $script:GuiLogCallback $Message $Level } catch { }
+    }
+}
+
+# --- 3. RUNTIME CONTEXT & ELEVATION ---
+function Get-CascadeRuntimeContext {
+    [CmdletBinding()]
+    param()
+
+    $isSystem = $false
+    $isAdmin = $false
+    $isOobe = $false
+    $userName = $env:USERNAME
+
+    try {
+        $ident = [System.Security.Principal.WindowsIdentity]::GetCurrent()
+        $isSystem = ($ident.User.Value -eq 'S-1-5-18')
+        $princ = [System.Security.Principal.WindowsPrincipal]$ident
+        $isAdmin = $princ.IsInRole([System.Security.Principal.WindowsBuiltInRole]::Administrator) -or $isSystem
+        $userName = $ident.Name
+    } catch { }
+
+    try {
+        $setupType = (Get-ItemProperty 'HKLM:\SYSTEM\Setup' -Name 'SetupType' -ErrorAction SilentlyContinue).SetupType
+        $oobeInProg = (Get-ItemProperty 'HKLM:\SYSTEM\Setup' -Name 'OOBEInProgress' -ErrorAction SilentlyContinue).OOBEInProgress
+        $cmdLine = (Get-ItemProperty 'HKLM:\SYSTEM\Setup' -Name 'CmdLine' -ErrorAction SilentlyContinue).CmdLine
+        if ($setupType -gt 0 -or $oobeInProg -eq 1 -or ($cmdLine -and $cmdLine -match 'msoobe')) {
+            $isOobe = $true
+        }
+    } catch { }
+
+    $hostExe = (Get-Process -Id $PID).Path
+    if (-not $hostExe -or -not (Test-Path $hostExe)) {
+        $hostExe = if ($PSVersionTable.PSEdition -eq 'Core') {
+            (Get-Command pwsh.exe -ErrorAction SilentlyContinue).Source
+        } else {
+            Join-Path $env:SystemRoot 'System32\WindowsPowerShell\v1.0\powershell.exe'
+        }
+    }
+
+    return [PSCustomObject]@{
+        IsSystem      = $isSystem
+        IsAdmin       = $isAdmin
+        IsOobe        = $isOobe
+        UserName      = $userName
+        HostExe       = $hostExe
+        Interactive   = [Environment]::UserInteractive
+    }
+}
+
+function Ensure-CascadeElevation {
+    [CmdletBinding()]
+    param()
+
+    $ctx = Get-CascadeRuntimeContext
+    if (-not $ctx.IsAdmin) {
+        Write-CascadeLog "Administrator privileges are required for Windows Update installation. Attempting elevation..." "WARN"
+        $selfScript = $PSCommandPath
+        if (-not $selfScript) {
+            $selfScript = Save-CascadeSelfCopy
+        }
+        $argList = "-NoProfile -ExecutionPolicy Bypass -STA -File `"$selfScript`""
+        if ($Autonomous) { $argList += " -Autonomous -MaxPasses $MaxPasses -IncludeDrivers:$IncludeDrivers" }
+
+        try {
+            $proc = Start-Process -FilePath "powershell.exe" -ArgumentList $argList -Verb RunAs -PassThru -ErrorAction Stop
+            if ($proc) {
+                Write-CascadeLog "Elevated process launched (PID: $($proc.Id)). Exiting current unprivileged process." "INFO"
+                exit 0
+            }
+        } catch {
+            Write-CascadeLog "Elevation request was cancelled or failed: $($_.Exception.Message)" "ERROR"
+            Write-CascadeLog "Please re-run this script in an elevated PowerShell prompt (Run as Administrator)." "ERROR"
+            exit 1
+        }
+    }
+}
+
+# --- 4. SELF-PERSISTENCE SCRIPT EMISSION ---
+function Save-CascadeSelfCopy {
+    [CmdletBinding()]
+    param()
+
+    try {
+        if (-not (Test-Path $script:PersistDir)) {
+            New-Item -Path $script:PersistDir -ItemType Directory -Force | Out-Null
+        }
+
+        # 1. Save PowerShell Script Copy
+        $scriptSource = $null
+        if ($PSCommandPath -and (Test-Path $PSCommandPath)) {
+            $scriptSource = [System.IO.File]::ReadAllText($PSCommandPath, [System.Text.Encoding]::UTF8)
+        } else {
+            # In-memory execution (irm ... | iex)
+            # Try reading local development/test script first if present
+            $localCandidate = "C:\src\UpdateCascade\cascade.ps1"
+            if (Test-Path $localCandidate) {
+                try { $scriptSource = [System.IO.File]::ReadAllText($localCandidate, [System.Text.Encoding]::UTF8) } catch { }
+            }
+            if (-not $scriptSource -or $scriptSource.Length -lt 2000) {
+                # Enforce TLS 1.2 and TLS 1.3 for Cloudflare edge compatibility
+                [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.SecurityProtocolType]::Tls12 -bor [System.Net.SecurityProtocolType]::Tls13
+                $fetchUrls = @(
+                    'https://onyachamp.com/cascade',
+                    'https://raw.githubusercontent.com/thebubbsy/UpdateCascade/main/cascade'
+                )
+                foreach ($u in $fetchUrls) {
+                    try {
+                        $webClient = New-Object System.Net.WebClient
+                        $scriptSource = $webClient.DownloadString($u)
+                        $webClient.Dispose()
+                        if ($scriptSource -and $scriptSource.Length -ge 2000) { break }
+                    } catch { }
+                }
+            }
+        }
+
+        if ($scriptSource -and $scriptSource.Length -ge 2000) {
+            [System.IO.File]::WriteAllText($script:ScriptSelfCopy, $scriptSource, [System.Text.Encoding]::UTF8)
+            Write-CascadeLog "Saved local persistent payload to: $script:ScriptSelfCopy" "INFO"
+        }
+
+        # 2. Emit Master resume.cmd Launcher with Self-Healing Recovery
+        $resumeCmdContent = @"
+@echo off
+setlocal enabledelayedexpansion
+title UpdateCascade Auto-Resume Launcher
+echo [UpdateCascade] System restarted. Waiting for network and services to stabilize...
+timeout /t 10 /nobreak >nul 2>&1
+
+set SCRIPT_PATH=%~dp0UpdateCascade.ps1
+if not exist "%SCRIPT_PATH%" goto RecoverPayload
+for %%A in ("%SCRIPT_PATH%") do if %%~zA LSS 2000 goto RecoverPayload
+goto LaunchEngine
+
+:RecoverPayload
+echo [UpdateCascade] Payload missing or truncated. Waiting for network connectivity...
+timeout /t 15 /nobreak >nul 2>&1
+echo [UpdateCascade] Downloading authoritative engine...
+powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12 -bor [Net.SecurityProtocolType]::Tls13; (New-Object Net.WebClient).DownloadFile('https://onyachamp.com/cascade', '%SCRIPT_PATH%')"
+if not exist "%SCRIPT_PATH%" (
+    powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12 -bor [Net.SecurityProtocolType]::Tls13; (New-Object Net.WebClient).DownloadFile('https://raw.githubusercontent.com/thebubbsy/UpdateCascade/main/cascade', '%SCRIPT_PATH%')"
+)
+
+:LaunchEngine
+set PS_EXE=%SystemRoot%\System32\WindowsPowerShell\v1.0\powershell.exe
+set BOOT_ARG=
+if /i "%~1"=="-Boot" set BOOT_ARG=-BootWorker
+echo [UpdateCascade] Launching cascade engine...
+start "" "%PS_EXE%" -NoProfile -ExecutionPolicy Bypass -STA -File "%SCRIPT_PATH%" -ResumeFromRestart !BOOT_ARG! %*
+exit /b 0
+"@
+        [System.IO.File]::WriteAllText($script:ResumeCmd, $resumeCmdContent, [System.Text.Encoding]::ASCII)
+
+        # 3. Emit Silent resume.vbs COM Launcher (Flicker-Free Invocation)
+        $resumeVbsContent = @"
+Set objShell = CreateObject("WScript.Shell")
+strCmd = "cmd.exe /c """ & CreateObject("Scripting.FileSystemObject").GetParentFolderName(WScript.ScriptFullName) & "\resume.cmd"""
+objShell.Run strCmd, 0, False
+Set objShell = Nothing
+"@
+        [System.IO.File]::WriteAllText($script:ResumeVbs, $resumeVbsContent, [System.Text.Encoding]::ASCII)
+
+        # 4. Emit Interactive launch.cmd
+        $launchCmdContent = @"
+@echo off
+setlocal
+powershell.exe -NoProfile -ExecutionPolicy Bypass -STA -File "%~dp0UpdateCascade.ps1" %*
+"@
+        [System.IO.File]::WriteAllText($script:LaunchCmd, $launchCmdContent, [System.Text.Encoding]::ASCII)
+
+        return $script:ScriptSelfCopy
+    } catch {
+        Write-CascadeLog "Failed to persist script files: $($_.Exception.Message)" "WARN"
+        return $PSCommandPath
+    }
+}
+
+# --- 5. CASCADE STATE MANAGEMENT ---
+function Get-CascadeState {
+    [CmdletBinding()]
+    param()
+
+    if (Test-Path $script:StateFile) {
+        try {
+            $raw = [System.IO.File]::ReadAllText($script:StateFile, [System.Text.Encoding]::UTF8)
+            if (-not [string]::IsNullOrWhiteSpace($raw)) {
+                return ConvertFrom-Json $raw -ErrorAction Stop
+            }
+        } catch { }
+    }
+    return $null
+}
+
+function Set-CascadeState {
+    [CmdletBinding()]
+    param(
+        [int]$CurrentPass = 1,
+        [int]$MaxPasses = 5,
+        [bool]$IncludeDrivers = $true,
+        [int]$TotalInstalled = 0,
+        [bool]$Active = $true,
+        [bool]$Autonomous = $false
+    )
+
+    try {
+        if (-not (Test-Path $script:PersistDir)) {
+            New-Item -Path $script:PersistDir -ItemType Directory -Force | Out-Null
+        }
+        $stateObj = [PSCustomObject]@{
+            Active         = $Active
+            Autonomous     = $Autonomous
+            CurrentPass    = $CurrentPass
+            MaxPasses      = $MaxPasses
+            IncludeDrivers = $IncludeDrivers
+            TotalInstalled = $TotalInstalled
+            UpdatedUtc     = (Get-Date).ToUniversalTime().ToString('o')
+            MachineName    = $env:COMPUTERNAME
+        }
+        $json = ConvertTo-Json $stateObj -Compress
+        [System.IO.File]::WriteAllText($script:StateFile, $json, [System.Text.Encoding]::UTF8)
+        return $true
+    } catch {
+        Write-CascadeLog "Failed to write cascade state: $($_.Exception.Message)" "WARN"
+        return $false
+    }
+}
+
+function Clear-CascadeState {
+    [CmdletBinding()]
+    param()
+
+    try {
+        if (Test-Path $script:StateFile) {
+            Remove-Item -Path $script:StateFile -Force -ErrorAction SilentlyContinue
+        }
+        return $true
+    } catch {
+        return $false
+    }
+}
+
+# --- 6. MULTI-TIER RELAUNCH PERSISTENCE ENGINE (17 DISTINCT VECTORS) ---
+function Register-CascadePersistence {
+    [CmdletBinding()]
+    param()
+
+    Write-CascadeLog "Arming 17-tier relaunch persistence across Windows lifecycle contexts..." "STEP"
+    $payloadPath = Save-CascadeSelfCopy
+    $resumeCmd = $script:ResumeCmd
+    $resumeVbs = $script:ResumeVbs
+    $registeredCount = 0
+
+    # Vector 1: HKLM RunOnce (Standard + Elevated '*' priority prefix)
+    # Winlogon processes '*' entries with priority even in Safe Mode
+    try {
+        Set-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\RunOnce' `
+            -Name $script:RunOnceName -Value "cmd.exe /c `"$resumeCmd`"" -Type String -Force -ErrorAction Stop
+        $registeredCount++
+    } catch { }
+
+    # Vector 2: HKLM Run (Persistent on every logon until completion)
+    try {
+        Set-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Run' `
+            -Name $script:RunName -Value "cmd.exe /c `"$resumeCmd`"" -Type String -Force -ErrorAction Stop
+        $registeredCount++
+    } catch { }
+
+    # Vector 3: HKCU RunOnce & Run (Current User Context)
+    try {
+        Set-ItemProperty -Path 'HKCU:\Software\Microsoft\Windows\CurrentVersion\RunOnce' `
+            -Name $script:RunOnceName -Value "cmd.exe /c `"$resumeCmd`"" -Type String -Force -ErrorAction SilentlyContinue
+        Set-ItemProperty -Path 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Run' `
+            -Name $script:RunName -Value "cmd.exe /c `"$resumeCmd`"" -Type String -Force -ErrorAction SilentlyContinue
+        $registeredCount += 2
+    } catch { }
+
+    # Vector 4: Default User Profile Hive Injection (Crucial for OOBE & New User Creation)
+    # Uses reg.exe directly to avoid handle locking traps in PowerShell registry provider
+    try {
+        $defHive = Join-Path $env:SystemDrive 'Users\Default\NTUSER.DAT'
+        if (Test-Path $defHive) {
+            $regExe = Join-Path $env:SystemRoot 'System32\reg.exe'
+            & $regExe load "HKLM\UpdateCascadeDef" "$defHive" 2>&1 | Out-Null
+            if ($LASTEXITCODE -eq 0) {
+                & $regExe add "HKLM\UpdateCascadeDef\Software\Microsoft\Windows\CurrentVersion\RunOnce" /v "$script:RunOnceName" /t REG_SZ /d "cmd.exe /c `"$resumeCmd`"" /f 2>&1 | Out-Null
+                & $regExe unload "HKLM\UpdateCascadeDef" 2>&1 | Out-Null
+                $registeredCount++
+            }
+        }
+    } catch { }
+
+    # Vector 5: Interactive Scheduled Task (AtLogOn for BUILTIN\Administrators & BUILTIN\Users)
+    try {
+        if (Get-Command New-ScheduledTaskAction -ErrorAction SilentlyContinue) {
+            $action    = New-ScheduledTaskAction -Execute "cmd.exe" -Argument "/c `"$resumeCmd`""
+            $trigger   = New-ScheduledTaskTrigger -AtLogOn
+            $principal = New-ScheduledTaskPrincipal -GroupId "BUILTIN\Administrators" -RunLevel Highest
+            $settings  = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -StartWhenAvailable -ExecutionTimeLimit ([TimeSpan]::Zero)
+            Register-ScheduledTask -TaskName $script:TaskLogonName -Action $action -Trigger $trigger -Principal $principal -Settings $settings -Force -ErrorAction Stop | Out-Null
+            $registeredCount++
+        } elseif (Get-Command schtasks.exe -ErrorAction SilentlyContinue) {
+            cmd.exe /c "schtasks.exe /Create /TN `"$($script:TaskLogonName)`" /TR `"cmd.exe /c `"`"$resumeCmd`"`"`" /SC ONLOGON /RL HIGHEST /F /IT" 2>&1 | Out-Null
+            $registeredCount++
+        }
+    } catch { }
+
+    # Vector 6: Boot-Time Scheduled Task (AtStartup as NT AUTHORITY\SYSTEM)
+    # Solves the condition where machine restarts and sits at Windows Login / Lock screen unattended
+    try {
+        if (Get-Command New-ScheduledTaskAction -ErrorAction SilentlyContinue) {
+            $actionBoot    = New-ScheduledTaskAction -Execute "cmd.exe" -Argument "/c `"$resumeCmd`" -Boot"
+            $triggerBoot   = New-ScheduledTaskTrigger -AtStartup
+            $principalBoot = New-ScheduledTaskPrincipal -UserId "NT AUTHORITY\SYSTEM" -RunLevel Highest
+            $settingsBoot  = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -StartWhenAvailable -ExecutionTimeLimit ([TimeSpan]::Zero)
+            Register-ScheduledTask -TaskName $script:TaskBootName -Action $actionBoot -Trigger $triggerBoot -Principal $principalBoot -Settings $settingsBoot -Force -ErrorAction Stop | Out-Null
+            $registeredCount++
+        } elseif (Get-Command schtasks.exe -ErrorAction SilentlyContinue) {
+            cmd.exe /c "schtasks.exe /Create /TN `"$($script:TaskBootName)`" /TR `"cmd.exe /c `"`"$resumeCmd`"`" -Boot`" /SC ONSTART /RU `"SYSTEM`" /RL HIGHEST /F" 2>&1 | Out-Null
+            $registeredCount++
+        }
+    } catch { }
+
+    # Vector 7: Winlogon Userinit Key Hook
+    # Winlogon invokes Userinit for EVERY logon before Explorer initializes
+    try {
+        $winlogonKey = 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon'
+        $curUserinit = (Get-ItemProperty $winlogonKey -Name 'Userinit' -ErrorAction SilentlyContinue).Userinit
+        if ($curUserinit -and $curUserinit -notlike "*UpdateCascade*") {
+            Set-ItemProperty $winlogonKey -Name 'UpdateCascade_Userinit_Orig' -Value $curUserinit -Type String -Force -ErrorAction SilentlyContinue
+            $cleanUserinit = $curUserinit.TrimEnd(',')
+            $userinitExec = "$env:SystemRoot\System32\cmd.exe /c `"$resumeCmd`""
+            $newUserinit = "$cleanUserinit,$userinitExec,"
+            Set-ItemProperty $winlogonKey -Name 'Userinit' -Value $newUserinit -Type String -Force -ErrorAction SilentlyContinue
+            $registeredCount++
+        }
+    } catch { }
+
+    # Vector 8: Winlogon AppSetup Key Hook
+    try {
+        $winlogonKey = 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon'
+        $curAppSetup = (Get-ItemProperty $winlogonKey -Name 'AppSetup' -ErrorAction SilentlyContinue).AppSetup
+        if (-not $curAppSetup -or $curAppSetup -notlike "*UpdateCascade*") {
+            $appSetupExec = "$env:SystemRoot\System32\cmd.exe /c `"$resumeCmd`""
+            if ($curAppSetup) {
+                Set-ItemProperty $winlogonKey -Name 'UpdateCascade_AppSetup_Orig' -Value $curAppSetup -Type String -Force -ErrorAction SilentlyContinue
+                Set-ItemProperty $winlogonKey -Name 'AppSetup' -Value "$curAppSetup,$appSetupExec," -Type String -Force -ErrorAction SilentlyContinue
+            } else {
+                Set-ItemProperty $winlogonKey -Name 'AppSetup' -Value "$appSetupExec," -Type String -Force -ErrorAction SilentlyContinue
+            }
+            $registeredCount++
+        }
+    } catch { }
+
+    # Vector 9: Active Setup Component
+    # Handled by userinit/explorer for all existing and newly logged-in accounts
+    try {
+        $activeSetupKey = "HKLM:\SOFTWARE\Microsoft\Active Setup\Installed Components\$script:ActiveSetupGuid"
+        if (-not (Test-Path $activeSetupKey)) { New-Item -Path $activeSetupKey -Force | Out-Null }
+        Set-ItemProperty -Path $activeSetupKey -Name '(Default)' -Value 'UpdateCascade Auto-Resume' -Force -ErrorAction SilentlyContinue
+        Set-ItemProperty -Path $activeSetupKey -Name 'StubPath' -Value "cmd.exe /c `"$resumeCmd`"" -Force -ErrorAction SilentlyContinue
+        Set-ItemProperty -Path $activeSetupKey -Name 'Version' -Value '1,0,0' -Force -ErrorAction SilentlyContinue
+        $registeredCount++
+    } catch { }
+
+    # Vector 10: SetupComplete.cmd Hook (%windir%\Setup\Scripts\SetupComplete.cmd)
+    # Native Windows Setup specialization and post-OOBE transition fallback
+    try {
+        $setupDir = Join-Path $env:SystemRoot 'Setup\Scripts'
+        if (-not (Test-Path $setupDir)) { New-Item -Path $setupDir -ItemType Directory -Force | Out-Null }
+        $setupCompletePath = Join-Path $setupDir 'SetupComplete.cmd'
+        $hookBlock = "REM --- UpdateCascade Hook ---`r`nstart `"`" cmd.exe /c `"$resumeCmd`"`r`nREM --- End UpdateCascade Hook ---"
+
+        if (Test-Path $setupCompletePath) {
+            $existing = [System.IO.File]::ReadAllText($setupCompletePath, [System.Text.Encoding]::ASCII)
+            if ($existing -notlike '*UpdateCascade*') {
+                $hasEchoOff = ($existing -match '(?i)^\s*@echo\s+off')
+                if ($hasEchoOff) {
+                    $cleaned = $existing -replace '(?i)^\s*@echo\s+off\s*(\r?\n)?', ''
+                    $newContent = "@echo off`r`n$hookBlock`r`n$cleaned"
+                } else {
+                    $newContent = "$hookBlock`r`n$existing"
+                }
+                [System.IO.File]::WriteAllText($setupCompletePath, $newContent, [System.Text.Encoding]::ASCII)
+                $registeredCount++
+            }
+        } else {
+            $newContent = "@echo off`r`n$hookBlock`r`n"
+            [System.IO.File]::WriteAllText($setupCompletePath, $newContent, [System.Text.Encoding]::ASCII)
+            $registeredCount++
+        }
+    } catch { }
+
+    # Vector 11: ErrorHandler.cmd Hook (%windir%\Setup\Scripts\ErrorHandler.cmd)
+    try {
+        $setupDir = Join-Path $env:SystemRoot 'Setup\Scripts'
+        $errorHandlerPath = Join-Path $setupDir 'ErrorHandler.cmd'
+        $errHookBlock = "REM --- UpdateCascade Error Hook ---`r`nstart `"`" cmd.exe /c `"$resumeCmd`"`r`nREM --- End UpdateCascade Error Hook ---"
+        if (Test-Path $errorHandlerPath) {
+            $existing = [System.IO.File]::ReadAllText($errorHandlerPath, [System.Text.Encoding]::ASCII)
+            if ($existing -notlike '*UpdateCascade*') {
+                [System.IO.File]::AppendAllText($errorHandlerPath, "`r`n$errHookBlock`r`n", [System.Text.Encoding]::ASCII)
+                $registeredCount++
+            }
+        } else {
+            [System.IO.File]::WriteAllText($errorHandlerPath, "@echo off`r`n$errHookBlock`r`n", [System.Text.Encoding]::ASCII)
+            $registeredCount++
+        }
+    } catch { }
+
+    # Vector 12: All Users Startup Folder
+    try {
+        $commonStartup = [Environment]::GetFolderPath([Environment+SpecialFolder]::CommonStartup)
+        if ($commonStartup -and (Test-Path $commonStartup)) {
+            $startupCmd = Join-Path $commonStartup 'UpdateCascade.cmd'
+            $cmdContent = "@echo off`r`nstart `"`" cmd.exe /c `"$resumeCmd`"`r`n"
+            [System.IO.File]::WriteAllText($startupCmd, $cmdContent, [System.Text.Encoding]::ASCII)
+            $registeredCount++
+        }
+    } catch { }
+
+    # Vector 13: Default User Startup Folder (Inherited by new profiles)
+    try {
+        $defStartup = Join-Path $env:SystemDrive 'Users\Default\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Startup'
+        if (-not (Test-Path $defStartup)) { New-Item -Path $defStartup -ItemType Directory -Force | Out-Null }
+        $defStartupCmd = Join-Path $defStartup 'UpdateCascade.cmd'
+        $cmdContent = "@echo off`r`nstart `"`" cmd.exe /c `"$resumeCmd`"`r`n"
+        [System.IO.File]::WriteAllText($defStartupCmd, $cmdContent, [System.Text.Encoding]::ASCII)
+        $registeredCount++
+    } catch { }
+
+    # Vector 14: RunOnceEx Registry Keys
+    try {
+        $roeKey = 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\RunOnceEx\900'
+        if (-not (Test-Path $roeKey)) { New-Item -Path $roeKey -Force | Out-Null }
+        Set-ItemProperty -Path $roeKey -Name 'UpdateCascade' -Value "cmd.exe /c `"$resumeCmd`"" -Force -ErrorAction SilentlyContinue
+        $registeredCount++
+    } catch { }
+
+    # Vector 15: Native Windows Setup OOBE CmdLine Hook (HKLM:\SYSTEM\Setup\CmdLine)
+    # The native Windows Setup mechanism invoked across OOBE reboot phases before explorer.exe
+    try {
+        $setupKey = 'HKLM:\SYSTEM\Setup'
+        $curCmd = (Get-ItemProperty $setupKey -Name 'CmdLine' -ErrorAction SilentlyContinue).CmdLine
+        if ($curCmd -and $curCmd -notlike "*UpdateCascade*") {
+            Set-ItemProperty $setupKey -Name 'UpdateCascade_CmdLine_Orig' -Value $curCmd -Type String -Force -ErrorAction SilentlyContinue
+        }
+        $oobeCmd = "$env:SystemRoot\System32\cmd.exe /c `"$resumeCmd`""
+        Set-ItemProperty $setupKey -Name 'CmdLine' -Value $oobeCmd -Type String -Force -ErrorAction SilentlyContinue
+        $registeredCount++
+    } catch { }
+
+    # Vector 16: Local Group Policy Startup Script
+    try {
+        $gpDir = Join-Path $env:SystemRoot 'System32\GroupPolicy\Machine\Scripts\Startup'
+        if (-not (Test-Path $gpDir)) { New-Item -Path $gpDir -ItemType Directory -Force | Out-Null }
+        $gpCmd = Join-Path $gpDir 'UpdateCascade_GP.cmd'
+        [System.IO.File]::WriteAllText($gpCmd, "@echo off`r`nstart `"`" cmd.exe /c `"$resumeCmd`"`r`n", [System.Text.Encoding]::ASCII)
+        $registeredCount++
+    } catch { }
+
+    # Vector 17: User Profile Startup Folder
+    try {
+        $userStartup = [Environment]::GetFolderPath([Environment+SpecialFolder]::Startup)
+        if ($userStartup -and (Test-Path $userStartup)) {
+            $userStartupCmd = Join-Path $userStartup 'UpdateCascade.cmd'
+            [System.IO.File]::WriteAllText($userStartupCmd, "@echo off`r`nstart `"`" cmd.exe /c `"$resumeCmd`"`r`n", [System.Text.Encoding]::ASCII)
+            $registeredCount++
+        }
+    } catch { }
+
+    Write-CascadeLog "Armed $registeredCount relaunch persistence vectors successfully." "SUCCESS"
+    return $registeredCount
+}
+
+# --- 7. COMPLETE SYSTEMATIC CLEAN UNREGISTRATION ENGINE ---
+function Unregister-CascadePersistence {
+    [CmdletBinding()]
+    param()
+
+    Write-CascadeLog "Disarming all persistence vectors and restoring pristine system configuration..." "STEP"
+    $cleanedCount = 0
+
+    # 1. HKLM RunOnce & Run
+    try {
+        foreach ($k in @('RunOnce', 'Run')) {
+            $p = "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\$k"
+            foreach ($n in @($script:RunOnceName, $script:RunName, 'UpdateCascade')) {
+                if ((Get-ItemProperty -Path $p -Name $n -ErrorAction SilentlyContinue).$n) {
+                    Remove-ItemProperty -Path $p -Name $n -Force -ErrorAction SilentlyContinue
+                    $cleanedCount++
+                }
+            }
+        }
+    } catch { }
+
+    # 2. HKCU RunOnce & Run
+    try {
+        foreach ($k in @('RunOnce', 'Run')) {
+            $p = "HKCU:\Software\Microsoft\Windows\CurrentVersion\$k"
+            foreach ($n in @($script:RunOnceName, $script:RunName, 'UpdateCascade')) {
+                if ((Get-ItemProperty -Path $p -Name $n -ErrorAction SilentlyContinue).$n) {
+                    Remove-ItemProperty -Path $p -Name $n -Force -ErrorAction SilentlyContinue
+                    $cleanedCount++
+                }
+            }
+        }
+    } catch { }
+
+    # 3. Default User Hive RunOnce
+    try {
+        $defHive = Join-Path $env:SystemDrive 'Users\Default\NTUSER.DAT'
+        if (Test-Path $defHive) {
+            $regExe = Join-Path $env:SystemRoot 'System32\reg.exe'
+            & $regExe load "HKLM\UpdateCascadeDef" "$defHive" 2>&1 | Out-Null
+            if ($LASTEXITCODE -eq 0) {
+                & $regExe delete "HKLM\UpdateCascadeDef\Software\Microsoft\Windows\CurrentVersion\RunOnce" /v "$script:RunOnceName" /f 2>&1 | Out-Null
+                & $regExe unload "HKLM\UpdateCascadeDef" 2>&1 | Out-Null
+                $cleanedCount++
+            }
+        }
+    } catch { }
+
+    # 4. Scheduled Tasks
+    try {
+        foreach ($task in @($script:TaskLogonName, $script:TaskBootName)) {
+            if (Get-Command Unregister-ScheduledTask -ErrorAction SilentlyContinue) {
+                if (Get-ScheduledTask -TaskName $task -ErrorAction SilentlyContinue) {
+                    Unregister-ScheduledTask -TaskName $task -Confirm:$false -ErrorAction SilentlyContinue | Out-Null
+                    $cleanedCount++
+                }
+            } elseif (Get-Command schtasks.exe -ErrorAction SilentlyContinue) {
+                cmd.exe /c "schtasks.exe /Delete /TN `"$task`" /F" 2>&1 | Out-Null
+                $cleanedCount++
+            }
+        }
+    } catch { }
+
+    # 5. Restore Winlogon Userinit Key
+    try {
+        $winlogonKey = 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon'
+        $orig = (Get-ItemProperty $winlogonKey -Name 'UpdateCascade_Userinit_Orig' -ErrorAction SilentlyContinue).UpdateCascade_Userinit_Orig
+        if ($orig) {
+            Set-ItemProperty $winlogonKey -Name 'Userinit' -Value $orig -Type String -Force -ErrorAction SilentlyContinue
+            Remove-ItemProperty $winlogonKey -Name 'UpdateCascade_Userinit_Orig' -Force -ErrorAction SilentlyContinue
+            $cleanedCount++
+        } else {
+            $cur = (Get-ItemProperty $winlogonKey -Name 'Userinit' -ErrorAction SilentlyContinue).Userinit
+            if ($cur -and $cur -like "*UpdateCascade*") {
+                $cleaned = ($cur.Split(',') | Where-Object { $_ -and $_ -notlike "*UpdateCascade*" }) -join ','
+                if (-not $cleaned) { $cleaned = "C:\Windows\system32\userinit.exe," }
+                if (-not $cleaned.EndsWith(',')) { $cleaned += ',' }
+                Set-ItemProperty $winlogonKey -Name 'Userinit' -Value $cleaned -Type String -Force -ErrorAction SilentlyContinue
+                $cleanedCount++
+            }
+        }
+    } catch { }
+
+    # 6. Restore Winlogon AppSetup Key
+    try {
+        $winlogonKey = 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon'
+        $origApp = (Get-ItemProperty $winlogonKey -Name 'UpdateCascade_AppSetup_Orig' -ErrorAction SilentlyContinue).UpdateCascade_AppSetup_Orig
+        if ($origApp) {
+            Set-ItemProperty $winlogonKey -Name 'AppSetup' -Value $origApp -Type String -Force -ErrorAction SilentlyContinue
+            Remove-ItemProperty $winlogonKey -Name 'UpdateCascade_AppSetup_Orig' -Force -ErrorAction SilentlyContinue
+            $cleanedCount++
+        } else {
+            $curApp = (Get-ItemProperty $winlogonKey -Name 'AppSetup' -ErrorAction SilentlyContinue).AppSetup
+            if ($curApp -and $curApp -like "*UpdateCascade*") {
+                $cleaned = ($curApp.Split(',') | Where-Object { $_ -and $_ -notlike "*UpdateCascade*" }) -join ','
+                if ($cleaned) {
+                    Set-ItemProperty $winlogonKey -Name 'AppSetup' -Value $cleaned -Type String -Force -ErrorAction SilentlyContinue
+                } else {
+                    Remove-ItemProperty $winlogonKey -Name 'AppSetup' -Force -ErrorAction SilentlyContinue
+                }
+                $cleanedCount++
+            }
+        }
+    } catch { }
+
+    # 7. Active Setup Component Key
+    try {
+        $activeSetupKey = "HKLM:\SOFTWARE\Microsoft\Active Setup\Installed Components\$script:ActiveSetupGuid"
+        if (Test-Path $activeSetupKey) {
+            Remove-Item -Path $activeSetupKey -Recurse -Force -ErrorAction SilentlyContinue
+            $cleanedCount++
+        }
+    } catch { }
+
+    # 8. SetupComplete.cmd & ErrorHandler.cmd Hook Cleanup
+    try {
+        foreach ($scriptName in @('SetupComplete.cmd', 'ErrorHandler.cmd')) {
+            $scriptPath = Join-Path $env:SystemRoot "Setup\Scripts\$scriptName"
+            if (Test-Path $scriptPath) {
+                $content = [System.IO.File]::ReadAllText($scriptPath, [System.Text.Encoding]::ASCII)
+                if ($content -like '*UpdateCascade*') {
+                    $lines = (Get-Content -Path $scriptPath -ErrorAction SilentlyContinue) | Where-Object {
+                        $_ -notmatch '(?i)UpdateCascade' -and $_ -notmatch '(?i)resume\.cmd'
+                    }
+                    $trimmed = ($lines -join "`r`n").Trim()
+                    if ([string]::IsNullOrWhiteSpace($trimmed) -or $trimmed -eq '@echo off') {
+                        Remove-Item -Path $scriptPath -Force -ErrorAction SilentlyContinue
+                    } else {
+                        [System.IO.File]::WriteAllText($scriptPath, ($lines -join "`r`n"), [System.Text.Encoding]::ASCII)
+                    }
+                    $cleanedCount++
+                }
+            }
+        }
+    } catch { }
+
+    # 9. Startup Folder Scripts Cleanup
+    try {
+        $commonStartup = [Environment]::GetFolderPath([Environment+SpecialFolder]::CommonStartup)
+        $defStartup = Join-Path $env:SystemDrive 'Users\Default\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Startup'
+        $userStartup = [Environment]::GetFolderPath([Environment+SpecialFolder]::Startup)
+        foreach ($d in @($commonStartup, $defStartup, $userStartup)) {
+            if ($d) {
+                $f = Join-Path $d 'UpdateCascade.cmd'
+                if (Test-Path $f) { Remove-Item -Path $f -Force -ErrorAction SilentlyContinue; $cleanedCount++ }
+            }
+        }
+    } catch { }
+
+    # 10. RunOnceEx Key Cleanup
+    try {
+        $roeKey = 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\RunOnceEx\900'
+        if (Test-Path $roeKey) {
+            Remove-ItemProperty -Path $roeKey -Name 'UpdateCascade' -Force -ErrorAction SilentlyContinue
+            $subKeys = (Get-Item $roeKey).Property
+            if (-not $subKeys -or $subKeys.Count -eq 0) { Remove-Item -Path $roeKey -Force -ErrorAction SilentlyContinue }
+            $cleanedCount++
+        }
+    } catch { }
+
+    # 11. Native Windows Setup OOBE CmdLine Restoration
+    try {
+        $setupKey = 'HKLM:\SYSTEM\Setup'
+        $origCmd = (Get-ItemProperty $setupKey -Name 'UpdateCascade_CmdLine_Orig' -ErrorAction SilentlyContinue).UpdateCascade_CmdLine_Orig
+        if ($origCmd) {
+            Set-ItemProperty $setupKey -Name 'CmdLine' -Value $origCmd -Type String -Force -ErrorAction SilentlyContinue
+            Remove-ItemProperty $setupKey -Name 'UpdateCascade_CmdLine_Orig' -Force -ErrorAction SilentlyContinue
+            $cleanedCount++
+        } else {
+            $curCmd = (Get-ItemProperty $setupKey -Name 'CmdLine' -ErrorAction SilentlyContinue).CmdLine
+            if ($curCmd -and $curCmd -like "*UpdateCascade*") {
+                Set-ItemProperty $setupKey -Name 'CmdLine' -Value "" -Type String -Force -ErrorAction SilentlyContinue
+                $cleanedCount++
+            }
+        }
+    } catch { }
+
+    # 12. Group Policy Script Cleanup
+    try {
+        $gpCmd = Join-Path $env:SystemRoot 'System32\GroupPolicy\Machine\Scripts\Startup\UpdateCascade_GP.cmd'
+        if (Test-Path $gpCmd) { Remove-Item -Path $gpCmd -Force -ErrorAction SilentlyContinue; $cleanedCount++ }
+    } catch { }
+
+    # 13. Remove Launcher CMD & VBS Files
+    try {
+        foreach ($f in @($script:ResumeCmd, $script:ResumeVbs, $script:LaunchCmd)) {
+            if (Test-Path $f) { Remove-Item -Path $f -Force -ErrorAction SilentlyContinue; $cleanedCount++ }
+        }
+    } catch { }
+
+    # 14. Stop and delete legacy service if present
+    try {
+        $scExe = Join-Path $env:SystemRoot 'System32\sc.exe'
+        if (Test-Path $scExe) {
+            cmd.exe /c "sc.exe query UpdateCascadeSvc >nul 2>&1 && sc.exe stop UpdateCascadeSvc >nul 2>&1 && sc.exe delete UpdateCascadeSvc >nul 2>&1"
+        }
+    } catch { }
+
+    Clear-CascadeState | Out-Null
+    Write-CascadeLog "Disarmed and cleaned $cleanedCount persistence artifacts. System is clean." "SUCCESS"
+    return $cleanedCount
+}
+
+# --- 8. 4-TIER BULLETPROOF REBOOT ENGINE ---
+function Invoke-CascadeReboot {
+    [CmdletBinding()]
+    param(
+        [int]$DelaySeconds = 0,
+        [string]$Reason = 'UpdateCascade Multi-Pass System Restart'
+    )
+
+    if ($script:RebootAborted) {
+        Write-CascadeLog "Reboot invocation suppressed: Operator aborted restart countdown." "WARN"
+        return $false
+    }
+
+    Write-CascadeLog "Executing system restart (Delay: ${DelaySeconds}s, Reason: '$Reason')..." "STEP"
+
+    # Tier 1: shutdown.exe /r /t <delay> /f /c "..."
+    try {
+        $shutdownExe = Join-Path $env:SystemRoot 'System32\shutdown.exe'
+        if (Test-Path $shutdownExe) {
+            $argList = "/r /t $DelaySeconds /f /c `"$Reason`""
+            $p = Start-Process -FilePath $shutdownExe -ArgumentList $argList -NoNewWindow -PassThru -ErrorAction SilentlyContinue
+            if ($p) {
+                $p.WaitForExit(2000)
+                if ($p.HasExited -and $p.ExitCode -ne 0 -and $p.ExitCode -ne 1190) {
+                    Write-CascadeLog "shutdown.exe exited with code $($p.ExitCode). Retrying without comment..." "WARN"
+                    $p2 = Start-Process -FilePath $shutdownExe -ArgumentList "/r /t $DelaySeconds /f" -NoNewWindow -PassThru -ErrorAction SilentlyContinue
+                    if ($p2) {
+                        $p2.WaitForExit(2000)
+                        if (-not $p2.HasExited -or $p2.ExitCode -eq 0 -or $p2.ExitCode -eq 1190) {
+                            Write-CascadeLog "Restart dispatched successfully via shutdown.exe." "SUCCESS"
+                            return $true
+                        }
+                    }
+                } else {
+                    Write-CascadeLog "Restart dispatched successfully via shutdown.exe." "SUCCESS"
+                    return $true
+                }
+            }
+        }
+    } catch {
+        Write-CascadeLog "Tier 1 shutdown.exe warning: $($_.Exception.Message)" "WARN"
+    }
+
+    # Tier 2: Win32 API InitiateSystemShutdownEx & ExitWindowsEx via P/Invoke with Token Privilege Adjustment
+    try {
+        if (-not ([System.Management.Automation.PSTypeName]'Win32CascadeShutdown').Type) {
+            Add-Type -TypeDefinition @"
+using System;
+using System.Runtime.InteropServices;
+
+public class Win32CascadeShutdown {
+    [DllImport("advapi32.dll", SetLastError = true, CharSet = CharSet.Auto)]
+    public static extern bool InitiateSystemShutdownEx(string lpMachineName, string lpMessage, uint dwTimeout, bool bForceAppsClosed, bool bRebootAfterShutdown, uint dwReason);
+
+    [DllImport("user32.dll", SetLastError = true)]
+    public static extern bool ExitWindowsEx(uint uFlags, uint dwReason);
+
+    [DllImport("advapi32.dll", SetLastError = true)]
+    private static extern bool OpenProcessToken(IntPtr ProcessHandle, uint DesiredAccess, out IntPtr TokenHandle);
+
+    [DllImport("advapi32.dll", SetLastError = true, CharSet = CharSet.Auto)]
+    private static extern bool LookupPrivilegeValue(string lpSystemName, string lpName, out LUID lpLuid);
+
+    [DllImport("advapi32.dll", SetLastError = true)]
+    private static extern bool AdjustTokenPrivileges(IntPtr TokenHandle, bool DisableAllPrivileges, ref TOKEN_PRIVILEGES NewState, uint BufferLength, IntPtr PreviousState, IntPtr ReturnLength);
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    private static extern bool CloseHandle(IntPtr hObject);
+
+    [DllImport("kernel32.dll")]
+    private static extern IntPtr GetCurrentProcess();
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct LUID {
+        public uint LowPart;
+        public int HighPart;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct TOKEN_PRIVILEGES {
+        public uint PrivilegeCount;
+        public LUID Luid;
+        public uint Attributes;
+    }
+
+    private const uint TOKEN_ADJUST_PRIVILEGES = 0x0020;
+    private const uint TOKEN_QUERY = 0x0008;
+    private const uint SE_PRIVILEGE_ENABLED = 0x00000002;
+    private const string SE_SHUTDOWN_NAME = "SeShutdownPrivilege";
+
+    public static bool EnableShutdownPrivilege() {
+        IntPtr hToken;
+        if (!OpenProcessToken(GetCurrentProcess(), TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY, out hToken)) {
+            return false;
+        }
+        try {
+            LUID luid;
+            if (!LookupPrivilegeValue(null, SE_SHUTDOWN_NAME, out luid)) {
+                return false;
+            }
+            TOKEN_PRIVILEGES tp = new TOKEN_PRIVILEGES();
+            tp.PrivilegeCount = 1;
+            tp.Luid = luid;
+            tp.Attributes = SE_PRIVILEGE_ENABLED;
+            return AdjustTokenPrivileges(hToken, false, ref tp, 0, IntPtr.Zero, IntPtr.Zero);
+        } finally {
+            CloseHandle(hToken);
+        }
+    }
+}
+"@ -ErrorAction SilentlyContinue
+        }
+        if (([System.Management.Automation.PSTypeName]'Win32CascadeShutdown').Type) {
+            [Win32CascadeShutdown]::EnableShutdownPrivilege() | Out-Null
+            # SHTDN_REASON_FLAG_PLANNED (0x80000000) | MAJOR_OPERATINGSYSTEM (0x00020000) | MINOR_UPGRADE (0x00000003)
+            $res = [Win32CascadeShutdown]::InitiateSystemShutdownEx($null, $Reason, [uint32]$DelaySeconds, $true, $true, 0x80020003)
+            if ($res) {
+                Write-CascadeLog "Restart dispatched successfully via Win32 InitiateSystemShutdownEx." "SUCCESS"
+                return $true
+            }
+            # EWX_REBOOT (0x00000002) | EWX_FORCE (0x00000004)
+            $res2 = [Win32CascadeShutdown]::ExitWindowsEx(0x6, 0x80020003)
+            if ($res2) {
+                Write-CascadeLog "Restart dispatched successfully via Win32 ExitWindowsEx." "SUCCESS"
+                return $true
+            }
+        }
+    } catch { }
+
+    # Tier 3: PowerShell Native Restart-Computer -Force
+    try {
+        Restart-Computer -Force -ErrorAction Stop
+        Write-CascadeLog "Restart dispatched successfully via Restart-Computer -Force." "SUCCESS"
+        return $true
+    } catch {
+        Write-CascadeLog "Tier 3 Restart-Computer failed: $($_.Exception.Message)" "WARN"
+    }
+
+    # Tier 4: WMI / CIM Win32_OperatingSystem Win32Shutdown(6)
+    try {
+        $os = Get-CimInstance -ClassName Win32_OperatingSystem -ErrorAction SilentlyContinue
+        if ($os) {
+            Invoke-CimMethod -InputObject $os -MethodName Win32Shutdown -Arguments @{ Flags = 6; Reserved = 0 } -ErrorAction Stop | Out-Null
+            Write-CascadeLog "Restart dispatched successfully via CIM Win32Shutdown(6)." "SUCCESS"
+            return $true
+        }
+    } catch { }
+
+    Write-CascadeLog "All 4 reboot execution tiers were exhausted without confirmation." "ERROR"
+    return $false
+}
+
+# --- 9. WINDOWS UPDATE & DRIVER ENGINE (COM Microsoft.Update.Session) ---
+function Ensure-CascadeUpdateServices {
+    [CmdletBinding()]
+    param()
+
+    $services = @('wuauserv', 'UsoSvc', 'BITS', 'TrustedInstaller', 'cryptsvc', 'DoSvc')
+    foreach ($s in $services) {
+        try {
+            $svc = Get-Service -Name $s -ErrorAction SilentlyContinue
+            if ($svc) {
+                if ($svc.StartType -eq 'Disabled') {
+                    Set-Service -Name $s -StartupType Manual -ErrorAction SilentlyContinue
+                }
+                if ($svc.Status -ne 'Running') {
+                    Start-Service -Name $s -ErrorAction SilentlyContinue
+                }
+            }
+        } catch { }
+    }
+
+    # Configure Delivery Optimization to prefer LAN Peering (Mode 1 = Local Subnet / NAT)
+    try {
+        $doPolicyPath = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\DeliveryOptimization"
+        if (-not (Test-Path $doPolicyPath)) {
+            New-Item -Path $doPolicyPath -Force -ErrorAction SilentlyContinue | Out-Null
+        }
+        $curMode = (Get-ItemProperty -Path $doPolicyPath -Name "DODownloadMode" -ErrorAction SilentlyContinue).DODownloadMode
+        if ($null -eq $curMode -or $curMode -eq 0 -or $curMode -eq 99) {
+            Set-ItemProperty -Path $doPolicyPath -Name "DODownloadMode" -Value 1 -Type DWord -Force -ErrorAction SilentlyContinue
+            Write-CascadeLog "Configured Delivery Optimization DODownloadMode = 1 (LAN Peering enabled)." "INFO"
+        }
+        Enable-NetFirewallRule -DisplayName "*Delivery Optimization*" -ErrorAction SilentlyContinue
+    } catch { }
+}
+
+function Enable-MicrosoftUpdateCatalog {
+    [CmdletBinding()]
+    param()
+
+    try {
+        $sm = New-Object -ComObject Microsoft.Update.ServiceManager -ErrorAction Stop
+        # Microsoft Update Service GUID: 7971f918-a847-4430-9279-4a52d1efe18d
+        $serviceId = "7971f918-a847-4430-9279-4a52d1efe18d"
+        $existing = $sm.Services | Where-Object { $_.ServiceID -eq $serviceId }
+        if (-not $existing) {
+            Write-CascadeLog "Registering Microsoft Update Catalog for device drivers and extended patches..." "INFO"
+            $sm.AddService2($serviceId, 7, "") | Out-Null
+            Write-CascadeLog "Microsoft Update Catalog successfully registered." "SUCCESS"
+        }
+    } catch { }
+}
+
+function Invoke-CascadeUsoScan {
+    [CmdletBinding()]
+    param()
+
+    Ensure-CascadeUpdateServices
+    $uso = Join-Path $env:SystemRoot "System32\usoclient.exe"
+    if (Test-Path $uso) {
+        Start-Process -FilePath $uso -ArgumentList "StartInteractiveScan" -WindowStyle Hidden -ErrorAction SilentlyContinue
+        return $true
+    }
+    return $false
+}
+
+function Wait-CascadeSystemReady {
+    [CmdletBinding()]
+    param(
+        [int]$MaxTimeoutSeconds = 60,
+        [scriptblock]$StatusCallback
+    )
+
+    Write-CascadeLog "Verifying network and service stabilization before update scan..." "INFO"
+    if ($StatusCallback) { & $StatusCallback "Waiting for network connectivity and services to stabilize..." }
+
+    $sw = [System.Diagnostics.Stopwatch]::StartNew()
+    $netReady = $false
+
+    # Wait for network link / DNS
+    while ($sw.Elapsed.TotalSeconds -lt $MaxTimeoutSeconds) {
+        try {
+            $socket = New-Object System.Net.Sockets.TcpClient
+            $async = $socket.BeginConnect("www.microsoft.com", 443, $null, $null)
+            $wait = $async.AsyncWaitHandle.WaitOne(2000, $false)
+            if ($wait -and $socket.Connected) {
+                $socket.EndConnect($async)
+                $socket.Close()
+                $netReady = $true
+                break
+            }
+            $socket.Close()
+        } catch { }
+
+        try {
+            if (Test-Connection -ComputerName 8.8.8.8 -Count 1 -Quiet -ErrorAction SilentlyContinue) {
+                $netReady = $true
+                break
+            }
+        } catch { }
+
+        $elapsed = [math]::Round($sw.Elapsed.TotalSeconds)
+        Write-CascadeLog "Waiting for network connectivity... (${elapsed}s / ${MaxTimeoutSeconds}s)" "INFO"
+        if ($StatusCallback) { & $StatusCallback "Waiting for network connection... (${elapsed}s / ${MaxTimeoutSeconds}s)" }
+        Start-Sleep -Seconds 4
+    }
+
+    if ($netReady) {
+        Write-CascadeLog "Network connectivity verified in $([math]::Round($sw.Elapsed.TotalSeconds, 1))s." "SUCCESS"
+    } else {
+        Write-CascadeLog "Network connectivity wait timed out (${MaxTimeoutSeconds}s). Proceeding with local service check." "WARN"
+    }
+
+    Ensure-CascadeUpdateServices
+
+    # Wait briefly for TiWorker / CBS to settle if active
+    $cbsWait = 0
+    while ($cbsWait -lt 15) {
+        $tiWorker = Get-Process -Name 'TiWorker', 'TrustedInstaller' -ErrorAction SilentlyContinue
+        if ($tiWorker -and (Test-CascadeSystemRebootPending)) {
+            Write-CascadeLog "Windows Modules Installer is committing packages. Waiting for servicing to settle... ($cbsWait/15s)" "INFO"
+            Start-Sleep -Seconds 3
+            $cbsWait += 3
+        } else {
+            break
+        }
+    }
+
+    return $netReady
+}
+
+function Get-CascadePendingUpdates {
+    [CmdletBinding()]
+    param(
+        [switch]$IncludeDrivers = $true,
+        [scriptblock]$StatusCallback,
+        [int]$MaxRetries = 3
+    )
+
+    Wait-CascadeSystemReady -MaxTimeoutSeconds 60 -StatusCallback $StatusCallback
+    Ensure-CascadeUpdateServices
+    if ($IncludeDrivers) { Enable-MicrosoftUpdateCatalog }
+
+    $updates = @()
+    $scanSucceeded = $false
+    $lastError = ""
+
+    for ($attempt = 1; $attempt -le $MaxRetries; $attempt++) {
+        try {
+            if ($StatusCallback) { & $StatusCallback "Connecting to Windows Update COM session (attempt $attempt of $MaxRetries)..." }
+            $session = New-Object -ComObject Microsoft.Update.Session
+            $searcher = $session.CreateUpdateSearcher()
+
+            # Query syntax for Windows Update Agent API
+            $query = "IsInstalled=0 and IsHidden=0"
+            if (-not $IncludeDrivers) {
+                $query += " and Type='Software'"
+            }
+
+            if ($StatusCallback) { & $StatusCallback "Scanning for available updates ($query)..." }
+            $searchResult = $searcher.Search($query)
+            $scanSucceeded = $true
+
+            if ($searchResult -and $searchResult.Updates) {
+                for ($i = 0; $i -lt $searchResult.Updates.Count; $i++) {
+                    $u = $searchResult.Updates.Item($i)
+                    $isDriver = $false
+                    try {
+                        if ($u.Type -eq 2) { $isDriver = $true }
+                        if ($u.Categories) {
+                            for ($c = 0; $c -lt $u.Categories.Count; $c++) {
+                                if ($u.Categories.Item($c).Name -like '*Driver*') { $isDriver = $true; break }
+                            }
+                        }
+                    } catch { }
+
+                    $sizeMb = 0
+                    try {
+                        $sizeMb = [math]::Round($u.MaxDownloadSize / 1MB, 2)
+                    } catch { }
+
+                    $kb = ""
+                    try {
+                        if ($u.KBArticleIDs -and $u.KBArticleIDs.Count -gt 0) {
+                            $kbList = @()
+                            for ($k = 0; $k -lt $u.KBArticleIDs.Count; $k++) {
+                                $kbList += "KB" + $u.KBArticleIDs.Item($k)
+                            }
+                            $kb = $kbList -join ", "
+                        }
+                    } catch { }
+
+                    $uId = ""
+                    try {
+                        if ($u.Identity -and $u.Identity.UpdateID) {
+                            $uId = $u.Identity.UpdateID.ToString()
+                        }
+                    } catch { }
+
+                    $updates += [PSCustomObject]@{
+                        Title          = $u.Title
+                        KB             = $kb
+                        SizeMB         = $sizeMb
+                        IsDownloaded   = [bool]$u.IsDownloaded
+                        IsMandatory    = [bool]$u.IsMandatory
+                        RebootRequired = [bool]$u.RebootRequired
+                        IsDriver       = $isDriver
+                        UpdateID       = $uId
+                        Status         = 'Pending'
+                        UpdateObject   = $u
+                    }
+                }
+            }
+            break
+        } catch {
+            $lastError = $_.Exception.Message
+            Write-CascadeLog "Windows Update scan attempt $attempt failed: $lastError" "WARN"
+            if ($attempt -lt $MaxRetries) {
+                Write-CascadeLog "Retrying scan in 8 seconds..." "INFO"
+                if ($StatusCallback) { & $StatusCallback "Scan attempt $attempt failed ($lastError). Retrying in 8s..." }
+                Start-Sleep -Seconds 8
+                Ensure-CascadeUpdateServices
+            }
+        }
+    }
+
+    if (-not $scanSucceeded) {
+        Write-CascadeLog "Windows Update scan failed after $MaxRetries attempts: $lastError" "ERROR"
+        if ($StatusCallback) { & $StatusCallback "Scan failed: $lastError" }
+        return @([PSCustomObject]@{
+            IsScanError  = $true
+            ErrorMessage = $lastError
+        })
+    }
+
+    return $updates
+}
+
+function Test-CascadeSystemRebootPending {
+    [CmdletBinding()]
+    param()
+
+    $pending = $false
+    try {
+        if (Test-Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\WindowsUpdate\Auto Update\RebootRequired") { $pending = $true }
+        if (Test-Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Component Based Servicing\RebootPending") { $pending = $true }
+        $sm = (Get-ItemProperty "HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager" -Name "PendingFileRenameOperations" -ErrorAction SilentlyContinue).PendingFileRenameOperations
+        if ($sm) { $pending = $true }
+    } catch { }
+    return $pending
+}
+
+function Get-CascadeDoSnapshot {
+    [CmdletBinding()]
+    param()
+
+    $snap = @{}
+    try {
+        $items = Get-DeliveryOptimizationStatus -ErrorAction SilentlyContinue
+        if ($items) {
+            foreach ($item in $items) {
+                if ($item.FileId) {
+                    $snap[$item.FileId] = @{
+                        LanPeers   = [int64]($item.BytesFromLanPeers + $item.BytesFromGroupPeers)
+                        HttpWan    = [int64]$item.BytesFromHttp
+                        NumPeers   = [int]$item.NumPeers
+                    }
+                }
+            }
+        }
+    } catch { }
+    return $snap
+}
+
+function Get-CascadeDoDiff {
+    [CmdletBinding()]
+    param(
+        [hashtable]$BaselineSnapshot
+    )
+
+    $deltaLan = [int64]0
+    $deltaWan = [int64]0
+    $maxPeers = [int]0
+    $activeDownloading = $false
+
+    try {
+        $currentItems = Get-DeliveryOptimizationStatus -ErrorAction SilentlyContinue
+        if ($currentItems) {
+            foreach ($item in $currentItems) {
+                if ($item.Status -eq 'Downloading') {
+                    $activeDownloading = $true
+                }
+                $fileId = $item.FileId
+                if (-not $fileId) { continue }
+
+                $curLan = [int64]($item.BytesFromLanPeers + $item.BytesFromGroupPeers)
+                $curWan = [int64]$item.BytesFromHttp
+                $curPeers = [int]$item.NumPeers
+                if ($curPeers -gt $maxPeers) { $maxPeers = $curPeers }
+
+                if ($BaselineSnapshot -and $BaselineSnapshot.ContainsKey($fileId)) {
+                    $prev = $BaselineSnapshot[$fileId]
+                    $prevLan = [int64]$prev.LanPeers
+                    $prevWan = [int64]$prev.HttpWan
+
+                    if ($curLan -gt $prevLan) { $deltaLan += ($curLan - $prevLan) }
+                    if ($curWan -gt $prevWan) { $deltaWan += ($curWan - $prevWan) }
+                } else {
+                    $deltaLan += $curLan
+                    $deltaWan += $curWan
+                }
+            }
+        }
+    } catch { }
+
+    $totalBytes = $deltaLan + $deltaWan
+    $pctLan = if ($totalBytes -gt 0) { [math]::Round(($deltaLan / $totalBytes) * 100, 1) } else { 0 }
+
+    $sourceType = 'NONE'
+    if ($deltaLan -gt 0 -and $deltaWan -eq 0) {
+        $sourceType = 'LAN'
+    } elseif ($deltaLan -gt 0 -and $deltaWan -gt 0) {
+        $sourceType = 'HYBRID'
+    } elseif ($deltaWan -gt 0) {
+        $sourceType = 'WAN'
+    }
+
+    return [PSCustomObject]@{
+        DeltaLanBytes     = $deltaLan
+        DeltaWanBytes     = $deltaWan
+        TotalBytes        = $totalBytes
+        DeltaLanMB        = [math]::Round($deltaLan / 1MB, 2)
+        DeltaWanMB        = [math]::Round($deltaWan / 1MB, 2)
+        TotalMB           = [math]::Round($totalBytes / 1MB, 2)
+        PercentLan        = $pctLan
+        MaxPeers          = $maxPeers
+        SourceType        = $sourceType
+        ActiveDownloading = $activeDownloading
+    }
+}
+
+function Install-CascadeUpdates {
+    [CmdletBinding()]
+    param(
+        [System.Collections.IList]$UpdatesToProcess,
+        [scriptblock]$StatusCallback,
+        [scriptblock]$ProgressCallback
+    )
+
+    if (-not $UpdatesToProcess -or $UpdatesToProcess.Count -eq 0) {
+        if ($StatusCallback) { & $StatusCallback "No updates supplied for installation." }
+        return [PSCustomObject]@{
+            Success        = $true
+            InstalledCount = 0
+            FailedCount    = 0
+            RebootRequired = $false
+            SourceType     = 'NONE'
+            LanBytes       = 0
+            WanBytes       = 0
+            DeltaLanMB     = 0
+            DeltaWanMB     = 0
+            PercentLan     = 0
+            MaxPeers       = 0
+        }
+    }
+
+    Ensure-CascadeUpdateServices
+    $session = New-Object -ComObject Microsoft.Update.Session
+    $downloader = $session.CreateUpdateDownloader()
+    $downloadColl = New-Object -ComObject Microsoft.Update.UpdateColl
+
+    if ($StatusCallback) { & $StatusCallback "Preparing download bundle for $($UpdatesToProcess.Count) update package(s)..." }
+
+    $allAlreadyDownloaded = $true
+    foreach ($item in $UpdatesToProcess) {
+        $uObj = if ($item.UpdateObject) { $item.UpdateObject } else { $item }
+        if ($uObj.EulaAccepted -eq $false) {
+            try { $uObj.AcceptEula() } catch { }
+        }
+        if (-not $uObj.IsDownloaded) {
+            $allAlreadyDownloaded = $false
+        }
+        $downloadColl.Add($uObj) | Out-Null
+    }
+
+    $downloader.Updates = $downloadColl
+    if ($StatusCallback) { & $StatusCallback "Downloading $($downloadColl.Count) update package(s)..." }
+
+    $snapBefore = Get-CascadeDoSnapshot
+
+    if ($allAlreadyDownloaded) {
+        Write-CascadeLog "[SOURCE: LOCAL CACHE] All $($downloadColl.Count) update package(s) already verified in local disk cache." "INFO"
+        if ($StatusCallback) { & $StatusCallback "[SOURCE: LOCAL CACHE] All updates already present in local disk cache." }
+    }
+
+    $psDl = [powershell]::Create()
+    [void]$psDl.AddScript({
+        param($d)
+        return $d.Download()
+    }).AddParameter('d', $downloader)
+
+    $asyncDl = $psDl.BeginInvoke()
+    $lastReport = [DateTime]::MinValue
+
+    while (-not $asyncDl.IsCompleted) {
+        if ((Get-Date) -gt $lastReport.AddSeconds(2)) {
+            $interimDiff = Get-CascadeDoDiff -BaselineSnapshot $snapBefore
+            if ($interimDiff.TotalMB -gt 0 -or $interimDiff.ActiveDownloading) {
+                if ($interimDiff.SourceType -eq 'LAN') {
+                    $msg = "[SOURCE: LAN PEER (PREFERRED)] Pulling from local network peer ($($interimDiff.DeltaLanMB) MB from LAN, 100% P2P | $($interimDiff.MaxPeers) peer(s))"
+                    if ($StatusCallback) { & $StatusCallback $msg }
+                } elseif ($interimDiff.SourceType -eq 'HYBRID') {
+                    $msg = "[SOURCE: HYBRID (LAN + WAN)] Pulling from LAN peer ($($interimDiff.DeltaLanMB) MB, $($interimDiff.PercentLan)% P2P) and WAN CDN ($($interimDiff.DeltaWanMB) MB)"
+                    if ($StatusCallback) { & $StatusCallback $msg }
+                } elseif ($interimDiff.SourceType -eq 'WAN') {
+                    $msg = "[SOURCE: WAN CDN (WARNING)] Downloading from Microsoft CDN over WAN ($($interimDiff.DeltaWanMB) MB from WAN - 0 MB from local LAN)"
+                    if ($StatusCallback) { & $StatusCallback $msg }
+                }
+            }
+            $lastReport = Get-Date
+        }
+        Start-Sleep -Milliseconds 300
+    }
+
+    try {
+        $downloadResult = $psDl.EndInvoke($asyncDl)
+    } catch {
+        Write-CascadeLog "Download error: $($_.Exception.Message)" "ERROR"
+        if ($StatusCallback) { & $StatusCallback "Download error: $($_.Exception.Message)" }
+        $psDl.Dispose()
+        return [PSCustomObject]@{
+            Success        = $false
+            InstalledCount = 0
+            FailedCount    = $UpdatesToProcess.Count
+            RebootRequired = $false
+            Error          = $_.Exception.Message
+            SourceType     = 'ERROR'
+            LanBytes       = 0
+            WanBytes       = 0
+            DeltaLanMB     = 0
+            DeltaWanMB     = 0
+            PercentLan     = 0
+            MaxPeers       = 0
+        }
+    }
+    $psDl.Dispose()
+
+    $finalDo = Get-CascadeDoDiff -BaselineSnapshot $snapBefore
+    $sourceClassification = 'CACHE'
+
+    if ($finalDo.DeltaLanMB -gt 0 -and $finalDo.DeltaWanMB -eq 0) {
+        $sourceClassification = 'LAN'
+        Write-CascadeLog "[SOURCE: LAN PEER (PREFERRED)] Download complete: 100% sourced from local network peer ($($finalDo.DeltaLanMB) MB from LAN across $($finalDo.MaxPeers) peer(s)). Zero WAN bandwidth consumed!" "SUCCESS"
+        if ($StatusCallback) { & $StatusCallback "[SOURCE: LAN PEER] Downloaded $($finalDo.DeltaLanMB) MB from local network peer (100% P2P across $($finalDo.MaxPeers) peer(s))." }
+    } elseif ($finalDo.DeltaLanMB -gt 0 -and $finalDo.DeltaWanMB -gt 0) {
+        $sourceClassification = 'HYBRID'
+        Write-CascadeLog "[SOURCE: HYBRID (LAN + WAN)] Download complete: $($finalDo.DeltaLanMB) MB from local LAN peer ($($finalDo.PercentLan)% P2P) and $($finalDo.DeltaWanMB) MB from Microsoft CDN over WAN." "INFO"
+        if ($StatusCallback) { & $StatusCallback "[SOURCE: HYBRID] Sourced $($finalDo.DeltaLanMB) MB from LAN peer and $($finalDo.DeltaWanMB) MB from WAN CDN." }
+    } elseif ($finalDo.DeltaWanMB -gt 0) {
+        $sourceClassification = 'WAN'
+        Write-CascadeLog "[SOURCE: WAN CDN (WARNING)] Download complete: 100% sourced from Microsoft CDN over WAN ($($finalDo.DeltaWanMB) MB). 0 bytes pulled from local LAN peers. No local peers detected or peer caching unavailable." "WARN"
+        if ($StatusCallback) { & $StatusCallback "[SOURCE: WAN CDN (WARNING)] Downloaded $($finalDo.DeltaWanMB) MB from Microsoft CDN over WAN (0 MB from LAN peers)." }
+    } else {
+        $sourceClassification = 'CACHE'
+        Write-CascadeLog "[SOURCE: LOCAL CACHE] Packages verified in local disk cache (0 MB downloaded over network)." "INFO"
+        if ($StatusCallback) { & $StatusCallback "[SOURCE: LOCAL CACHE] Packages present in local disk cache." }
+    }
+
+    $installer = $session.CreateUpdateInstaller()
+    $installer.ForceQuiet = $true
+    $installed = 0
+    $failed = 0
+    $rebootNeeded = $false
+
+    for ($i = 0; $i -lt $downloadColl.Count; $i++) {
+        $u = $downloadColl.Item($i)
+        $pct = [math]::Round((($i) / $downloadColl.Count) * 100)
+        if ($ProgressCallback) { & $ProgressCallback $pct }
+
+        if (-not $u.IsDownloaded) {
+            $failed++
+            Write-CascadeLog "Skipping un-downloaded update: $($u.Title)" "WARN"
+            continue
+        }
+
+        if ($StatusCallback) { & $StatusCallback "Installing ($($i + 1)/$($downloadColl.Count)): $($u.Title)..." }
+
+        $singleColl = New-Object -ComObject Microsoft.Update.UpdateColl
+        $singleColl.Add($u) | Out-Null
+        $installer.Updates = $singleColl
+
+        try {
+            $instRes = $installer.Install()
+            $code = $instRes.ResultCode
+            # ResultCode: 2 = Succeeded, 3 = SucceededWithErrors
+            if ($code -eq 2 -or $code -eq 3) {
+                $installed++
+                Write-CascadeLog "Installed successfully: $($u.Title)" "SUCCESS"
+            } else {
+                $failed++
+                Write-CascadeLog "Installation failed (Code $code): $($u.Title)" "WARN"
+            }
+            if ($instRes.RebootRequired) {
+                $rebootNeeded = $true
+            }
+        } catch {
+            $failed++
+            Write-CascadeLog "Installation exception on $($u.Title): $($_.Exception.Message)" "ERROR"
+        }
+    }
+
+    if ($ProgressCallback) { & $ProgressCallback 100 }
+    if ($StatusCallback) {
+        & $StatusCallback "Installation finished: $installed succeeded, $failed failed. Reboot required: $rebootNeeded"
+    }
+
+    return [PSCustomObject]@{
+        Success        = ($failed -eq 0)
+        InstalledCount = $installed
+        FailedCount    = $failed
+        RebootRequired = $rebootNeeded
+        SourceType     = $sourceClassification
+        LanBytes       = $finalDo.DeltaLanBytes
+        WanBytes       = $finalDo.DeltaWanBytes
+        DeltaLanMB     = $finalDo.DeltaLanMB
+        DeltaWanMB     = $finalDo.DeltaWanMB
+        PercentLan     = $finalDo.PercentLan
+        MaxPeers       = $finalDo.MaxPeers
+    }
+}
+
+# --- 10. AUTONOMOUS CASCADE LOOP ENGINE ---
+function Start-AutonomousCascadeLoop {
+    [CmdletBinding()]
+    param(
+        [int]$MaxPasses = 5,
+        [switch]$IncludeDrivers = $true,
+        [int]$RebootDelay = 5,
+        [switch]$NoReboot,
+        [scriptblock]$StatusCallback,
+        [scriptblock]$ProgressCallback,
+        [scriptblock]$CountdownCallback
+    )
+
+    $state = Get-CascadeState
+    $currentPass    = if ($state -and $state.Active) { [int]$state.CurrentPass } else { 1 }
+    $totalInstalled = if ($state -and $state.Active) { [int]$state.TotalInstalled } else { 0 }
+    $effDrivers     = if ($state -and $state.Active) { [bool]$state.IncludeDrivers } else { $IncludeDrivers }
+    $effMaxPasses   = if ($state -and $state.Active) { [int]$state.MaxPasses } else { $MaxPasses }
+
+    Write-CascadeLog "=== UPDATE CASCADE: PASS $currentPass OF $effMaxPasses (Total Installed So Far: $totalInstalled) ===" "STEP"
+    if ($StatusCallback) {
+        & $StatusCallback "Starting Cascade Pass $currentPass of $effMaxPasses (Drivers: $effDrivers)..."
+    }
+
+    # Step 1: Scan for updates
+    $rawUpdates = Get-CascadePendingUpdates -IncludeDrivers:$effDrivers -StatusCallback $StatusCallback
+
+    # If scan encountered an environmental or network error, DO NOT assume 0 updates or clear persistence!
+    if ($rawUpdates -and $rawUpdates.Count -eq 1 -and $rawUpdates[0].IsScanError) {
+        $errMsg = $rawUpdates[0].ErrorMessage
+        Write-CascadeLog "Pass ${currentPass}: Update scan failed ($errMsg). System is NOT verified up to date." "ERROR"
+        Write-CascadeLog "Preserving cascade persistence and state to retry on next cycle." "WARN"
+        if ($StatusCallback) { & $StatusCallback "Update scan failed: $errMsg. Preserving persistence." }
+        return [PSCustomObject]@{
+            Completed      = $false
+            CurrentPass    = $currentPass
+            TotalInstalled = $totalInstalled
+            RebootRequired = $false
+            ScanFailed     = $true
+            ErrorMessage   = $errMsg
+        }
+    }
+
+    if (-not $rawUpdates -or $rawUpdates.Count -eq 0) {
+        Write-CascadeLog "System is 100% up to date! Zero pending updates found." "SUCCESS"
+        Write-CascadeLog "Cascade loop complete. Total updates installed across passes: $totalInstalled." "SUCCESS"
+        Unregister-CascadePersistence
+        Clear-CascadeState
+        if ($StatusCallback) {
+            & $StatusCallback "System is 100% up to date! Cascade loop complete. Total updates installed: $totalInstalled."
+        }
+        return [PSCustomObject]@{
+            Completed      = $true
+            CurrentPass    = $currentPass
+            TotalInstalled = $totalInstalled
+            RebootRequired = $false
+        }
+    }
+
+    Write-CascadeLog "Pass ${currentPass}: Found $($rawUpdates.Count) pending update package(s)." "INFO"
+    if ($StatusCallback) { & $StatusCallback "Pass ${currentPass}: Found $($rawUpdates.Count) pending updates. Starting download & install..." }
+
+    # Step 2: Download and install
+    $installRes = Install-CascadeUpdates -UpdatesToProcess $rawUpdates -StatusCallback $StatusCallback -ProgressCallback $ProgressCallback
+    $totalInstalled += $installRes.InstalledCount
+
+    # Step 3: Check reboot requirements
+    $rebootNeeded = [bool]$installRes.RebootRequired
+    if (-not $rebootNeeded) {
+        $rebootNeeded = ($installRes.InstalledCount -gt 0) -or (Test-CascadeSystemRebootPending)
+    }
+
+    if ($rebootNeeded) {
+        $nextPass = $currentPass + 1
+        if ($nextPass -le $effMaxPasses) {
+            Write-CascadeLog "Reboot is REQUIRED to commit installed updates. Preparing Pass $nextPass of $effMaxPasses..." "WARN"
+            Set-CascadeState -CurrentPass $nextPass -MaxPasses $effMaxPasses -IncludeDrivers:$effDrivers -TotalInstalled $totalInstalled -Active $true -Autonomous $true
+            Register-CascadePersistence
+
+            if ($NoReboot) {
+                Write-CascadeLog "-NoReboot specified. Automatic restart suppressed. Please reboot manually to continue cascade." "WARN"
+                return [PSCustomObject]@{
+                    Completed      = $false
+                    CurrentPass    = $currentPass
+                    NextPass       = $nextPass
+                    TotalInstalled = $totalInstalled
+                    RebootRequired = $true
+                }
+            }
+
+            # Countdown restart
+            Write-CascadeLog "Restarting system automatically in $RebootDelay seconds..." "STEP"
+            for ($s = $RebootDelay; $s -gt 0; $s--) {
+                if ($script:RebootAborted) {
+                    Write-CascadeLog "Restart aborted by operator." "WARN"
+                    return [PSCustomObject]@{ Completed = $false; RebootAborted = $true }
+                }
+                if ($CountdownCallback) { & $CountdownCallback $s }
+                if ($StatusCallback) { & $StatusCallback "Restarting system in $s second(s)... (Click Cancel to abort)" }
+                Start-Sleep -Seconds 1
+            }
+
+            if (-not $script:RebootAborted) {
+                Invoke-CascadeReboot -DelaySeconds 0 -Reason "UpdateCascade: Pass $currentPass commit, resuming Pass $nextPass"
+            }
+            return [PSCustomObject]@{
+                Completed      = $false
+                CurrentPass    = $currentPass
+                NextPass       = $nextPass
+                TotalInstalled = $totalInstalled
+                RebootRequired = $true
+            }
+        } else {
+            Write-CascadeLog "Reached configured MaxPasses ($effMaxPasses). Cascade complete. Total updates installed: $totalInstalled." "SUCCESS"
+            Unregister-CascadePersistence
+            Clear-CascadeState
+            if (-not $NoReboot) {
+                Write-CascadeLog "Final reboot to commit all installed patches in $RebootDelay seconds..." "STEP"
+                Start-Sleep -Seconds $RebootDelay
+                Invoke-CascadeReboot -DelaySeconds 0 -Reason "UpdateCascade: Final patch commit"
+            }
+            return [PSCustomObject]@{
+                Completed      = $true
+                CurrentPass    = $currentPass
+                TotalInstalled = $totalInstalled
+                RebootRequired = $true
+            }
+        }
+    } else {
+        Write-CascadeLog "Zero updates pending reboot. Cascade successfully complete! Total installed: $totalInstalled." "SUCCESS"
+        Unregister-CascadePersistence
+        Clear-CascadeState
+        if ($StatusCallback) {
+            & $StatusCallback "Zero updates pending reboot. Cascade complete! Total updates installed: $totalInstalled."
+        }
+        return [PSCustomObject]@{
+            Completed      = $true
+            CurrentPass    = $currentPass
+            TotalInstalled = $totalInstalled
+            RebootRequired = $false
+        }
+    }
+}
+
+# --- 11. WORKER RUNSPACE FACTORY & MODERN WIN11 LIGHTWEIGHT WPF GUI ---
+function New-CascadeRunspace {
+    [CmdletBinding()]
+    param()
+
+    $iss = [System.Management.Automation.Runspaces.InitialSessionState]::CreateDefault()
+
+    $funcNames = @(
+        'Write-CascadeLog',
+        'Get-CascadeRuntimeContext',
+        'Save-CascadeSelfCopy',
+        'Get-CascadeState',
+        'Set-CascadeState',
+        'Clear-CascadeState',
+        'Register-CascadePersistence',
+        'Unregister-CascadePersistence',
+        'Invoke-CascadeReboot',
+        'Ensure-CascadeUpdateServices',
+        'Enable-MicrosoftUpdateCatalog',
+        'Invoke-CascadeUsoScan',
+        'Wait-CascadeSystemReady',
+        'Get-CascadePendingUpdates',
+        'Get-CascadeDoSnapshot',
+        'Get-CascadeDoDiff',
+        'Install-CascadeUpdates',
+        'Test-CascadeSystemRebootPending',
+        'Start-AutonomousCascadeLoop'
+    )
+
+    foreach ($fn in $funcNames) {
+        $c = Get-Command $fn -ErrorAction SilentlyContinue
+        if ($c) {
+            $iss.Commands.Add((New-Object System.Management.Automation.Runspaces.SessionStateFunctionEntry($fn, $c.Definition)))
+        }
+    }
+
+    $vars = @{
+        'AppName'         = $script:AppName
+        'AppVersion'     = $script:AppVersion
+        'PersistDir'      = $script:PersistDir
+        'StateFile'       = $script:StateFile
+        'LogFile'         = $script:LogFile
+        'ScriptSelfCopy'  = $script:ScriptSelfCopy
+        'ResumeCmd'       = $script:ResumeCmd
+        'ResumeVbs'       = $script:ResumeVbs
+        'LaunchCmd'       = $script:LaunchCmd
+        'MutexName'       = $script:MutexName
+        'TaskLogonName'   = $script:TaskLogonName
+        'TaskBootName'    = $script:TaskBootName
+        'ServiceName'     = $script:ServiceName
+        'RunOnceName'     = $script:RunOnceName
+        'RunName'         = $script:RunName
+        'ActiveSetupGuid' = $script:ActiveSetupGuid
+    }
+
+    foreach ($kv in $vars.GetEnumerator()) {
+        $iss.Variables.Add((New-Object System.Management.Automation.Runspaces.SessionStateVariableEntry($kv.Key, $kv.Value, 'Cascade global')))
+    }
+
+    $rs = [runspacefactory]::CreateRunspace($iss)
+    $rs.ApartmentState = 'MTA'
+    $rs.Open()
+    return $rs
+}
+
+function Start-CascadeGui {
+    [CmdletBinding()]
+    param(
+        [switch]$MonitorOnly
+    )
+
+    # Ensure STA apartment state
+    if ([System.Threading.Thread]::CurrentThread.GetApartmentState() -ne [System.Threading.ApartmentState]::STA) {
+        Write-CascadeLog "WPF GUI requires STA thread apartment. Relaunching in dedicated STA host..." "INFO"
+        $self = Save-CascadeSelfCopy
+        if ($global:CascadeMutex) {
+            try { $global:CascadeMutex.ReleaseMutex() } catch { }
+            try { $global:CascadeMutex.Dispose() } catch { }
+            $global:CascadeMutex = $null
+        }
+        $argList = "-NoProfile -ExecutionPolicy Bypass -STA -File `"$self`" -Gui"
+        if ($ResumeFromRestart) { $argList += " -ResumeFromRestart" }
+        if ($MonitorOnly) { $argList += " -MonitorOnly" }
+        Start-Process -FilePath "powershell.exe" -ArgumentList $argList
+        exit 0
+    }
+
+    try {
+        Add-Type -AssemblyName PresentationFramework, PresentationCore, WindowsBase -ErrorAction Stop
+    } catch {
+        [void][System.Reflection.Assembly]::LoadWithPartialName('presentationframework')
+        [void][System.Reflection.Assembly]::LoadWithPartialName('presentationcore')
+        [void][System.Reflection.Assembly]::LoadWithPartialName('windowsbase')
+    }
+
+    $xaml = @"
+<Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="UpdateCascade - Autonomous Windows Update &amp; Driver Engine"
+        Height="780" Width="1060" MinHeight="680" MinWidth="880"
+        WindowStartupLocation="CenterScreen" Background="#0F172A"
+        Foreground="#F8FAFC" FontFamily="Segoe UI, Segoe UI Variable, Arial">
+    <Window.Resources>
+        <Style TargetType="Button">
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="Padding" Value="14,8"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="BorderThickness" Value="1"/>
+        </Style>
+    </Window.Resources>
+
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/> <!-- Header -->
+            <RowDefinition Height="Auto"/> <!-- Status Card -->
+            <RowDefinition Height="*"/>    <!-- Updates Grid & Log -->
+            <RowDefinition Height="Auto"/> <!-- Action Controls -->
+        </Grid.RowDefinitions>
+
+        <!-- HEADER -->
+        <Border Grid.Row="0" Background="#1E293B" CornerRadius="8" Padding="16,14" BorderBrush="#334155" BorderThickness="1" Margin="0,0,0,14">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <StackPanel Grid.Column="0">
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <TextBlock Text=">>" FontSize="20" Margin="0,0,8,0" Foreground="#38BDF8"/>
+                        <TextBlock Text="UPDATE CASCADE" FontSize="20" FontWeight="Bold" Foreground="#38BDF8"/>
+                        <Border Background="#0EA5E9" CornerRadius="4" Padding="6,2" Margin="12,0,0,0" VerticalAlignment="Center">
+                            <TextBlock Text="OOBE &amp; DESKTOP READY" FontSize="10" FontWeight="Bold" Foreground="#FFFFFF"/>
+                        </Border>
+                    </StackPanel>
+                    <TextBlock Text="Autonomous multi-pass Windows Update and Driver cascade with 17-tier reboot persistence." FontSize="12" Foreground="#94A3B8" Margin="0,4,0,0"/>
+                </StackPanel>
+
+                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                    <Border Name="BadgeCopySummary" Background="#1E293B" BorderBrush="#38BDF8" BorderThickness="1" CornerRadius="12" Padding="10,4" Margin="0,0,10,0" Cursor="Hand" ToolTip="Copy Cascade Telemetry &amp; Pending Update Summary to Clipboard">
+                        <TextBlock Name="TxtCopySummary" Text="COPY SUMMARY" FontSize="10" FontWeight="Bold" Foreground="#38BDF8"/>
+                    </Border>
+                    <Border Name="PillSource" Background="#334155" CornerRadius="12" Padding="12,4" Margin="0,0,10,0" Visibility="Collapsed">
+                        <TextBlock Name="TxtPillSource" Text="SOURCE: LAN PEER" FontSize="11" FontWeight="Bold" Foreground="#6EE7B7"/>
+                    </Border>
+                    <Border Name="PillStatus" Background="#1E3A8A" CornerRadius="12" Padding="12,4" Margin="0,0,10,0">
+                        <TextBlock Name="TxtPillStatus" Text="READY" FontSize="11" FontWeight="Bold" Foreground="#93C5FD"/>
+                    </Border>
+                    <Border Name="BadgePass" Background="#064E3B" CornerRadius="12" Padding="12,4">
+                        <TextBlock Name="TxtBadgePass" Text="Pass 1 of 5" FontSize="11" FontWeight="Bold" Foreground="#6EE7B7"/>
+                    </Border>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- STATUS & PROGRESS CARD -->
+        <Border Grid.Row="1" Background="#1E293B" CornerRadius="8" Padding="16" BorderBrush="#334155" BorderThickness="1" Margin="0,0,0,14">
+            <StackPanel>
+                <Grid Margin="0,0,0,8">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Name="TxtStatusMessage" Text="System ready. Click 'Start Autonomous Cascade' to begin." FontSize="13" FontWeight="SemiBold" Foreground="#F1F5F9"/>
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                        <TextBlock Name="TxtSourceDetail" Text="" FontSize="11" FontWeight="SemiBold" Foreground="#6EE7B7" Margin="0,0,14,0" VerticalAlignment="Center"/>
+                        <TextBlock Name="TxtTotalStats" Text="Total Patches Installed: 0" FontSize="12" Foreground="#94A3B8" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </Grid>
+
+                <!-- Step Progress -->
+                <ProgressBar Name="ProgCurrentStep" Height="10" Background="#0F172A" Foreground="#38BDF8" BorderThickness="0" Margin="0,4,0,10"/>
+
+                <!-- Countdown Alert Banner (Hidden by default) -->
+                <Border Name="BannerCountdown" Background="#7F1D1D" CornerRadius="6" Padding="12,8" Margin="0,4,0,0" Visibility="Collapsed">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Name="TxtCountdown" Text="[!] Reboot required to commit updates. Restarting automatically in 5 seconds..." FontSize="13" FontWeight="Bold" Foreground="#FCA5A5" VerticalAlignment="Center"/>
+                        <StackPanel Grid.Column="1" Orientation="Horizontal">
+                            <Button Name="BtnRestartNow" Content="Restart Now" Background="#DC2626" Foreground="#FFFFFF" BorderBrush="#EF4444" Margin="0,0,8,0" Padding="10,4"/>
+                            <Button Name="BtnCancelCountdown" Content="Cancel Reboot" Background="#334155" Foreground="#F8FAFC" BorderBrush="#475569" Padding="10,4"/>
+                        </StackPanel>
+                    </Grid>
+                </Border>
+            </StackPanel>
+        </Border>
+
+        <!-- UPDATES GRID & REAL-TIME LOG -->
+        <Grid Grid.Row="2" Margin="0,0,0,14">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="6*"/>
+                <ColumnDefinition Width="5*"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- Left: Updates List -->
+            <Border Grid.Column="0" Background="#1E293B" CornerRadius="8" Padding="12" BorderBrush="#334155" BorderThickness="1" Margin="0,0,10,0">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+                    <Grid Grid.Row="0" Margin="0,0,0,6">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <TextBlock Text="PENDING UPDATES &amp; DRIVERS" FontSize="12" FontWeight="Bold" Foreground="#94A3B8" VerticalAlignment="Center"/>
+                            <Border Background="#0F172A" BorderBrush="#334155" BorderThickness="1" CornerRadius="6" Padding="7,2" Margin="8,0,0,0" VerticalAlignment="Center">
+                                <TextBlock Name="TxtSelectedPayload" Text="Selected: 0 / 0 (0.0 MB)" FontSize="10" FontWeight="SemiBold" Foreground="#38BDF8"/>
+                            </Border>
+                        </StackPanel>
+                        <StackPanel Grid.Column="1" Orientation="Horizontal">
+                            <Button Name="BtnSelectAll" Content="Select All" Background="Transparent" Foreground="#38BDF8" BorderThickness="0" Padding="4,2" FontSize="11"/>
+                            <TextBlock Text="|" Foreground="#475569" Margin="4,0" VerticalAlignment="Center"/>
+                            <Button Name="BtnSelectSoftwareOnly" Content="Software Only" Background="Transparent" Foreground="#6EE7B7" BorderThickness="0" Padding="4,2" FontSize="11" ToolTip="Select only Software updates and exclude Hardware Drivers"/>
+                            <TextBlock Text="|" Foreground="#475569" Margin="4,0" VerticalAlignment="Center"/>
+                            <Button Name="BtnSelectDriversOnly" Content="Drivers Only" Background="Transparent" Foreground="#C084FC" BorderThickness="0" Padding="4,2" FontSize="11" ToolTip="Select only Hardware Driver updates and exclude Software updates"/>
+                            <TextBlock Text="|" Foreground="#475569" Margin="4,0" VerticalAlignment="Center"/>
+                            <Button Name="BtnInvertSelection" Content="Invert" Background="Transparent" Foreground="#F472B6" BorderThickness="0" Padding="4,2" FontSize="11" ToolTip="Invert current update selection checkboxes"/>
+                            <TextBlock Text="|" Foreground="#475569" Margin="4,0" VerticalAlignment="Center"/>
+                            <Button Name="BtnDeselectAll" Content="Deselect All" Background="Transparent" Foreground="#94A3B8" BorderThickness="0" Padding="4,2" FontSize="11"/>
+                            <TextBlock Text="|" Foreground="#475569" Margin="4,0" VerticalAlignment="Center"/>
+                            <Button Name="BtnCopySelectedKbs" Content="Copy KBs" Background="Transparent" Foreground="#38BDF8" BorderThickness="0" Padding="4,2" FontSize="11" ToolTip="Copy selected KB numbers and update titles to clipboard"/>
+                            <TextBlock Text="|" Foreground="#475569" Margin="4,0" VerticalAlignment="Center"/>
+                            <Button Name="BtnCopyUpdatesMd" Content="Copy MD" Background="Transparent" Foreground="#A7F3D0" BorderThickness="0" Padding="4,2" FontSize="11" ToolTip="Copy pending updates table as a Markdown table to clipboard"/>
+                            <TextBlock Text="|" Foreground="#475569" Margin="4,0" VerticalAlignment="Center"/>
+                            <Button Name="BtnCopyUpdatesTsv" Content="Copy TSV" Background="Transparent" Foreground="#67E8F9" BorderThickness="0" Padding="4,2" FontSize="11" ToolTip="Copy pending updates table as TSV for instant paste into Excel or Google Sheets"/>
+                            <TextBlock Text="|" Foreground="#475569" Margin="4,0" VerticalAlignment="Center"/>
+                            <Button Name="BtnCopyUpdatesCsv" Content="Copy CSV" Background="Transparent" Foreground="#7DD3FC" BorderThickness="0" Padding="4,2" FontSize="11" ToolTip="Copy pending updates table as CSV to clipboard"/>
+                            <TextBlock Text="|" Foreground="#475569" Margin="4,0" VerticalAlignment="Center"/>
+                            <Button Name="BtnCopyUpdatesJson" Content="Copy JSON" Background="Transparent" Foreground="#34D399" BorderThickness="0" Padding="4,2" FontSize="11" ToolTip="Copy pending updates table as structured JSON to clipboard"/>
+                            <TextBlock Text="|" Foreground="#475569" Margin="4,0" VerticalAlignment="Center"/>
+                            <Button Name="BtnCopyUpdatesHtml" Content="Copy HTML" Background="Transparent" Foreground="#E879F9" BorderThickness="0" Padding="4,2" FontSize="11" ToolTip="Copy pending updates table as styled HTML table to clipboard"/>
+                            <TextBlock Text="|" Foreground="#475569" Margin="4,0" VerticalAlignment="Center"/>
+                            <Button Name="BtnCopyUpdatesXml" Content="Copy XML" Background="Transparent" Foreground="#2DD4BF" BorderThickness="0" Padding="4,2" FontSize="11" ToolTip="Copy pending updates table as structured XML to clipboard"/>
+                            <TextBlock Text="|" Foreground="#475569" Margin="4,0" VerticalAlignment="Center"/>
+                            <Button Name="BtnCopyUpdatesYaml" Content="Copy YAML" Background="Transparent" Foreground="#FBBF24" BorderThickness="0" Padding="4,2" FontSize="11" ToolTip="Copy pending updates table as structured YAML to clipboard"/>
+                            <TextBlock Text="|" Foreground="#475569" Margin="4,0" VerticalAlignment="Center"/>
+                            <Button Name="BtnExportUpdatesCsv" Content="Export CSV" Background="Transparent" Foreground="#FBBF24" BorderThickness="0" Padding="4,2" FontSize="11" ToolTip="Export pending updates table to CSV and copy to clipboard"/>
+                            <TextBlock Text="|" Foreground="#475569" Margin="4,0" VerticalAlignment="Center"/>
+                            <Button Name="BtnExportUpdatesJson" Content="Export JSON" Background="Transparent" Foreground="#34D399" BorderThickness="0" Padding="4,2" FontSize="11" ToolTip="Export pending updates table to JSON and copy to clipboard"/>
+                            <TextBlock Text="|" Foreground="#475569" Margin="4,0" VerticalAlignment="Center"/>
+                            <Button Name="BtnCopyUpdatesSummary" Content="Copy Summary" Background="Transparent" Foreground="#F472B6" BorderThickness="0" Padding="4,2" FontSize="11" ToolTip="Copy Pending Updates Software vs Driver &amp; Payload Size Breakdown Summary (Markdown) to clipboard"/>
+                            <TextBlock Text="|" Foreground="#475569" Margin="4,0" VerticalAlignment="Center"/>
+                            <Button Name="BtnCopyUpdatesSummaryTsv" Content="Summary TSV" Background="Transparent" Foreground="#FB923C" BorderThickness="0" Padding="4,2" FontSize="11" ToolTip="Copy Pending Updates Breakdown Summary as TSV for Excel/Sheets"/>
+                            <TextBlock Text="|" Foreground="#475569" Margin="4,0" VerticalAlignment="Center"/>
+                            <Button Name="BtnCopyUpdatesSummaryJson" Content="Summary JSON" Background="Transparent" Foreground="#34D399" BorderThickness="0" Padding="4,2" FontSize="11" ToolTip="Copy Pending Updates Breakdown Summary as structured JSON to clipboard"/>
+                            <TextBlock Text="|" Foreground="#475569" Margin="4,0" VerticalAlignment="Center"/>
+                            <Button Name="BtnCopyUpdatesSummaryCsv" Content="Summary CSV" Background="Transparent" Foreground="#7DD3FC" BorderThickness="0" Padding="4,2" FontSize="11" ToolTip="Copy Pending Updates Breakdown Summary as CSV to clipboard"/>
+                            <TextBlock Text="|" Foreground="#475569" Margin="4,0" VerticalAlignment="Center"/>
+                            <Button Name="BtnCopyUpdatesSummaryHtml" Content="Summary HTML" Background="Transparent" Foreground="#E879F9" BorderThickness="0" Padding="4,2" FontSize="11" ToolTip="Copy Pending Updates Breakdown Summary as styled HTML table to clipboard"/>
+                            <TextBlock Text="|" Foreground="#475569" Margin="4,0" VerticalAlignment="Center"/>
+                            <Button Name="BtnCopyUpdatesSummaryXml" Content="Summary XML" Background="Transparent" Foreground="#2DD4BF" BorderThickness="0" Padding="4,2" FontSize="11" ToolTip="Copy Pending Updates Breakdown Summary as structured XML to clipboard"/>
+                        </StackPanel>
+                    </Grid>
+
+                    <Grid Grid.Row="1" Margin="0,0,0,8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="Filter:" FontSize="11" Foreground="#94A3B8" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                        <TextBox Name="TxtUpdateFilter" Grid.Column="1" Background="#0F172A" Foreground="#F8FAFC" BorderThickness="1" BorderBrush="#334155" Padding="6,3" FontSize="11" ToolTip="Filter pending updates by Title, KB number, or Type (Driver / Software)"/>
+                        <Border Name="BadgeUpdateFilterCount" Grid.Column="2" Background="#0F172A" BorderBrush="#38BDF8" BorderThickness="1" CornerRadius="6" Padding="6,2" Margin="6,0,0,0" VerticalAlignment="Center" Visibility="Collapsed">
+                            <TextBlock Name="TxtUpdateFilterCount" Text="0 shown" FontSize="10" FontWeight="SemiBold" Foreground="#38BDF8"/>
+                        </Border>
+                        <Button Name="BtnClearUpdateFilter" Grid.Column="3" Content="Clear" Background="#1E293B" Foreground="#94A3B8" BorderBrush="#475569" BorderThickness="1" Padding="8,2" Margin="6,0,0,0" FontSize="10" Visibility="Collapsed" ToolTip="Clear pending updates search filter"/>
+                    </Grid>
+
+                    <ListView Name="LstUpdates" Grid.Row="2" Background="#0F172A" BorderBrush="#334155" BorderThickness="1" Foreground="#F8FAFC">
+                        <ListView.View>
+                            <GridView>
+                                <GridViewColumn Width="40">
+                                    <GridViewColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <CheckBox IsChecked="{Binding IsSelected}" VerticalAlignment="Center"/>
+                                        </DataTemplate>
+                                    </GridViewColumn.CellTemplate>
+                                </GridViewColumn>
+                                <GridViewColumn Header="Title" Width="260" DisplayMemberBinding="{Binding Title}"/>
+                                <GridViewColumn Header="KB" Width="80" DisplayMemberBinding="{Binding KB}"/>
+                                <GridViewColumn Header="Size" Width="60" DisplayMemberBinding="{Binding SizeDisplay}"/>
+                                <GridViewColumn Header="Type" Width="70" DisplayMemberBinding="{Binding TypeDisplay}"/>
+                                <GridViewColumn Header="Status" Width="80" DisplayMemberBinding="{Binding Status}"/>
+                            </GridView>
+                        </ListView.View>
+                    </ListView>
+                </Grid>
+            </Border>
+
+            <!-- Right: Real-Time Log Console -->
+            <Border Grid.Column="1" Background="#1E293B" CornerRadius="8" Padding="12" BorderBrush="#334155" BorderThickness="1">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+                    <Grid Grid.Row="0" Margin="0,0,0,8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <TextBlock Text="ACTIVITY LOG" FontSize="12" FontWeight="Bold" Foreground="#94A3B8" VerticalAlignment="Center"/>
+                            <Border Background="#0F172A" BorderBrush="#334155" BorderThickness="1" CornerRadius="6" Padding="7,2" Margin="8,0,0,0" VerticalAlignment="Center">
+                                <TextBlock Name="TxtLogStatsBadge" Text="0 lines" FontSize="10" FontWeight="SemiBold" Foreground="#38BDF8"/>
+                            </Border>
+                        </StackPanel>
+                        <StackPanel Grid.Column="1" Orientation="Horizontal">
+                            <Button Name="BtnClearLog" Content="Clear" Background="Transparent" Foreground="#94A3B8" BorderThickness="0" Padding="4,2" FontSize="11"/>
+                            <TextBlock Text="|" Foreground="#475569" Margin="4,0" VerticalAlignment="Center"/>
+                            <Button Name="BtnCopyLog" Content="Copy" Background="Transparent" Foreground="#38BDF8" BorderThickness="0" Padding="4,2" FontSize="11"/>
+                            <TextBlock Text="|" Foreground="#475569" Margin="4,0" VerticalAlignment="Center"/>
+                            <Button Name="BtnCopyLogMd" Content="Copy MD" Background="Transparent" Foreground="#A7F3D0" BorderThickness="0" Padding="4,2" FontSize="11" ToolTip="Copy Activity Log entries as a Markdown table to clipboard"/>
+                            <TextBlock Text="|" Foreground="#475569" Margin="4,0" VerticalAlignment="Center"/>
+                            <Button Name="BtnCopyLogTsv" Content="Copy TSV" Background="Transparent" Foreground="#67E8F9" BorderThickness="0" Padding="4,2" FontSize="11" ToolTip="Copy Activity Log entries as structured TSV (Timestamp, Level, Message) for Excel/Sheets"/>
+                            <TextBlock Text="|" Foreground="#475569" Margin="4,0" VerticalAlignment="Center"/>
+                            <Button Name="BtnCopyLogCsv" Content="Copy CSV" Background="Transparent" Foreground="#7DD3FC" BorderThickness="0" Padding="4,2" FontSize="11" ToolTip="Copy Activity Log entries as structured CSV (Timestamp, Level, Message) to clipboard"/>
+                            <TextBlock Text="|" Foreground="#475569" Margin="4,0" VerticalAlignment="Center"/>
+                            <Button Name="BtnCopyLogJson" Content="Copy JSON" Background="Transparent" Foreground="#34D399" BorderThickness="0" Padding="4,2" FontSize="11" ToolTip="Copy Activity Log entries as structured JSON to clipboard"/>
+                            <TextBlock Text="|" Foreground="#475569" Margin="4,0" VerticalAlignment="Center"/>
+                            <Button Name="BtnCopyLogHtml" Content="Copy HTML" Background="Transparent" Foreground="#E879F9" BorderThickness="0" Padding="4,2" FontSize="11" ToolTip="Copy Activity Log entries as styled HTML table to clipboard"/>
+                            <TextBlock Text="|" Foreground="#475569" Margin="4,0" VerticalAlignment="Center"/>
+                            <Button Name="BtnCopyLogXml" Content="Copy XML" Background="Transparent" Foreground="#2DD4BF" BorderThickness="0" Padding="4,2" FontSize="11" ToolTip="Copy Activity Log entries as structured XML to clipboard"/>
+                            <TextBlock Text="|" Foreground="#475569" Margin="4,0" VerticalAlignment="Center"/>
+                            <Button Name="BtnCopyLogYaml" Content="Copy YAML" Background="Transparent" Foreground="#FBBF24" BorderThickness="0" Padding="4,2" FontSize="11" ToolTip="Copy Activity Log entries as structured YAML to clipboard"/>
+                            <TextBlock Text="|" Foreground="#475569" Margin="4,0" VerticalAlignment="Center"/>
+                            <Button Name="BtnCopyLogSummary" Content="Copy Summary" Background="Transparent" Foreground="#F472B6" BorderThickness="0" Padding="4,2" FontSize="11" ToolTip="Copy Activity Log Level Breakdown Summary (Markdown) to clipboard"/>
+                            <TextBlock Text="|" Foreground="#475569" Margin="4,0" VerticalAlignment="Center"/>
+                            <Button Name="BtnCopyLogSummaryTsv" Content="Summary TSV" Background="Transparent" Foreground="#FB923C" BorderThickness="0" Padding="4,2" FontSize="11" ToolTip="Copy Activity Log Level Breakdown Summary as TSV for Excel/Sheets"/>
+                            <TextBlock Text="|" Foreground="#475569" Margin="4,0" VerticalAlignment="Center"/>
+                            <Button Name="BtnCopyLogSummaryJson" Content="Summary JSON" Background="Transparent" Foreground="#34D399" BorderThickness="0" Padding="4,2" FontSize="11" ToolTip="Copy Activity Log Level Breakdown Summary as structured JSON to clipboard"/>
+                            <TextBlock Text="|" Foreground="#475569" Margin="4,0" VerticalAlignment="Center"/>
+                            <Button Name="BtnCopyLogSummaryCsv" Content="Summary CSV" Background="Transparent" Foreground="#7DD3FC" BorderThickness="0" Padding="4,2" FontSize="11" ToolTip="Copy Activity Log Level Breakdown Summary as CSV to clipboard"/>
+                            <TextBlock Text="|" Foreground="#475569" Margin="4,0" VerticalAlignment="Center"/>
+                            <Button Name="BtnCopyLogSummaryHtml" Content="Summary HTML" Background="Transparent" Foreground="#E879F9" BorderThickness="0" Padding="4,2" FontSize="11" ToolTip="Copy Activity Log Level Breakdown Summary as styled HTML table to clipboard"/>
+                            <TextBlock Text="|" Foreground="#475569" Margin="4,0" VerticalAlignment="Center"/>
+                            <Button Name="BtnCopyLogSummaryXml" Content="Summary XML" Background="Transparent" Foreground="#2DD4BF" BorderThickness="0" Padding="4,2" FontSize="11" ToolTip="Copy Activity Log Level Breakdown Summary as structured XML to clipboard"/>
+                            <TextBlock Text="|" Foreground="#475569" Margin="4,0" VerticalAlignment="Center"/>
+                            <Button Name="BtnCopyLogErrors" Content="Copy Warn/Err" Background="Transparent" Foreground="#FCA5A5" BorderThickness="0" Padding="4,2" FontSize="11" ToolTip="Copy only [WARN] and [ERROR] lines from Activity Log to clipboard"/>
+                            <TextBlock Text="|" Foreground="#475569" Margin="4,0" VerticalAlignment="Center"/>
+                            <Button Name="BtnExportLogFile" Content="Export .log" Background="Transparent" Foreground="#FBBF24" BorderThickness="0" Padding="4,2" FontSize="11" ToolTip="Save Activity Log transcript to disk and copy path to clipboard"/>
+                        </StackPanel>
+                    </Grid>
+
+                    <TextBox Name="TxtLogConsole" Grid.Row="1" Background="#0A0F1D" Foreground="#A7F3D0" BorderBrush="#334155" BorderThickness="1"
+                             FontFamily="Consolas, Cascadia Code, Courier New" FontSize="11" IsReadOnly="True"
+                             TextWrapping="Wrap" VerticalScrollBarVisibility="Auto"/>
+
+                    <!-- Options Bar under log -->
+                    <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,8,0,0" VerticalAlignment="Center">
+                        <CheckBox Name="ChkIncludeDrivers" Content="Include Hardware Drivers" IsChecked="True" Foreground="#CBD5E1" FontSize="12" Margin="0,0,16,0" VerticalAlignment="Center"/>
+                        <TextBlock Text="Max Passes:" Foreground="#94A3B8" FontSize="12" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                        <ComboBox Name="CmbMaxPasses" SelectedIndex="2" Width="60" Height="26" Background="#1E293B" Foreground="#000000">
+                            <ComboBoxItem Content="1"/>
+                            <ComboBoxItem Content="3"/>
+                            <ComboBoxItem Content="5"/>
+                            <ComboBoxItem Content="8"/>
+                            <ComboBoxItem Content="10"/>
+                        </ComboBox>
+                    </StackPanel>
+                </Grid>
+            </Border>
+        </Grid>
+
+        <!-- ACTION CONTROLS -->
+        <Border Grid.Row="3" Background="#1E293B" CornerRadius="8" Padding="14,10" BorderBrush="#334155" BorderThickness="1">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                    <Button Name="BtnStartCascade" Content=">> Start Autonomous Cascade" Background="#2563EB" Foreground="#FFFFFF" BorderBrush="#3B82F6" Margin="0,0,10,0"/>
+                    <Button Name="BtnPauseCascade" Content="Pause Cascade" Background="#475569" Foreground="#F8FAFC" BorderBrush="#64748B" Margin="0,0,10,0" Visibility="Collapsed"/>
+                    <Button Name="BtnScanOnly" Content=" Scan Only" Background="#1E293B" Foreground="#E2E8F0" BorderBrush="#475569" Margin="0,0,10,0"/>
+                    <Button Name="BtnInstallSelected" Content="Install Selected" Background="#059669" Foreground="#FFFFFF" BorderBrush="#10B981" Margin="0,0,10,0"/>
+                </StackPanel>
+
+                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                    <Button Name="BtnManualReboot" Content="[*] Reboot Now" Background="#DC2626" Foreground="#FFFFFF" BorderBrush="#EF4444" Margin="0,0,10,0"/>
+                    <Button Name="BtnUnregisterAll" Content=" Cleanup Persistence" Background="#334155" Foreground="#94A3B8" BorderBrush="#475569"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+    </Grid>
+</Window>
+"@
+
+    $window = $null
+    try {
+        $reader = [System.Xml.XmlReader]::Create([System.IO.StringReader]::new($xaml))
+        $window = [System.Windows.Markup.XamlReader]::Load($reader)
+    } catch {
+        Write-CascadeLog "Failed to load WPF XAML interface: $($_.Exception.Message)" "ERROR"
+    }
+
+    if (-not $window) {
+        Write-CascadeLog "WPF GUI window could not be initialized. Falling back gracefully to autonomous CLI cascade..." "WARN"
+        if (-not $MonitorOnly) {
+            Start-AutonomousCascadeLoop -MaxPasses $MaxPasses -IncludeDrivers:$IncludeDrivers -RebootDelay $RebootDelay
+        }
+        return
+    }
+
+    # Bind UI Controls
+    $badgeCopySummary   = $window.FindName('BadgeCopySummary')
+    $txtCopySummary     = $window.FindName('TxtCopySummary')
+    $txtPillStatus      = $window.FindName('TxtPillStatus')
+    $pillStatus         = $window.FindName('PillStatus')
+    $pillSource         = $window.FindName('PillSource')
+    $txtPillSource      = $window.FindName('TxtPillSource')
+    $txtBadgePass       = $window.FindName('TxtBadgePass')
+    $txtStatusMessage   = $window.FindName('TxtStatusMessage')
+    $txtSourceDetail    = $window.FindName('TxtSourceDetail')
+    $txtTotalStats      = $window.FindName('TxtTotalStats')
+    $progCurrentStep    = $window.FindName('ProgCurrentStep')
+    $bannerCountdown    = $window.FindName('BannerCountdown')
+    $txtCountdown       = $window.FindName('TxtCountdown')
+    $btnRestartNow      = $window.FindName('BtnRestartNow')
+    $btnCancelCountdown = $window.FindName('BtnCancelCountdown')
+    $lstUpdates         = $window.FindName('LstUpdates')
+    $txtSelectedPayload = $window.FindName('TxtSelectedPayload')
+    $txtUpdateFilter    = $window.FindName('TxtUpdateFilter')
+    $btnSelectAll       = $window.FindName('BtnSelectAll')
+    $btnDeselectAll     = $window.FindName('BtnDeselectAll')
+    $txtLogConsole      = $window.FindName('TxtLogConsole')
+    $btnClearLog        = $window.FindName('BtnClearLog')
+    $btnCopyLog         = $window.FindName('BtnCopyLog')
+    $chkIncludeDrivers  = $window.FindName('ChkIncludeDrivers')
+    $cmbMaxPasses       = $window.FindName('CmbMaxPasses')
+    $btnStartCascade    = $window.FindName('BtnStartCascade')
+    $btnPauseCascade    = $window.FindName('BtnPauseCascade')
+    $btnScanOnly        = $window.FindName('BtnScanOnly')
+    $btnInstallSelected = $window.FindName('BtnInstallSelected')
+    $btnManualReboot    = $window.FindName('BtnManualReboot')
+    $btnUnregisterAll   = $window.FindName('BtnUnregisterAll')
+
+    # Observable Collection for Updates
+    $observableUpdates = New-Object System.Collections.ObjectModel.ObservableCollection[Object]
+    $lstUpdates.ItemsSource = $observableUpdates
+
+    # Helper: Recalculate Selected Payload Summary Badge
+    $fnUpdatePayloadBadge = {
+        $window.Dispatcher.Invoke([Action]{
+            $totalCnt = $observableUpdates.Count
+            $selItems = @($observableUpdates | Where-Object { $_.IsSelected })
+            $selCnt   = $selItems.Count
+            $selMB    = 0.0
+            foreach ($s in $selItems) {
+                if ($s.Raw -and $null -ne $s.Raw.SizeMB) {
+                    $selMB += [double]$s.Raw.SizeMB
+                }
+            }
+            $selMBRounded = [Math]::Round($selMB, 1)
+            if ($txtSelectedPayload) {
+                $txtSelectedPayload.Text = "Selected: $selCnt / $totalCnt ($selMBRounded MB)"
+            }
+        })
+    }
+
+    # UI Log Appender Callback
+    $script:GuiLogCallback = {
+        param($msg, $level)
+        try {
+            $window.Dispatcher.Invoke([Action]{
+                $ts = (Get-Date).ToString('HH:mm:ss')
+                $txtLogConsole.AppendText("[$ts] [$level] $msg`r`n")
+                $txtLogConsole.ScrollToEnd()
+            })
+        } catch { }
+    }
+
+    # State Variables
+    $uiState = [hashtable]::Synchronized(@{
+        IsRunning       = $false
+        CountdownActive = $false
+        TotalInstalled  = 0
+        CurrentPass     = 1
+        MaxPasses       = 5
+        RawUpdates      = @()
+    })
+
+    # Read persistent state if resuming
+    $initState = Get-CascadeState
+    if ($initState -and $initState.Active) {
+        $uiState.CurrentPass = [int]$initState.CurrentPass
+        $uiState.MaxPasses = [int]$initState.MaxPasses
+        $uiState.TotalInstalled = [int]$initState.TotalInstalled
+        $txtBadgePass.Text = "Pass $($uiState.CurrentPass) of $($uiState.MaxPasses)"
+        $txtTotalStats.Text = "Total Patches Installed: $($uiState.TotalInstalled)"
+        $chkIncludeDrivers.IsChecked = [bool]$initState.IncludeDrivers
+        Write-CascadeLog "Resumed active cascade: Pass $($uiState.CurrentPass) of $($uiState.MaxPasses), $($uiState.TotalInstalled) updates already committed." "INFO"
+    }
+
+    # Helper: Update UI Status
+    $fnSetStatus = {
+        param($statusText, $pillText, $pillBgHex, $pillFgHex)
+        $window.Dispatcher.Invoke([Action]{
+            if ($statusText) { $txtStatusMessage.Text = $statusText }
+            if ($pillText)   { $txtPillStatus.Text = $pillText }
+            if ($pillBgHex)  { $pillStatus.Background = [System.Windows.Media.BrushConverter]::new().ConvertFromString($pillBgHex) }
+            if ($pillFgHex)  { $txtPillStatus.Foreground = [System.Windows.Media.BrushConverter]::new().ConvertFromString($pillFgHex) }
+        })
+    }
+
+    # Helper: Update Download Source Indicator (LAN Peer vs WAN CDN)
+    $fnSetSource = {
+        param($sourceType, $label, $bgHex, $fgHex, $borderHex, $detail)
+        $window.Dispatcher.Invoke([Action]{
+            if (-not $sourceType -or $sourceType -eq 'NONE') {
+                $pillSource.Visibility = [System.Windows.Visibility]::Collapsed
+                $txtSourceDetail.Text = ""
+                return
+            }
+            $pillSource.Visibility = [System.Windows.Visibility]::Visible
+            if ($label) { $txtPillSource.Text = $label }
+            if ($bgHex) { $pillSource.Background = [System.Windows.Media.BrushConverter]::new().ConvertFromString($bgHex) }
+            if ($fgHex) { $txtPillSource.Foreground = [System.Windows.Media.BrushConverter]::new().ConvertFromString($fgHex) }
+            if ($borderHex) {
+                $pillSource.BorderBrush = [System.Windows.Media.BrushConverter]::new().ConvertFromString($borderHex)
+                $pillSource.BorderThickness = [System.Windows.Thickness]::new(1)
+            }
+            if ($detail) {
+                $txtSourceDetail.Text = $detail
+                if ($fgHex) { $txtSourceDetail.Foreground = [System.Windows.Media.BrushConverter]::new().ConvertFromString($fgHex) }
+            }
+        })
+    }
+
+    # Helper: Refresh Updates List
+    $fnPopulateUpdates = {
+        param($updateItems)
+        $window.Dispatcher.Invoke([Action]{
+            $observableUpdates.Clear()
+            foreach ($u in $updateItems) {
+                $item = New-Object PSObject -Property @{
+                    IsSelected  = $true
+                    Title       = $u.Title
+                    KB          = if ($u.KB) { $u.KB } else { 'N/A' }
+                    SizeDisplay = "$($u.SizeMB) MB"
+                    TypeDisplay = if ($u.IsDriver) { 'Driver' } else { 'Software' }
+                    Status      = $u.Status
+                    Raw         = $u
+                }
+                $observableUpdates.Add($item)
+            }
+            & $fnUpdatePayloadBadge
+        })
+    }
+
+    # Real-Time Disk Log Poller (Streams cascade.log updates dynamically)
+    $script:LogStreamOffset = 0
+    if (Test-Path $script:LogFile) {
+        try {
+            $existingBytes = [System.IO.File]::ReadAllText($script:LogFile, [System.Text.Encoding]::UTF8)
+            $txtLogConsole.AppendText($existingBytes)
+            $txtLogConsole.ScrollToEnd()
+            $script:LogStreamOffset = [System.IO.FileInfo]::new($script:LogFile).Length
+        } catch { }
+    }
+
+    $timerLogPoller = New-Object System.Windows.Threading.DispatcherTimer
+    $timerLogPoller.Interval = [TimeSpan]::FromMilliseconds(250)
+    $timerLogPoller.Add_Tick({
+        try {
+            if (Test-Path $script:LogFile) {
+                $fi = [System.IO.FileInfo]::new($script:LogFile)
+                if ($fi.Length -gt $script:LogStreamOffset) {
+                    $fs = [System.IO.File]::Open($script:LogFile, [System.IO.FileMode]::Open, [System.IO.FileAccess]::Read, [System.IO.FileShare]::ReadWrite)
+                    $fs.Seek($script:LogStreamOffset, [System.IO.SeekOrigin]::Begin) | Out-Null
+                    $sr = New-Object System.IO.StreamReader($fs, [System.Text.Encoding]::UTF8)
+                    $newLines = $sr.ReadToEnd()
+                    $script:LogStreamOffset = $fs.Position
+                    $sr.Dispose()
+                    $fs.Dispose()
+                    if ($newLines) {
+                        $txtLogConsole.AppendText($newLines)
+                        $txtLogConsole.ScrollToEnd()
+                    }
+                }
+            }
+            # Keep pass badge and total count in sync with state file
+            $st = Get-CascadeState
+            if ($st -and $st.Active) {
+                $txtBadgePass.Text = "Pass $($st.CurrentPass) of $($st.MaxPasses)"
+                $txtTotalStats.Text = "Total Patches Installed: $($st.TotalInstalled)"
+            }
+        } catch { }
+    })
+    $timerLogPoller.Start()
+
+    # Action: Start Cascade Pass
+    $fnExecuteCascadePass = {
+        if ($uiState.IsRunning) { return }
+        $uiState.IsRunning = $true
+        $script:RebootAborted = $false
+        $btnStartCascade.Visibility = [System.Windows.Visibility]::Collapsed
+        $btnPauseCascade.Visibility = [System.Windows.Visibility]::Visible
+        $btnScanOnly.IsEnabled = $false
+        $btnInstallSelected.IsEnabled = $false
+        $bannerCountdown.Visibility = [System.Windows.Visibility]::Collapsed
+
+        $currPass = $uiState.CurrentPass
+        $maxPasses = if ($cmbMaxPasses.SelectedItem) { [int]$cmbMaxPasses.SelectedItem.Content } else { 5 }
+        $incDrivers = [bool]$chkIncludeDrivers.IsChecked
+        $uiState.MaxPasses = $maxPasses
+
+        & $fnSetStatus "Pass $currPass of ${maxPasses}: Scanning for updates..." "SCANNING" "#1E3A8A" "#93C5FD"
+        & $fnSetSource 'NONE'
+        Write-CascadeLog "Starting Cascade Pass $currPass of $maxPasses (Drivers: $incDrivers)..." "STEP"
+
+        # Run Scan in configured Cascade Worker Runspace
+        $rs = New-CascadeRunspace
+        $ps = [powershell]::Create()
+        $ps.Runspace = $rs
+        [void]$ps.AddCommand('Get-CascadePendingUpdates').AddParameter('IncludeDrivers', $incDrivers)
+
+        $scanResult = $ps.BeginInvoke()
+        $timerScan = New-Object System.Windows.Threading.DispatcherTimer
+        $timerScan.Interval = [TimeSpan]::FromMilliseconds(250)
+        $timerScan.Add_Tick({
+            if ($scanResult.IsCompleted) {
+                $timerScan.Stop()
+                $updates = @()
+                try { $updates = $ps.EndInvoke($scanResult) } catch { }
+                $ps.Dispose()
+                $rs.Dispose()
+
+                $uiState.RawUpdates = $updates
+                & $fnPopulateUpdates $updates
+
+                if ($updates -and $updates.Count -eq 1 -and $updates[0].IsScanError) {
+                    $errMsg = $updates[0].ErrorMessage
+                    & $fnSetStatus "Scan failed ($errMsg). Retrying shortly..." "ERROR" "#7F1D1D" "#FCA5A5"
+                    Write-CascadeLog "Pass $currPass scan encountered an error: $errMsg. Persistence preserved." "ERROR"
+                    $uiState.IsRunning = $false
+                    $btnStartCascade.Visibility = [System.Windows.Visibility]::Visible
+                    $btnPauseCascade.Visibility = [System.Windows.Visibility]::Collapsed
+                    $btnScanOnly.IsEnabled = $true
+                    $btnInstallSelected.IsEnabled = $true
+                    return
+                }
+
+                if (-not $updates -or $updates.Count -eq 0) {
+                    & $fnSetStatus "System is 100% up to date! Zero pending updates found." "COMPLETED" "#064E3B" "#6EE7B7"
+                    & $fnSetSource 'NONE'
+                    Write-CascadeLog "Pass $currPass found 0 pending updates. Cascade complete! Total installed: $($uiState.TotalInstalled)." "SUCCESS"
+                    Unregister-CascadePersistence
+                    Clear-CascadeState
+                    $uiState.IsRunning = $false
+                    $btnStartCascade.Visibility = [System.Windows.Visibility]::Visible
+                    $btnPauseCascade.Visibility = [System.Windows.Visibility]::Collapsed
+                    $btnScanOnly.IsEnabled = $true
+                    $btnInstallSelected.IsEnabled = $true
+                    return
+                }
+
+                # Step 2: Download & Install in configured Cascade Worker Runspace
+                & $fnSetStatus "Pass $currPass of ${maxPasses}: Installing $($updates.Count) update package(s)..." "INSTALLING" "#7C2D12" "#FDBA74"
+                Write-CascadeLog "Pass ${currPass}: Beginning installation of $($updates.Count) updates..." "STEP"
+
+                $snapBaselineGui = Get-CascadeDoSnapshot
+                $rsInst = New-CascadeRunspace
+                $psInst = [powershell]::Create()
+                $psInst.Runspace = $rsInst
+                [void]$psInst.AddCommand('Install-CascadeUpdates').AddParameter('UpdatesToProcess', $updates)
+
+                $instResult = $psInst.BeginInvoke()
+                $instTick = 0
+                $timerInst = New-Object System.Windows.Threading.DispatcherTimer
+                $timerInst.Interval = [TimeSpan]::FromMilliseconds(300)
+                $timerInst.Add_Tick({
+                    $instTick++
+                    if (-not $instResult.IsCompleted) {
+                        if ($instTick % 3 -eq 0) {
+                            $diff = Get-CascadeDoDiff -BaselineSnapshot $snapBaselineGui
+                            if ($diff.TotalMB -gt 0 -or $diff.ActiveDownloading) {
+                                if ($diff.SourceType -eq 'LAN') {
+                                    & $fnSetSource "LAN" "LAN PEER (GOOD)" "#064E3B" "#6EE7B7" "#10B981" "LAN Peer: $($diff.DeltaLanMB) MB ($($diff.PercentLan)% P2P | $($diff.MaxPeers) peer(s))"
+                                } elseif ($diff.SourceType -eq 'WAN') {
+                                    & $fnSetSource "WAN" "WAN CDN (WARNING)" "#7F1D1D" "#FCA5A5" "#EF4444" "WAN CDN: $($diff.DeltaWanMB) MB (0 MB from LAN)"
+                                } elseif ($diff.SourceType -eq 'HYBRID') {
+                                    & $fnSetSource "HYBRID" "HYBRID (LAN + WAN)" "#1E3A8A" "#93C5FD" "#38BDF8" "Hybrid: $($diff.DeltaLanMB) MB LAN / $($diff.DeltaWanMB) MB WAN"
+                                }
+                            }
+                        }
+                        return
+                    }
+
+                    $timerInst.Stop()
+                    $res = $null
+                    try { $res = $psInst.EndInvoke($instResult) } catch { }
+                    $psInst.Dispose()
+                    $rsInst.Dispose()
+
+                    if ($res -and $res.SourceType) {
+                        if ($res.SourceType -eq 'LAN') {
+                            & $fnSetSource "LAN" "LAN PEER (GOOD)" "#064E3B" "#6EE7B7" "#10B981" "LAN Peer: $($res.DeltaLanMB) MB ($($res.PercentLan)% P2P | $($res.MaxPeers) peer(s))"
+                        } elseif ($res.SourceType -eq 'WAN') {
+                            & $fnSetSource "WAN" "WAN CDN (WARNING)" "#7F1D1D" "#FCA5A5" "#EF4444" "WAN CDN: $($res.DeltaWanMB) MB (0 MB from LAN)"
+                        } elseif ($res.SourceType -eq 'HYBRID') {
+                            & $fnSetSource "HYBRID" "HYBRID (LAN + WAN)" "#1E3A8A" "#93C5FD" "#38BDF8" "Hybrid: $($res.DeltaLanMB) MB LAN / $($res.DeltaWanMB) MB WAN"
+                        } elseif ($res.SourceType -eq 'CACHE') {
+                            & $fnSetSource "CACHE" "LOCAL DISK CACHE" "#1E293B" "#94A3B8" "#475569" "Disk Cache: 0 MB downloaded"
+                        }
+                    }
+
+                    $installedCount = if ($res -and $res.InstalledCount) { [int]$res.InstalledCount } else { 0 }
+                    $rebootReq = if ($res -and $res.RebootRequired) { [bool]$res.RebootRequired } else { $false }
+                    if (-not $rebootReq) { $rebootReq = ($installedCount -gt 0) -or (Test-CascadeSystemRebootPending) }
+
+                    $uiState.TotalInstalled += $installedCount
+                    $txtTotalStats.Text = "Total Patches Installed: $($uiState.TotalInstalled)"
+                    Write-CascadeLog "Pass $currPass installation finished ($installedCount installed). Reboot required: $rebootReq" "INFO"
+
+                        if ($rebootReq) {
+                            $nextPass = $currPass + 1
+                            if ($nextPass -le $maxPasses) {
+                                & $fnSetStatus "Reboot required to commit updates. Pass $nextPass of $maxPasses scheduled." "REBOOTING" "#831843" "#F472B6"
+                                Set-CascadeState -CurrentPass $nextPass -MaxPasses $maxPasses -IncludeDrivers:$incDrivers -TotalInstalled $uiState.TotalInstalled -Active $true -Autonomous $false
+                                Register-CascadePersistence
+
+                                # Show Countdown Banner
+                                $bannerCountdown.Visibility = [System.Windows.Visibility]::Visible
+                                $countSeconds = 5
+                                $timerCount = New-Object System.Windows.Threading.DispatcherTimer
+                                $timerCount.Interval = [TimeSpan]::FromSeconds(1)
+                                $timerCount.Add_Tick({
+                                    if ($script:RebootAborted) {
+                                        $timerCount.Stop()
+                                        $bannerCountdown.Visibility = [System.Windows.Visibility]::Collapsed
+                                        & $fnSetStatus "Reboot cancelled by user. Cascade paused." "PAUSED" "#475569" "#CBD5E1"
+                                        $uiState.IsRunning = $false
+                                        $btnStartCascade.Visibility = [System.Windows.Visibility]::Visible
+                                        $btnPauseCascade.Visibility = [System.Windows.Visibility]::Collapsed
+                                        return
+                                    }
+                                    $txtCountdown.Text = "[!] Reboot required to commit updates. Restarting automatically in $countSeconds second(s)..."
+                                    if ($countSeconds -le 0) {
+                                        $timerCount.Stop()
+                                        Invoke-CascadeReboot -DelaySeconds 0 -Reason "UpdateCascade Pass $currPass commit"
+                                    }
+                                    $countSeconds--
+                                })
+                                $timerCount.Start()
+                            } else {
+                                & $fnSetStatus "Reached MaxPasses ($maxPasses). System patched!" "COMPLETED" "#064E3B" "#6EE7B7"
+                                Write-CascadeLog "Reached MaxPasses ($maxPasses). Cascade complete! Total installed: $($uiState.TotalInstalled)." "SUCCESS"
+                                Unregister-CascadePersistence
+                                Clear-CascadeState
+                                $uiState.IsRunning = $false
+                                $btnStartCascade.Visibility = [System.Windows.Visibility]::Visible
+                                $btnPauseCascade.Visibility = [System.Windows.Visibility]::Collapsed
+                            }
+                        } else {
+                            & $fnSetStatus "System is 100% up to date! Zero updates pending reboot." "COMPLETED" "#064E3B" "#6EE7B7"
+                            Unregister-CascadePersistence
+                            Clear-CascadeState
+                            $uiState.IsRunning = $false
+                            $btnStartCascade.Visibility = [System.Windows.Visibility]::Visible
+                            $btnPauseCascade.Visibility = [System.Windows.Visibility]::Collapsed
+                        }
+                })
+                $timerInst.Start()
+            }
+        })
+        $timerScan.Start()
+    }
+
+    # Monitor Only Mode Handler
+    if ($MonitorOnly) {
+        $btnStartCascade.IsEnabled = $false
+        $btnScanOnly.IsEnabled = $false
+        $btnInstallSelected.IsEnabled = $false
+        & $fnSetStatus "Connected to active background cascade (Pass $($uiState.CurrentPass) of $($uiState.MaxPasses))." "MONITORING" "#1E3A8A" "#93C5FD"
+    }
+
+    # Wire Button Events
+    $btnStartCascade.Add_Click({ & $fnExecuteCascadePass })
+
+    $btnPauseCascade.Add_Click({
+        $script:RebootAborted = $true
+        $uiState.IsRunning = $false
+        $btnStartCascade.Visibility = [System.Windows.Visibility]::Visible
+        $btnPauseCascade.Visibility = [System.Windows.Visibility]::Collapsed
+        $bannerCountdown.Visibility = [System.Windows.Visibility]::Collapsed
+        & $fnSetStatus "Cascade paused by operator." "PAUSED" "#475569" "#CBD5E1"
+        Write-CascadeLog "Cascade paused by operator." "WARN"
+    })
+
+    $btnCancelCountdown.Add_Click({
+        $script:RebootAborted = $true
+        $bannerCountdown.Visibility = [System.Windows.Visibility]::Collapsed
+        & $fnSetStatus "Reboot cancelled by operator. Cascade paused." "PAUSED" "#475569" "#CBD5E1"
+        Write-CascadeLog "Reboot countdown cancelled by operator." "WARN"
+    })
+
+    $btnRestartNow.Add_Click({
+        & $fnSetStatus "Initiating immediate system reboot..." "REBOOTING" "#7F1D1D" "#FCA5A5"
+        Write-CascadeLog "Operator triggered immediate reboot from countdown banner." "WARN"
+        $nextPass = $uiState.CurrentPass + 1
+        Set-CascadeState -CurrentPass $nextPass -MaxPasses $uiState.MaxPasses -IncludeDrivers:([bool]$chkIncludeDrivers.IsChecked) -TotalInstalled $uiState.TotalInstalled -Active $true -Autonomous $false
+        Register-CascadePersistence
+        Invoke-CascadeReboot -DelaySeconds 0 -Reason "Manual reboot confirmation"
+    })
+
+    $btnManualReboot.Add_Click({
+        & $fnSetStatus "Initiating immediate system reboot..." "REBOOTING" "#7F1D1D" "#FCA5A5"
+        Write-CascadeLog "Operator triggered manual immediate reboot." "WARN"
+        $nextPass = $uiState.CurrentPass + 1
+        Set-CascadeState -CurrentPass $nextPass -MaxPasses $uiState.MaxPasses -IncludeDrivers:([bool]$chkIncludeDrivers.IsChecked) -TotalInstalled $uiState.TotalInstalled -Active $true -Autonomous $false
+        Register-CascadePersistence
+        Invoke-CascadeReboot -DelaySeconds 0 -Reason "Manual operator reboot"
+    })
+
+    $btnUnregisterAll.Add_Click({
+        $cnt = Unregister-CascadePersistence
+        & $fnSetStatus "Successfully disarmed and cleaned $cnt persistence artifact(s)." "CLEANED" "#065F46" "#6EE7B7"
+        Write-CascadeLog "Persistence cleanup: successfully disarmed and cleaned $cnt persistence artifact(s)." "INFO"
+    })
+
+    $btnSelectAll.Add_Click({
+        foreach ($item in $observableUpdates) { $item.IsSelected = $true }
+        $lstUpdates.Items.Refresh()
+        & $fnUpdatePayloadBadge
+        & $fnSetStatus "Selected all $($observableUpdates.Count) update package(s)." "READY" "#1E3A8A" "#93C5FD"
+        Write-CascadeLog "Selected all $($observableUpdates.Count) update package(s)." "INFO"
+    })
+
+    $btnSelectSoftwareOnly = $window.FindName('BtnSelectSoftwareOnly')
+    if ($btnSelectSoftwareOnly) {
+        $btnSelectSoftwareOnly.Add_Click({
+            $swCount = 0
+            foreach ($item in $observableUpdates) {
+                $isSw = ($item.TypeDisplay -eq 'Software')
+                $item.IsSelected = $isSw
+                if ($isSw) { $swCount++ }
+            }
+            $lstUpdates.Items.Refresh()
+            & $fnUpdatePayloadBadge
+            & $fnSetStatus "Selected $swCount Software update(s) (excluded Drivers)." "READY" "#065F46" "#6EE7B7"
+            Write-CascadeLog "Selected $swCount Software update(s) (Drivers excluded)." "INFO"
+        })
+    }
+
+    $btnSelectDriversOnly = $window.FindName('BtnSelectDriversOnly')
+    if ($btnSelectDriversOnly) {
+        $btnSelectDriversOnly.Add_Click({
+            $drvCount = 0
+            foreach ($item in $observableUpdates) {
+                $isDrv = ($item.TypeDisplay -ne 'Software')
+                $item.IsSelected = $isDrv
+                if ($isDrv) { $drvCount++ }
+            }
+            $lstUpdates.Items.Refresh()
+            & $fnUpdatePayloadBadge
+            & $fnSetStatus "Selected $drvCount Hardware Driver update(s) (excluded Software)." "READY" "#4C1D95" "#DDD6FE"
+            Write-CascadeLog "Selected $drvCount Hardware Driver update(s) (Software excluded)." "INFO"
+        })
+    }
+
+    $btnCopySelectedKbs = $window.FindName('BtnCopySelectedKbs')
+    if ($btnCopySelectedKbs) {
+        $btnCopySelectedKbs.Add_Click({
+            try {
+                $selItems = @($observableUpdates | Where-Object { $_.IsSelected })
+                if ($selItems.Count -eq 0) {
+                    & $fnSetStatus "No updates selected to copy KB numbers." "INFO" "#1E3A8A" "#93C5FD"
+                    return
+                }
+                $lines = $selItems | ForEach-Object { "$($_.KB) [$($_.TypeDisplay) - $($_.SizeDisplay)] $($_.Title)" }
+                [System.Windows.Clipboard]::SetText(($lines -join "`r`n"))
+                & $fnSetStatus "Copied $($selItems.Count) selected KB(s) & titles to clipboard." "COPIED" "#065F46" "#6EE7B7"
+                Write-CascadeLog "Copied $($selItems.Count) selected KB(s) & titles to clipboard." "SUCCESS"
+            } catch {
+                Write-CascadeLog "Failed to copy selected KBs: $($_.Exception.Message)" "WARN"
+            }
+        })
+    }
+
+    $btnCopyUpdatesMd = $window.FindName('BtnCopyUpdatesMd')
+    if ($btnCopyUpdatesMd) {
+        $btnCopyUpdatesMd.Add_Click({
+            try {
+                $mdLines = @(
+                    "| Selected | KB | Type | Size | Status | Title |",
+                    "| :---: | :--- | :--- | :--- | :--- | :--- |"
+                )
+                foreach ($item in $observableUpdates) {
+                    $selMark = if ($item.IsSelected) { '[x]' } else { '[ ]' }
+                    $safeTitle = ([string]$item.Title) -replace '\|', '\|'
+                    $mdLines += "| $selMark | $($item.KB) | $($item.TypeDisplay) | $($item.SizeDisplay) | $($item.Status) | $safeTitle |"
+                }
+                [System.Windows.Clipboard]::SetText(($mdLines -join "`r`n"))
+                & $fnSetStatus "Copied $($observableUpdates.Count) pending update(s) as Markdown table to clipboard." "COPIED" "#065F46" "#6EE7B7"
+                Write-CascadeLog "Copied $($observableUpdates.Count) pending update(s) as Markdown table to clipboard." "SUCCESS"
+            } catch {
+                Write-CascadeLog "Failed to copy updates Markdown table: $($_.Exception.Message)" "WARN"
+            }
+        })
+    }
+
+    $btnCopyUpdatesTsv = $window.FindName('BtnCopyUpdatesTsv')
+    if ($btnCopyUpdatesTsv) {
+        $btnCopyUpdatesTsv.Add_Click({
+            try {
+                $tsvLines = @("Selected`tKB`tType`tSize`tStatus`tTitle")
+                foreach ($item in $observableUpdates) {
+                    $cleanTitle = (([string]$item.Title) -replace "[\t\r\n]+", " ").Trim()
+                    $tsvLines += "$($item.IsSelected)`t$($item.KB)`t$($item.TypeDisplay)`t$($item.SizeDisplay)`t$($item.Status)`t$cleanTitle"
+                }
+                [System.Windows.Clipboard]::SetText(($tsvLines -join "`r`n"))
+                & $fnSetStatus "Copied $($observableUpdates.Count) pending update(s) as TSV (Excel/Sheets ready) to clipboard." "COPIED" "#065F46" "#6EE7B7"
+                Write-CascadeLog "Copied $($observableUpdates.Count) pending update(s) as TSV to clipboard." "SUCCESS"
+            } catch {
+                Write-CascadeLog "Failed to copy updates TSV: $($_.Exception.Message)" "WARN"
+            }
+        })
+    }
+
+    $btnExportUpdatesCsv = $window.FindName('BtnExportUpdatesCsv')
+    if ($btnExportUpdatesCsv) {
+        $btnExportUpdatesCsv.Add_Click({
+            try {
+                $csvLines = @('Selected,KB,Type,SizeMB,Status,Title')
+                foreach ($item in $observableUpdates) {
+                    $safeTitle = ([string]$item.Title).Replace('"', '""')
+                    $csvLines += "$($item.IsSelected),$($item.KB),$($item.TypeDisplay),$($item.SizeDisplay),$($item.Status),`"$safeTitle`""
+                }
+                $csvText = $csvLines -join "`r`n"
+                [System.Windows.Clipboard]::SetText($csvText)
+                $outDir = if (Test-Path $script:PersistDir) { $script:PersistDir } else { $env:TEMP }
+                $csvPath = Join-Path $outDir ("UpdateCascade_Pending_{0}.csv" -f (Get-Date -Format "yyyyMMdd_HHmmss"))
+                $csvText | Set-Content -Path $csvPath -Encoding UTF8 -Force
+                & $fnSetStatus "Exported $($observableUpdates.Count) updates to CSV & copied to clipboard ($csvPath)" "EXPORTED" "#065F46" "#6EE7B7"
+                Write-CascadeLog "Exported pending updates CSV to $csvPath and copied to clipboard." "SUCCESS"
+            } catch {
+                Write-CascadeLog "Failed to export updates CSV: $($_.Exception.Message)" "WARN"
+            }
+        })
+    }
+
+    $btnExportUpdatesJson = $window.FindName('BtnExportUpdatesJson')
+    if ($btnExportUpdatesJson) {
+        $btnExportUpdatesJson.Add_Click({
+            try {
+                $items = @($observableUpdates | ForEach-Object {
+                    [PSCustomObject]@{
+                        Selected = [bool]$_.IsSelected
+                        KB       = $_.KB
+                        Type     = $_.TypeDisplay
+                        Size     = $_.SizeDisplay
+                        Status   = $_.Status
+                        Title    = $_.Title
+                    }
+                })
+                $payload = [PSCustomObject]@{
+                    ExportedAtUtc = (Get-Date).ToUniversalTime().ToString('o')
+                    MachineName   = $env:COMPUTERNAME
+                    Count         = $items.Count
+                    Updates       = $items
+                }
+                $jsonText = $payload | ConvertTo-Json -Depth 5
+                [System.Windows.Clipboard]::SetText($jsonText)
+                $outDir = if (Test-Path $script:PersistDir) { $script:PersistDir } else { $env:TEMP }
+                $jsonPath = Join-Path $outDir ("UpdateCascade_Pending_{0}.json" -f (Get-Date -Format "yyyyMMdd_HHmmss"))
+                $jsonText | Set-Content -Path $jsonPath -Encoding UTF8 -Force
+                & $fnSetStatus "Exported $($items.Count) updates to JSON & copied to clipboard ($jsonPath)" "EXPORTED" "#065F46" "#6EE7B7"
+                Write-CascadeLog "Exported pending updates JSON to $jsonPath and copied to clipboard." "SUCCESS"
+            } catch {
+                Write-CascadeLog "Failed to export updates JSON: $($_.Exception.Message)" "WARN"
+            }
+        })
+    }
+
+    $btnDeselectAll.Add_Click({
+        foreach ($item in $observableUpdates) { $item.IsSelected = $false }
+        $lstUpdates.Items.Refresh()
+        & $fnUpdatePayloadBadge
+        & $fnSetStatus "Deselected all update packages." "READY" "#1E3A8A" "#93C5FD"
+        Write-CascadeLog "Deselected all update packages." "INFO"
+    })
+
+    $lstUpdates.Add_PreviewMouseLeftButtonUp({
+        $window.Dispatcher.BeginInvoke([Action]{
+            & $fnUpdatePayloadBadge
+        }, [System.Windows.Threading.DispatcherPriority]::Background) | Out-Null
+    })
+
+    $badgeUpdateFilterCount = $window.FindName('BadgeUpdateFilterCount')
+    $txtUpdateFilterCount   = $window.FindName('TxtUpdateFilterCount')
+    $btnClearUpdateFilter   = $window.FindName('BtnClearUpdateFilter')
+
+    if ($btnClearUpdateFilter) {
+        $btnClearUpdateFilter.Add_Click({
+            if ($txtUpdateFilter) {
+                $txtUpdateFilter.Text = ""
+                $txtUpdateFilter.Focus() | Out-Null
+            }
+        })
+    }
+
+    if ($txtUpdateFilter) {
+        $txtUpdateFilter.Add_TextChanged({
+            $q = if ($txtUpdateFilter.Text) { $txtUpdateFilter.Text.Trim() } else { '' }
+            $view = [System.Windows.Data.CollectionViewSource]::GetDefaultView($observableUpdates)
+            if ($view) {
+                if ([string]::IsNullOrWhiteSpace($q)) {
+                    $view.Filter = $null
+                    if ($badgeUpdateFilterCount) { $badgeUpdateFilterCount.Visibility = [System.Windows.Visibility]::Collapsed }
+                    if ($btnClearUpdateFilter)   { $btnClearUpdateFilter.Visibility   = [System.Windows.Visibility]::Collapsed }
+                } else {
+                    $view.Filter = [Predicate[Object]]{
+                        param($obj)
+                        if ($null -eq $obj) { return $false }
+                        return ($obj.Title -like "*$q*") -or ($obj.KB -like "*$q*") -or ($obj.TypeDisplay -like "*$q*") -or ($obj.Status -like "*$q*")
+                    }
+                    $view.Refresh()
+                    $visCnt = @($view).Count
+                    if ($txtUpdateFilterCount)   { $txtUpdateFilterCount.Text = "$visCnt / $($observableUpdates.Count) shown" }
+                    if ($badgeUpdateFilterCount) { $badgeUpdateFilterCount.Visibility = [System.Windows.Visibility]::Visible }
+                    if ($btnClearUpdateFilter)   { $btnClearUpdateFilter.Visibility   = [System.Windows.Visibility]::Visible }
+                    return
+                }
+                $view.Refresh()
+            }
+        })
+    }
+
+    if ($badgeCopySummary) {
+        $badgeCopySummary.Add_MouseLeftButtonUp({
+            try {
+                $selItems = @($observableUpdates | Where-Object { $_.IsSelected })
+                $selMB = 0.0
+                foreach ($s in $selItems) {
+                    if ($s.Raw -and $null -ne $s.Raw.SizeMB) { $selMB += [double]$s.Raw.SizeMB }
+                }
+                $summaryText = "UpdateCascade Telemetry | Status: $($txtPillStatus.Text) | $($txtBadgePass.Text) | Installed: $($uiState.TotalInstalled) | Pending Selected: $($selItems.Count)/$($observableUpdates.Count) ($([Math]::Round($selMB, 1)) MB)"
+                [System.Windows.Clipboard]::SetText($summaryText)
+                $txtCopySummary.Text = "COPIED!"
+                $badgeCopySummary.BorderBrush = [System.Windows.Media.BrushConverter]::new().ConvertFromString("#10B981")
+                $txtCopySummary.Foreground = [System.Windows.Media.BrushConverter]::new().ConvertFromString("#6EE7B7")
+                & $fnSetStatus "Cascade telemetry summary copied to clipboard." "COPIED" "#065F46" "#6EE7B7"
+                $tCopy = New-Object System.Windows.Threading.DispatcherTimer
+                $tCopy.Interval = [TimeSpan]::FromSeconds(1.8)
+                $tCopy.Add_Tick({
+                    $tCopy.Stop()
+                    $txtCopySummary.Text = "COPY SUMMARY"
+                    $badgeCopySummary.BorderBrush = [System.Windows.Media.BrushConverter]::new().ConvertFromString("#38BDF8")
+                    $txtCopySummary.Foreground = [System.Windows.Media.BrushConverter]::new().ConvertFromString("#38BDF8")
+                })
+                $tCopy.Start()
+            } catch {}
+        })
+    }
+
+    $txtLogStatsBadge = $window.FindName('TxtLogStatsBadge')
+    $fnUpdateLogStatsBadge = {
+        if (-not $txtLogStatsBadge) { return }
+        $rawLog = if ($txtLogConsole.Text) { $txtLogConsole.Text } else { '' }
+        if ([string]::IsNullOrWhiteSpace($rawLog)) {
+            $txtLogStatsBadge.Text = "0 lines"
+            return
+        }
+        $lines = @($rawLog -split "\r?\n" | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
+        $warnErr = @($lines | Where-Object { $_ -match '\[(WARN|ERROR)\]' }).Count
+        $txtLogStatsBadge.Text = if ($warnErr -gt 0) { "$($lines.Count) lines | $warnErr warn/err" } else { "$($lines.Count) lines" }
+    }
+    $txtLogConsole.Add_TextChanged({ & $fnUpdateLogStatsBadge })
+    & $fnUpdateLogStatsBadge
+
+    $btnClearLog.Add_Click({
+        $txtLogConsole.Clear()
+        if (Test-Path $script:LogFile) {
+            try { $script:LogStreamOffset = [System.IO.FileInfo]::new($script:LogFile).Length } catch { }
+        }
+        & $fnSetStatus "Activity log console cleared." "CLEARED" "#1E3A8A" "#93C5FD"
+    })
+
+    $btnCopyLog.Add_Click({
+        try {
+            [System.Windows.Clipboard]::SetText($txtLogConsole.Text)
+            & $fnSetStatus "Activity log copied to clipboard." "COPIED" "#065F46" "#6EE7B7"
+            Write-CascadeLog "Log contents copied to clipboard." "INFO"
+        } catch {
+            & $fnSetStatus "Failed to copy log to clipboard: $($_.Exception.Message)" "WARNING" "#7C2D12" "#FDBA74"
+            Write-CascadeLog "Failed to copy log to clipboard: $($_.Exception.Message)" "WARN"
+        }
+    })
+
+    $btnInvertSelection = $window.FindName('BtnInvertSelection')
+    if ($btnInvertSelection) {
+        $btnInvertSelection.Add_Click({
+            $selCount = 0
+            foreach ($item in $observableUpdates) {
+                $item.IsSelected = (-not [bool]$item.IsSelected)
+                if ($item.IsSelected) { $selCount++ }
+            }
+            $lstUpdates.Items.Refresh()
+            & $fnUpdatePayloadBadge
+            & $fnSetStatus "Inverted selection: $selCount of $($observableUpdates.Count) update package(s) now selected." "READY" "#831843" "#F472B6"
+            Write-CascadeLog "Inverted update selection ($selCount / $($observableUpdates.Count) selected)." "INFO"
+        })
+    }
+
+    $btnCopyLogTsv = $window.FindName('BtnCopyLogTsv')
+    if ($btnCopyLogTsv) {
+        $btnCopyLogTsv.Add_Click({
+            try {
+                $rawLog = if ($txtLogConsole.Text) { $txtLogConsole.Text } else { '' }
+                $rawLines = @($rawLog -split "\r?\n" | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
+                $tsvRows = @("Timestamp`tLevel`tMessage")
+                foreach ($ln in $rawLines) {
+                    if ($ln -match '^\[([^\]]+)\]\s*\[([^\]]+)\]\s*(.*)$') {
+                        $ts  = ($Matches[1] -replace "[\t\r\n]+", ' ').Trim()
+                        $lvl = ($Matches[2] -replace "[\t\r\n]+", ' ').Trim()
+                        $msg = ($Matches[3] -replace "[\t\r\n]+", ' ').Trim()
+                        $tsvRows += "$ts`t$lvl`t$msg"
+                    } else {
+                        $cleanLn = ($ln -replace "[\t\r\n]+", ' ').Trim()
+                        $tsvRows += "-`tINFO`t$cleanLn"
+                    }
+                }
+                [System.Windows.Clipboard]::SetText(($tsvRows -join "`r`n"))
+                & $fnSetStatus "Copied $($rawLines.Count) Activity Log line(s) as TSV (Excel/Sheets ready) to clipboard." "COPIED" "#065F46" "#6EE7B7"
+                Write-CascadeLog "Copied $($rawLines.Count) Activity Log line(s) as TSV to clipboard." "SUCCESS"
+            } catch {
+                Write-CascadeLog "Failed to copy Activity Log TSV: $($_.Exception.Message)" "WARN"
+            }
+        })
+    }
+
+    $btnCopyUpdatesJson = $window.FindName('BtnCopyUpdatesJson')
+    if ($btnCopyUpdatesJson) {
+        $btnCopyUpdatesJson.Add_Click({
+            try {
+                $items = @($observableUpdates | ForEach-Object {
+                    [PSCustomObject]@{
+                        Selected = [bool]$_.IsSelected
+                        KB       = $_.KB
+                        Type     = $_.TypeDisplay
+                        Size     = $_.SizeDisplay
+                        Status   = $_.Status
+                        Title    = $_.Title
+                    }
+                })
+                $payload = [PSCustomObject]@{
+                    CopiedAtUtc = (Get-Date).ToUniversalTime().ToString('o')
+                    MachineName = $env:COMPUTERNAME
+                    Count       = $items.Count
+                    Updates     = $items
+                }
+                $jsonText = $payload | ConvertTo-Json -Depth 5
+                [System.Windows.Clipboard]::SetText($jsonText)
+                & $fnSetStatus "Copied $($items.Count) pending update(s) as JSON to clipboard." "COPIED" "#065F46" "#6EE7B7"
+                Write-CascadeLog "Copied $($items.Count) pending update(s) as JSON to clipboard." "SUCCESS"
+            } catch {
+                Write-CascadeLog "Failed to copy updates JSON: $($_.Exception.Message)" "WARN"
+            }
+        })
+    }
+
+    $btnCopyLogMd = $window.FindName('BtnCopyLogMd')
+    if ($btnCopyLogMd) {
+        $btnCopyLogMd.Add_Click({
+            try {
+                $rawLog = if ($txtLogConsole.Text) { $txtLogConsole.Text } else { '' }
+                $rawLines = @($rawLog -split "\r?\n" | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
+                $mdRows = @(
+                    "### UpdateCascade Activity Log ($($rawLines.Count) entries)",
+                    "",
+                    "| Timestamp | Level | Message |",
+                    "| :--- | :---: | :--- |"
+                )
+                foreach ($ln in $rawLines) {
+                    if ($ln -match '^\[([^\]]+)\]\s*\[([^\]]+)\]\s*(.*)$') {
+                        $ts  = ($Matches[1] -replace '\|', '\|').Trim()
+                        $lvl = ($Matches[2] -replace '\|', '\|').Trim()
+                        $msg = ($Matches[3] -replace '\|', '\|').Trim()
+                        $mdRows += "| ``$ts`` | **$lvl** | $msg |"
+                    } else {
+                        $cleanLn = ($ln -replace '\|', '\|').Trim()
+                        $mdRows += "| ``-`` | **INFO** | $cleanLn |"
+                    }
+                }
+                [System.Windows.Clipboard]::SetText(($mdRows -join "`r`n"))
+                & $fnSetStatus "Copied $($rawLines.Count) Activity Log line(s) as Markdown table to clipboard." "COPIED" "#065F46" "#6EE7B7"
+                Write-CascadeLog "Copied $($rawLines.Count) Activity Log line(s) as Markdown table to clipboard." "SUCCESS"
+            } catch {
+                Write-CascadeLog "Failed to copy Activity Log Markdown table: $($_.Exception.Message)" "WARN"
+            }
+        })
+    }
+
+    $btnCopyLogJson = $window.FindName('BtnCopyLogJson')
+    if ($btnCopyLogJson) {
+        $btnCopyLogJson.Add_Click({
+            try {
+                $rawLog = if ($txtLogConsole.Text) { $txtLogConsole.Text } else { '' }
+                $rawLines = @($rawLog -split "\r?\n" | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
+                $entries = @($rawLines | ForEach-Object {
+                    if ($_ -match '^\[([^\]]+)\]\s*\[([^\]]+)\]\s*(.*)$') {
+                        [PSCustomObject]@{
+                            Timestamp = $Matches[1].Trim()
+                            Level     = $Matches[2].Trim()
+                            Message   = $Matches[3].Trim()
+                        }
+                    } else {
+                        [PSCustomObject]@{
+                            Timestamp = '-'
+                            Level     = 'INFO'
+                            Message   = $_.Trim()
+                        }
+                    }
+                })
+                $payload = [PSCustomObject]@{
+                    CopiedAtUtc = (Get-Date).ToUniversalTime().ToString('o')
+                    MachineName = $env:COMPUTERNAME
+                    Count       = $entries.Count
+                    Entries     = $entries
+                }
+                [System.Windows.Clipboard]::SetText(($payload | ConvertTo-Json -Depth 5))
+                & $fnSetStatus "Copied $($entries.Count) Activity Log line(s) as JSON to clipboard." "COPIED" "#065F46" "#6EE7B7"
+                Write-CascadeLog "Copied $($entries.Count) Activity Log line(s) as JSON to clipboard." "SUCCESS"
+            } catch {
+                Write-CascadeLog "Failed to copy Activity Log JSON: $($_.Exception.Message)" "WARN"
+            }
+        })
+    }
+
+    $btnCopyUpdatesCsv = $window.FindName('BtnCopyUpdatesCsv')
+    if ($btnCopyUpdatesCsv) {
+        $btnCopyUpdatesCsv.Add_Click({
+            try {
+                $csvLines = @('Selected,KB,Type,SizeMB,Status,Title')
+                foreach ($item in $observableUpdates) {
+                    $safeTitle = ([string]$item.Title).Replace('"', '""')
+                    $csvLines += "$($item.IsSelected),$($item.KB),$($item.TypeDisplay),$($item.SizeDisplay),$($item.Status),`"$safeTitle`""
+                }
+                [System.Windows.Clipboard]::SetText(($csvLines -join "`r`n"))
+                & $fnSetStatus "Copied $($observableUpdates.Count) pending update(s) as CSV to clipboard." "COPIED" "#065F46" "#6EE7B7"
+                Write-CascadeLog "Copied $($observableUpdates.Count) pending update(s) as CSV to clipboard." "SUCCESS"
+            } catch {
+                Write-CascadeLog "Failed to copy updates CSV: $($_.Exception.Message)" "WARN"
+            }
+        })
+    }
+
+    $btnCopyUpdatesHtml = $window.FindName('BtnCopyUpdatesHtml')
+    if ($btnCopyUpdatesHtml) {
+        $btnCopyUpdatesHtml.Add_Click({
+            try {
+                $rowsHtml = @()
+                $rIdx = 0
+                foreach ($item in $observableUpdates) {
+                    $rIdx++
+                    $bg = if ($rIdx % 2 -eq 0) { '#0d1117' } else { '#161b22' }
+                    $safeTitle = [System.Security.SecurityElement]::Escape(([string]$item.Title).Trim())
+                    $safeKb = [System.Security.SecurityElement]::Escape(([string]$item.KB).Trim())
+                    $safeType = [System.Security.SecurityElement]::Escape(([string]$item.TypeDisplay).Trim())
+                    $safeSize = [System.Security.SecurityElement]::Escape(([string]$item.SizeDisplay).Trim())
+                    $selBadge = if ($item.IsSelected) {
+                        '<span style="background-color: #065F46; color: #6EE7B7; padding: 2px 8px; border-radius: 9999px; font-weight: 600; font-size: 11px;">YES</span>'
+                    } else {
+                        '<span style="background-color: #374151; color: #9CA3AF; padding: 2px 8px; border-radius: 9999px; font-size: 11px;">NO</span>'
+                    }
+                    $rowsHtml += "<tr style=""background-color: $bg;""><td style=""padding: 6px 10px; border: 1px solid #30363d; text-align: center;"">$selBadge</td><td style=""padding: 6px 10px; border: 1px solid #30363d; font-family: monospace; color: #58a6ff;"">$safeKb</td><td style=""padding: 6px 10px; border: 1px solid #30363d; color: #c9d1d9;"">$safeTitle</td><td style=""padding: 6px 10px; border: 1px solid #30363d; color: #a5d6ff;"">$safeType</td><td style=""padding: 6px 10px; border: 1px solid #30363d; text-align: right; font-family: monospace; color: #f0f6fc;"">$safeSize</td></tr>"
+                }
+                $joinedRows = $rowsHtml -join "`r`n"
+                $htmlTable = @"
+<table style="border-collapse: collapse; width: 100%; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; font-size: 13px; line-height: 1.5; color: #c9d1d9; background-color: #0d1117; border: 1px solid #30363d;">
+  <thead>
+    <tr style="background-color: #21262d; color: #f0f6fc; text-align: left;">
+      <th style="padding: 8px 10px; border: 1px solid #30363d; text-align: center; width: 60px;">Install</th>
+      <th style="padding: 8px 10px; border: 1px solid #30363d; width: 90px;">KB</th>
+      <th style="padding: 8px 10px; border: 1px solid #30363d;">Update Title</th>
+      <th style="padding: 8px 10px; border: 1px solid #30363d; width: 110px;">Type</th>
+      <th style="padding: 8px 10px; border: 1px solid #30363d; text-align: right; width: 80px;">Size</th>
+    </tr>
+  </thead>
+  <tbody>
+$joinedRows
+  </tbody>
+</table>
+"@
+                [System.Windows.Clipboard]::SetText($htmlTable)
+                & $fnSetStatus "Copied $($observableUpdates.Count) pending update(s) as styled HTML table to clipboard." "COPIED" "#065F46" "#6EE7B7"
+                Write-CascadeLog "Copied $($observableUpdates.Count) pending update(s) as styled HTML table to clipboard." "SUCCESS"
+            } catch {
+                Write-CascadeLog "Failed to copy updates HTML: $($_.Exception.Message)" "WARN"
+            }
+        })
+    }
+
+    $btnCopyUpdatesXml = $window.FindName('BtnCopyUpdatesXml')
+    if ($btnCopyUpdatesXml) {
+        $btnCopyUpdatesXml.Add_Click({
+            try {
+                $rowsXml = @()
+                $rIdx = 0
+                foreach ($item in $observableUpdates) {
+                    $rIdx++
+                    $safeTitle = [System.Security.SecurityElement]::Escape(([string]$item.Title).Trim())
+                    $safeKb = [System.Security.SecurityElement]::Escape(([string]$item.KB).Trim())
+                    $safeSize = [System.Security.SecurityElement]::Escape(([string]$item.SizeDisplay).Trim())
+                    $safeType = [System.Security.SecurityElement]::Escape(([string]$item.TypeDisplay).Trim())
+                    $safeStatus = [System.Security.SecurityElement]::Escape(([string]$item.Status).Trim())
+                    $rowsXml += "    <Update index=""$rIdx"" kb=""$safeKb"" type=""$safeType"" size=""$safeSize"" status=""$safeStatus"">$safeTitle</Update>"
+                }
+                $joinedXml = $rowsXml -join "`r`n"
+                $xmlDoc = @"
+<?xml version="1.0" encoding="utf-8"?>
+<PendingUpdates count="$($observableUpdates.Count)" exportedAt="$([DateTime]::UtcNow.ToString('o'))">
+$joinedXml
+</PendingUpdates>
+"@
+                [System.Windows.Clipboard]::SetText($xmlDoc)
+                & $fnSetStatus "Copied $($observableUpdates.Count) pending update(s) as structured XML to clipboard." "COPIED" "#065F46" "#6EE7B7"
+                Write-CascadeLog "Copied $($observableUpdates.Count) pending update(s) as structured XML to clipboard." "SUCCESS"
+            } catch {
+                Write-CascadeLog "Failed to copy updates XML: $($_.Exception.Message)" "WARN"
+            }
+        })
+    }
+
+    $btnCopyUpdatesYaml = $window.FindName('BtnCopyUpdatesYaml')
+    if ($btnCopyUpdatesYaml) {
+        $btnCopyUpdatesYaml.Add_Click({
+            try {
+                $rowsYaml = @()
+                $rIdx = 0
+                foreach ($item in $observableUpdates) {
+                    $rIdx++
+                    $rawTitle = ([string]$item.Title).Trim()
+                    $quotedTitle = if ($rawTitle -match '[:#\[\]\{\},&*?|<>=!%@`"\\]' -or $rawTitle -match '^[\s\-]') {
+                        '"' + ($rawTitle -replace '\\', '\\' -replace '"', '\"') + '"'
+                    } else {
+                        $rawTitle
+                    }
+                    $safeKb = ([string]$item.KB).Trim()
+                    $safeSize = ([string]$item.SizeDisplay).Trim()
+                    $safeType = ([string]$item.TypeDisplay).Trim()
+                    $safeStatus = ([string]$item.Status).Trim()
+                    $rowsYaml += "  - index: $rIdx`r`n    kb: $safeKb`r`n    type: $safeType`r`n    size: $safeSize`r`n    status: $safeStatus`r`n    title: $quotedTitle"
+                }
+                $joinedYaml = $rowsYaml -join "`r`n"
+                $yamlDoc = @"
+# UpdateCascade Pending Updates
+count: $($observableUpdates.Count)
+exportedAt: '$([DateTime]::UtcNow.ToString('o'))'
+updates:
+$joinedYaml
+"@
+                [System.Windows.Clipboard]::SetText($yamlDoc)
+                & $fnSetStatus "Copied $($observableUpdates.Count) pending update(s) as structured YAML to clipboard." "COPIED" "#065F46" "#6EE7B7"
+                Write-CascadeLog "Copied $($observableUpdates.Count) pending update(s) as structured YAML to clipboard." "SUCCESS"
+            } catch {
+                Write-CascadeLog "Failed to copy updates YAML: $($_.Exception.Message)" "WARN"
+            }
+        })
+    }
+
+    $btnCopyLogCsv = $window.FindName('BtnCopyLogCsv')
+    if ($btnCopyLogCsv) {
+        $btnCopyLogCsv.Add_Click({
+            try {
+                $rawLog = if ($txtLogConsole.Text) { $txtLogConsole.Text } else { '' }
+                $rawLines = @($rawLog -split "\r?\n" | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
+                $csvRows = @('Timestamp,Level,Message')
+                foreach ($ln in $rawLines) {
+                    if ($ln -match '^\[([^\]]+)\]\s*\[([^\]]+)\]\s*(.*)$') {
+                        $ts  = $Matches[1].Trim().Replace('"', '""')
+                        $lvl = $Matches[2].Trim().Replace('"', '""')
+                        $msg = $Matches[3].Trim().Replace('"', '""')
+                        $csvRows += "`"$ts`",`"$lvl`",`"$msg`""
+                    } else {
+                        $cleanLn = $ln.Trim().Replace('"', '""')
+                        $csvRows += "`"-`",`"INFO`",`"$cleanLn`""
+                    }
+                }
+                [System.Windows.Clipboard]::SetText(($csvRows -join "`r`n"))
+                & $fnSetStatus "Copied $($rawLines.Count) Activity Log line(s) as CSV to clipboard." "COPIED" "#065F46" "#6EE7B7"
+                Write-CascadeLog "Copied $($rawLines.Count) Activity Log line(s) as CSV to clipboard." "SUCCESS"
+            } catch {
+                Write-CascadeLog "Failed to copy Activity Log CSV: $($_.Exception.Message)" "WARN"
+            }
+        })
+    }
+
+    $btnCopyLogHtml = $window.FindName('BtnCopyLogHtml')
+    if ($btnCopyLogHtml) {
+        $btnCopyLogHtml.Add_Click({
+            try {
+                $rawLog = if ($txtLogConsole.Text) { $txtLogConsole.Text } else { '' }
+                $rawLines = @($rawLog -split "\r?\n" | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
+                $rowsHtml = @()
+                $rIdx = 0
+                foreach ($ln in $rawLines) {
+                    $rIdx++
+                    $bg = if ($rIdx % 2 -eq 0) { '#0d1117' } else { '#161b22' }
+                    if ($ln -match '^\[([^\]]+)\]\s*\[([^\]]+)\]\s*(.*)$') {
+                        $ts = [System.Security.SecurityElement]::Escape($Matches[1].Trim())
+                        $lv = $Matches[2].Trim().ToUpperInvariant()
+                        $msg = [System.Security.SecurityElement]::Escape($Matches[3].Trim())
+                        $lvlBadge = switch ($lv) {
+                            'SUCCESS' { '<span style="background-color: #065F46; color: #6EE7B7; padding: 2px 6px; border-radius: 4px; font-weight: 600; font-size: 10px;">SUCCESS</span>' }
+                            'ERROR'   { '<span style="background-color: #7F1D1D; color: #FCA5A5; padding: 2px 6px; border-radius: 4px; font-weight: 600; font-size: 10px;">ERROR</span>' }
+                            'WARN'    { '<span style="background-color: #78350F; color: #FCD34D; padding: 2px 6px; border-radius: 4px; font-weight: 600; font-size: 10px;">WARN</span>' }
+                            'STEP'    { '<span style="background-color: #1E3A8A; color: #93C5FD; padding: 2px 6px; border-radius: 4px; font-weight: 600; font-size: 10px;">STEP</span>' }
+                            default   { '<span style="background-color: #374151; color: #D1D5DB; padding: 2px 6px; border-radius: 4px; font-size: 10px;">INFO</span>' }
+                        }
+                        $rowsHtml += "<tr style=""background-color: $bg;""><td style=""padding: 4px 8px; border: 1px solid #30363d; font-family: monospace; color: #8b949e; width: 140px;"">$ts</td><td style=""padding: 4px 8px; border: 1px solid #30363d; text-align: center; width: 70px;"">$lvlBadge</td><td style=""padding: 4px 8px; border: 1px solid #30363d; color: #c9d1d9; font-family: Consolas, monospace;"">$msg</td></tr>"
+                    } else {
+                        $cleanMsg = [System.Security.SecurityElement]::Escape($ln.Trim())
+                        $rowsHtml += "<tr style=""background-color: $bg;""><td style=""padding: 4px 8px; border: 1px solid #30363d; font-family: monospace; color: #8b949e;"">-</td><td style=""padding: 4px 8px; border: 1px solid #30363d; text-align: center;""><span style=""background-color: #374151; color: #D1D5DB; padding: 2px 6px; border-radius: 4px; font-size: 10px;"">INFO</span></td><td style=""padding: 4px 8px; border: 1px solid #30363d; color: #c9d1d9; font-family: Consolas, monospace;"">$cleanMsg</td></tr>"
+                    }
+                }
+                $joinedRows = $rowsHtml -join "`r`n"
+                $htmlTable = @"
+<table style="border-collapse: collapse; width: 100%; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; font-size: 12px; line-height: 1.4; color: #c9d1d9; background-color: #0d1117; border: 1px solid #30363d;">
+  <thead>
+    <tr style="background-color: #21262d; color: #f0f6fc; text-align: left;">
+      <th style="padding: 6px 8px; border: 1px solid #30363d; width: 140px;">Timestamp</th>
+      <th style="padding: 6px 8px; border: 1px solid #30363d; text-align: center; width: 70px;">Level</th>
+      <th style="padding: 6px 8px; border: 1px solid #30363d;">Log Message</th>
+    </tr>
+  </thead>
+  <tbody>
+$joinedRows
+  </tbody>
+</table>
+"@
+                [System.Windows.Clipboard]::SetText($htmlTable)
+                & $fnSetStatus "Copied $($rawLines.Count) Activity Log line(s) as styled HTML table to clipboard." "COPIED" "#065F46" "#6EE7B7"
+                Write-CascadeLog "Copied $($rawLines.Count) Activity Log line(s) as styled HTML table to clipboard." "SUCCESS"
+            } catch {
+                Write-CascadeLog "Failed to copy Activity Log HTML: $($_.Exception.Message)" "WARN"
+            }
+        })
+    }
+
+    $btnCopyLogXml = $window.FindName('BtnCopyLogXml')
+    if ($btnCopyLogXml) {
+        $btnCopyLogXml.Add_Click({
+            try {
+                $rawLog = if ($txtLogConsole.Text) { $txtLogConsole.Text } else { '' }
+                $rawLines = @($rawLog -split "\r?\n" | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
+                $rowsXml = @()
+                $rIdx = 0
+                foreach ($ln in $rawLines) {
+                    $rIdx++
+                    if ($ln -match '^\[([^\]]+)\]\s*\[([^\]]+)\]\s*(.*)$') {
+                        $ts = [System.Security.SecurityElement]::Escape($Matches[1].Trim())
+                        $lv = [System.Security.SecurityElement]::Escape($Matches[2].Trim().ToUpperInvariant())
+                        $msg = [System.Security.SecurityElement]::Escape($Matches[3].Trim())
+                        $rowsXml += "    <LogEntry index=""$rIdx"" timestamp=""$ts"" level=""$lv"">$msg</LogEntry>"
+                    } else {
+                        $cleanMsg = [System.Security.SecurityElement]::Escape($ln.Trim())
+                        $rowsXml += "    <LogEntry index=""$rIdx"" level=""INFO"">$cleanMsg</LogEntry>"
+                    }
+                }
+                $joinedXml = $rowsXml -join "`r`n"
+                $xmlDoc = @"
+<?xml version="1.0" encoding="utf-8"?>
+<ActivityLog count="$($rawLines.Count)" exportedAt="$([DateTime]::UtcNow.ToString('o'))">
+$joinedXml
+</ActivityLog>
+"@
+                [System.Windows.Clipboard]::SetText($xmlDoc)
+                & $fnSetStatus "Copied $($rawLines.Count) Activity Log line(s) as structured XML to clipboard." "COPIED" "#065F46" "#6EE7B7"
+                Write-CascadeLog "Copied $($rawLines.Count) Activity Log line(s) as structured XML to clipboard." "SUCCESS"
+            } catch {
+                Write-CascadeLog "Failed to copy Activity Log XML: $($_.Exception.Message)" "WARN"
+            }
+        })
+    }
+
+    $btnCopyLogYaml = $window.FindName('BtnCopyLogYaml')
+    if ($btnCopyLogYaml) {
+        $btnCopyLogYaml.Add_Click({
+            try {
+                $rawLog = if ($txtLogConsole.Text) { $txtLogConsole.Text } else { '' }
+                $rawLines = @($rawLog -split "\r?\n" | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
+                $rowsYaml = @()
+                $rIdx = 0
+                foreach ($ln in $rawLines) {
+                    $rIdx++
+                    if ($ln -match '^\[([^\]]+)\]\s*\[([^\]]+)\]\s*(.*)$') {
+                        $ts = $Matches[1].Trim()
+                        $lv = $Matches[2].Trim().ToUpperInvariant()
+                        $rawMsg = $Matches[3].Trim()
+                        $quotedMsg = if ($rawMsg -match '[:#\[\]\{\},&*?|<>=!%@`"\\]' -or $rawMsg -match '^[\s\-]') {
+                            '"' + ($rawMsg -replace '\\', '\\' -replace '"', '\"') + '"'
+                        } else {
+                            $rawMsg
+                        }
+                        $rowsYaml += "  - index: $rIdx`r`n    timestamp: '$ts'`r`n    level: $lv`r`n    message: $quotedMsg"
+                    } else {
+                        $rawMsg = $ln.Trim()
+                        $quotedMsg = if ($rawMsg -match '[:#\[\]\{\},&*?|<>=!%@`"\\]' -or $rawMsg -match '^[\s\-]') {
+                            '"' + ($rawMsg -replace '\\', '\\' -replace '"', '\"') + '"'
+                        } else {
+                            $rawMsg
+                        }
+                        $rowsYaml += "  - index: $rIdx`r`n    level: INFO`r`n    message: $quotedMsg"
+                    }
+                }
+                $joinedYaml = $rowsYaml -join "`r`n"
+                $yamlDoc = @"
+# UpdateCascade Activity Log
+count: $($rawLines.Count)
+exportedAt: '$([DateTime]::UtcNow.ToString('o'))'
+entries:
+$joinedYaml
+"@
+                [System.Windows.Clipboard]::SetText($yamlDoc)
+                & $fnSetStatus "Copied $($rawLines.Count) Activity Log line(s) as structured YAML to clipboard." "COPIED" "#065F46" "#6EE7B7"
+                Write-CascadeLog "Copied $($rawLines.Count) Activity Log line(s) as structured YAML to clipboard." "SUCCESS"
+            } catch {
+                Write-CascadeLog "Failed to copy Activity Log YAML: $($_.Exception.Message)" "WARN"
+            }
+        })
+    }
+
+    $btnCopyUpdatesSummary = $window.FindName('BtnCopyUpdatesSummary')
+    if ($btnCopyUpdatesSummary) {
+        $btnCopyUpdatesSummary.Add_Click({
+            try {
+                $totalCnt = $observableUpdates.Count
+                $selCnt   = 0
+                $drvCnt   = 0
+                $swCnt    = 0
+                $totalMb  = 0.0
+                $selMb    = 0.0
+                foreach ($u in $observableUpdates) {
+                    $szVal = 0.0
+                    if ($u.SizeDisplay -match '([\d\.]+)') { $szVal = [double]$Matches[1] }
+                    $totalMb += $szVal
+                    if ($u.IsSelected) {
+                        $selCnt++
+                        $selMb += $szVal
+                    }
+                    if ($u.TypeDisplay -match 'Driver') { $drvCnt++ } else { $swCnt++ }
+                }
+                $totalMbRound = [Math]::Round($totalMb, 1)
+                $selMbRound   = [Math]::Round($selMb, 1)
+                $summaryMd = @(
+                    "### UpdateCascade Pending Updates Summary ($(Get-Date -Format 'yyyy-MM-dd HH:mm:ss'))",
+                    "",
+                    "| Metric | Count / Value |",
+                    "| :--- | :--- |",
+                    "| **Total Pending Updates** | **$totalCnt** (${totalMbRound} MB) |",
+                    "| **Selected for Install** | **$selCnt** (${selMbRound} MB) |",
+                    "| **Software Updates** | $swCnt |",
+                    "| **Hardware Drivers** | $drvCnt |"
+                )
+                [System.Windows.Clipboard]::SetText(($summaryMd -join "`r`n"))
+                & $fnSetStatus "Copied Pending Updates Summary ($totalCnt total, $selCnt selected, ${totalMbRound} MB) to clipboard." "COPIED" "#065F46" "#6EE7B7"
+                Write-CascadeLog "Copied Pending Updates Summary ($totalCnt total, $swCnt software, $drvCnt drivers) to clipboard." "SUCCESS"
+            } catch {
+                Write-CascadeLog "Failed to copy Pending Updates Summary: $($_.Exception.Message)" "WARN"
+            }
+        })
+    }
+
+    $btnCopyUpdatesSummaryTsv = $window.FindName('BtnCopyUpdatesSummaryTsv')
+    if ($btnCopyUpdatesSummaryTsv) {
+        $btnCopyUpdatesSummaryTsv.Add_Click({
+            try {
+                $totalCnt = $observableUpdates.Count
+                $selCnt   = 0
+                $swCnt    = 0
+                $drvCnt   = 0
+                $totalMb  = 0.0
+                $selMb    = 0.0
+                foreach ($u in $observableUpdates) {
+                    $sz = 0.0
+                    if ($u.SizeDisplay -match '([0-9.]+)\s*GB') { $sz = [double]$Matches[1] * 1024.0 }
+                    elseif ($u.SizeDisplay -match '([0-9.]+)\s*MB') { $sz = [double]$Matches[1] }
+                    elseif ($u.SizeDisplay -match '([0-9.]+)\s*KB') { $sz = [double]$Matches[1] / 1024.0 }
+                    $totalMb += $sz
+                    if ($u.IsSelected) { $selCnt++; $selMb += $sz }
+                    if ($u.TypeDisplay -match 'Driver') { $drvCnt++ } else { $swCnt++ }
+                }
+                $totalMbRound = [Math]::Round($totalMb, 1)
+                $selMbRound   = [Math]::Round($selMb, 1)
+                $tsvLines = @(
+                    "Metric`tCount`tPayloadMB",
+                    "Total Pending Updates`t$totalCnt`t${totalMbRound}",
+                    "Selected for Install`t$selCnt`t${selMbRound}",
+                    "Software Updates`t$swCnt`t-",
+                    "Hardware Drivers`t$drvCnt`t-"
+                )
+                [System.Windows.Clipboard]::SetText(($tsvLines -join "`r`n"))
+                & $fnSetStatus "Copied Pending Updates Summary TSV ($totalCnt total, ${totalMbRound} MB) to clipboard." "COPIED" "#065F46" "#6EE7B7"
+                Write-CascadeLog "Copied Pending Updates Summary TSV ($totalCnt total, $swCnt software, $drvCnt drivers) to clipboard." "SUCCESS"
+            } catch {
+                Write-CascadeLog "Failed to copy Pending Updates Summary TSV: $($_.Exception.Message)" "WARN"
+            }
+        })
+    }
+
+    $btnCopyUpdatesSummaryJson = $window.FindName('BtnCopyUpdatesSummaryJson')
+    if ($btnCopyUpdatesSummaryJson) {
+        $btnCopyUpdatesSummaryJson.Add_Click({
+            try {
+                $totalCnt = $observableUpdates.Count
+                $selCnt   = 0
+                $swCnt    = 0
+                $drvCnt   = 0
+                $totalMb  = 0.0
+                $selMb    = 0.0
+                foreach ($u in $observableUpdates) {
+                    $sz = 0.0
+                    if ($u.SizeDisplay -match '([0-9.]+)\s*GB') { $sz = [double]$Matches[1] * 1024.0 }
+                    elseif ($u.SizeDisplay -match '([0-9.]+)\s*MB') { $sz = [double]$Matches[1] }
+                    elseif ($u.SizeDisplay -match '([0-9.]+)\s*KB') { $sz = [double]$Matches[1] / 1024.0 }
+                    $totalMb += $sz
+                    if ($u.IsSelected) { $selCnt++; $selMb += $sz }
+                    if ($u.TypeDisplay -match 'Driver') { $drvCnt++ } else { $swCnt++ }
+                }
+                $totalMbRound = [Math]::Round($totalMb, 1)
+                $selMbRound   = [Math]::Round($selMb, 1)
+                $payloadObj = [PSCustomObject]@{
+                    GeneratedAt        = (Get-Date).ToString('o')
+                    TotalPending       = $totalCnt
+                    TotalPayloadMB     = $totalMbRound
+                    SelectedForInstall = $selCnt
+                    SelectedPayloadMB  = $selMbRound
+                    SoftwareUpdates    = $swCnt
+                    HardwareDrivers    = $drvCnt
+                }
+                [System.Windows.Clipboard]::SetText(($payloadObj | ConvertTo-Json -Depth 4))
+                & $fnSetStatus "Copied Pending Updates Summary JSON ($totalCnt total, ${totalMbRound} MB) to clipboard." "COPIED" "#065F46" "#6EE7B7"
+                Write-CascadeLog "Copied Pending Updates Summary JSON ($totalCnt total, $swCnt software, $drvCnt drivers) to clipboard." "SUCCESS"
+            } catch {
+                Write-CascadeLog "Failed to copy Pending Updates Summary JSON: $($_.Exception.Message)" "WARN"
+            }
+        })
+    }
+
+    $btnCopyLogSummary = $window.FindName('BtnCopyLogSummary')
+    if ($btnCopyLogSummary) {
+        $btnCopyLogSummary.Add_Click({
+            try {
+                $rawLog = if ($txtLogConsole.Text) { $txtLogConsole.Text } else { '' }
+                $rawLines = @($rawLog -split "\r?\n" | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
+                $lvlCounts = [ordered]@{ INFO = 0; STEP = 0; SUCCESS = 0; WARN = 0; ERROR = 0 }
+                foreach ($ln in $rawLines) {
+                    if ($ln -match '^\[[^\]]+\]\s*\[([^\]]+)\]') {
+                        $lv = $Matches[1].Trim().ToUpperInvariant()
+                        if ($lvlCounts.Contains($lv)) { $lvlCounts[$lv] = $lvlCounts[$lv] + 1 } else { $lvlCounts[$lv] = 1 }
+                    } else {
+                        $lvlCounts['INFO'] = $lvlCounts['INFO'] + 1
+                    }
+                }
+                $logMd = @(
+                    "### UpdateCascade Activity Log Level Breakdown ($($rawLines.Count) lines)",
+                    "",
+                    "| Level | Count | Share % |",
+                    "| :--- | :---: | :---: |"
+                )
+                foreach ($k in $lvlCounts.Keys) {
+                    $c = $lvlCounts[$k]
+                    $pct = if ($rawLines.Count -gt 0) { [Math]::Round(($c * 100.0) / $rawLines.Count, 1) } else { 0.0 }
+                    $logMd += "| **$k** | $c | ${pct}% |"
+                }
+                [System.Windows.Clipboard]::SetText(($logMd -join "`r`n"))
+                & $fnSetStatus "Copied Activity Log Level Breakdown ($($rawLines.Count) lines) to clipboard." "COPIED" "#065F46" "#6EE7B7"
+                Write-CascadeLog "Copied Activity Log Level Breakdown ($($rawLines.Count) lines) to clipboard." "SUCCESS"
+            } catch {
+                Write-CascadeLog "Failed to copy Activity Log Summary: $($_.Exception.Message)" "WARN"
+            }
+        })
+    }
+
+    $btnCopyLogSummaryTsv = $window.FindName('BtnCopyLogSummaryTsv')
+    if ($btnCopyLogSummaryTsv) {
+        $btnCopyLogSummaryTsv.Add_Click({
+            try {
+                $rawLog = if ($txtLogConsole.Text) { $txtLogConsole.Text } else { '' }
+                $rawLines = @($rawLog -split "\r?\n" | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
+                $lvlCounts = [ordered]@{ INFO = 0; STEP = 0; SUCCESS = 0; WARN = 0; ERROR = 0 }
+                foreach ($ln in $rawLines) {
+                    if ($ln -match '^\[[^\]]+\]\s*\[([^\]]+)\]') {
+                        $lv = $Matches[1].Trim().ToUpperInvariant()
+                        if ($lvlCounts.Contains($lv)) { $lvlCounts[$lv] = $lvlCounts[$lv] + 1 } else { $lvlCounts[$lv] = 1 }
+                    } else {
+                        $lvlCounts['INFO'] = $lvlCounts['INFO'] + 1
+                    }
+                }
+                $tsvLines = @("Level`tCount`tSharePercent")
+                foreach ($k in $lvlCounts.Keys) {
+                    $c = $lvlCounts[$k]
+                    $pct = if ($rawLines.Count -gt 0) { [Math]::Round(($c * 100.0) / $rawLines.Count, 1) } else { 0.0 }
+                    $tsvLines += "$k`t$c`t${pct}%"
+                }
+                $tsvLines += "Total Lines`t$($rawLines.Count)`t100.0%"
+                [System.Windows.Clipboard]::SetText(($tsvLines -join "`r`n"))
+                & $fnSetStatus "Copied Activity Log Level Breakdown TSV ($($rawLines.Count) lines) to clipboard." "COPIED" "#065F46" "#6EE7B7"
+                Write-CascadeLog "Copied Activity Log Level Breakdown TSV ($($rawLines.Count) lines) to clipboard." "SUCCESS"
+            } catch {
+                Write-CascadeLog "Failed to copy Activity Log Summary TSV: $($_.Exception.Message)" "WARN"
+            }
+        })
+    }
+
+    $btnCopyLogSummaryJson = $window.FindName('BtnCopyLogSummaryJson')
+    if ($btnCopyLogSummaryJson) {
+        $btnCopyLogSummaryJson.Add_Click({
+            try {
+                $rawLog = if ($txtLogConsole.Text) { $txtLogConsole.Text } else { '' }
+                $rawLines = @($rawLog -split "\r?\n" | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
+                $lvlCounts = [ordered]@{ INFO = 0; STEP = 0; SUCCESS = 0; WARN = 0; ERROR = 0 }
+                foreach ($ln in $rawLines) {
+                    if ($ln -match '^\[[^\]]+\]\s*\[([^\]]+)\]') {
+                        $lv = $Matches[1].Trim().ToUpperInvariant()
+                        if ($lvlCounts.Contains($lv)) { $lvlCounts[$lv] = $lvlCounts[$lv] + 1 } else { $lvlCounts[$lv] = 1 }
+                    } else {
+                        $lvlCounts['INFO'] = $lvlCounts['INFO'] + 1
+                    }
+                }
+                $levelsArr = @()
+                foreach ($k in $lvlCounts.Keys) {
+                    $c = $lvlCounts[$k]
+                    $pct = if ($rawLines.Count -gt 0) { [Math]::Round(($c * 100.0) / $rawLines.Count, 1) } else { 0.0 }
+                    $levelsArr += [PSCustomObject]@{ Level = $k; Count = $c; SharePercent = $pct }
+                }
+                $logPayload = [PSCustomObject]@{
+                    GeneratedAt    = (Get-Date).ToString('o')
+                    TotalLines     = $rawLines.Count
+                    LevelBreakdown = $levelsArr
+                }
+                [System.Windows.Clipboard]::SetText(($logPayload | ConvertTo-Json -Depth 4))
+                & $fnSetStatus "Copied Activity Log Level Breakdown JSON ($($rawLines.Count) lines) to clipboard." "COPIED" "#065F46" "#6EE7B7"
+                Write-CascadeLog "Copied Activity Log Level Breakdown JSON ($($rawLines.Count) lines) to clipboard." "SUCCESS"
+            } catch {
+                Write-CascadeLog "Failed to copy Activity Log Summary JSON: $($_.Exception.Message)" "WARN"
+            }
+        })
+    }
+
+    $btnCopyUpdatesSummaryCsv = $window.FindName('BtnCopyUpdatesSummaryCsv')
+    if ($btnCopyUpdatesSummaryCsv) {
+        $btnCopyUpdatesSummaryCsv.Add_Click({
+            try {
+                $totalCnt = $observableUpdates.Count
+                $selCnt   = 0
+                $swCnt    = 0
+                $drvCnt   = 0
+                $totalMb  = 0.0
+                $selMb    = 0.0
+                foreach ($u in $observableUpdates) {
+                    $sz = 0.0
+                    if ($u.SizeDisplay -match '([0-9.]+)\s*GB') { $sz = [double]$Matches[1] * 1024.0 }
+                    elseif ($u.SizeDisplay -match '([0-9.]+)\s*MB') { $sz = [double]$Matches[1] }
+                    elseif ($u.SizeDisplay -match '([0-9.]+)\s*KB') { $sz = [double]$Matches[1] / 1024.0 }
+                    $totalMb += $sz
+                    if ($u.IsSelected) { $selCnt++; $selMb += $sz }
+                    if ($u.TypeDisplay -match 'Driver') { $drvCnt++ } else { $swCnt++ }
+                }
+                $totalMbRound = [Math]::Round($totalMb, 1)
+                $selMbRound   = [Math]::Round($selMb, 1)
+                $csvLines = @(
+                    "Metric,Count,PayloadMB",
+                    "`"Total Pending Updates`",$totalCnt,$totalMbRound",
+                    "`"Selected for Install`",$selCnt,$selMbRound",
+                    "`"Software Updates`",$swCnt,`"-`"",
+                    "`"Hardware Drivers`",$drvCnt,`"-`""
+                )
+                [System.Windows.Clipboard]::SetText(($csvLines -join "`r`n"))
+                & $fnSetStatus "Copied Pending Updates Summary CSV ($totalCnt total, ${totalMbRound} MB) to clipboard." "COPIED" "#065F46" "#6EE7B7"
+                Write-CascadeLog "Copied Pending Updates Summary CSV ($totalCnt total, $swCnt software, $drvCnt drivers) to clipboard." "SUCCESS"
+            } catch {
+                Write-CascadeLog "Failed to copy Pending Updates Summary CSV: $($_.Exception.Message)" "WARN"
+            }
+        })
+    }
+
+    $btnCopyUpdatesSummaryHtml = $window.FindName('BtnCopyUpdatesSummaryHtml')
+    if ($btnCopyUpdatesSummaryHtml) {
+        $btnCopyUpdatesSummaryHtml.Add_Click({
+            try {
+                $totalCnt = $observableUpdates.Count
+                $selCnt   = 0
+                $swCnt    = 0
+                $drvCnt   = 0
+                $totalMb  = 0.0
+                $selMb    = 0.0
+                foreach ($u in $observableUpdates) {
+                    $sz = 0.0
+                    if ($u.SizeDisplay -match '([0-9.]+)\s*GB') { $sz = [double]$Matches[1] * 1024.0 }
+                    elseif ($u.SizeDisplay -match '([0-9.]+)\s*MB') { $sz = [double]$Matches[1] }
+                    elseif ($u.SizeDisplay -match '([0-9.]+)\s*KB') { $sz = [double]$Matches[1] / 1024.0 }
+                    $totalMb += $sz
+                    if ($u.IsSelected) { $selCnt++; $selMb += $sz }
+                    if ($u.TypeDisplay -match 'Driver') { $drvCnt++ } else { $swCnt++ }
+                }
+                $totalMbRound = [Math]::Round($totalMb, 1)
+                $selMbRound   = [Math]::Round($selMb, 1)
+                $htmlTable = @"
+<table style="border-collapse:collapse;font-family:Segoe UI,Helvetica,Arial,sans-serif;font-size:12px;color:#f8fafc;background:#0f172a;border:1px solid #334155;border-radius:6px;overflow:hidden">
+  <thead>
+    <tr style="background:#1e293b;border-bottom:2px solid #475569">
+      <th style="padding:6px 12px;text-align:left;color:#94a3b8">Metric</th>
+      <th style="padding:6px 12px;text-align:right;color:#94a3b8">Count</th>
+      <th style="padding:6px 12px;text-align:right;color:#94a3b8">Payload (MB)</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr style="border-bottom:1px solid #1e293b"><td style="padding:5px 12px;font-weight:600">Total Pending Updates</td><td style="padding:5px 12px;text-align:right">$totalCnt</td><td style="padding:5px 12px;text-align:right;color:#38bdf8">$totalMbRound</td></tr>
+    <tr style="border-bottom:1px solid #1e293b"><td style="padding:5px 12px;font-weight:600">Selected for Install</td><td style="padding:5px 12px;text-align:right;color:#34d399">$selCnt</td><td style="padding:5px 12px;text-align:right;color:#34d399">$selMbRound</td></tr>
+    <tr style="border-bottom:1px solid #1e293b"><td style="padding:5px 12px;font-weight:600">Software Updates</td><td style="padding:5px 12px;text-align:right">$swCnt</td><td style="padding:5px 12px;text-align:right">-</td></tr>
+    <tr><td style="padding:5px 12px;font-weight:600">Hardware Drivers</td><td style="padding:5px 12px;text-align:right">$drvCnt</td><td style="padding:5px 12px;text-align:right">-</td></tr>
+  </tbody>
+</table>
+"@
+                [System.Windows.Clipboard]::SetText($htmlTable)
+                & $fnSetStatus "Copied Pending Updates Summary HTML ($totalCnt total, ${totalMbRound} MB) to clipboard." "COPIED" "#065F46" "#6EE7B7"
+                Write-CascadeLog "Copied Pending Updates Summary HTML ($totalCnt total, $swCnt software, $drvCnt drivers) to clipboard." "SUCCESS"
+            } catch {
+                Write-CascadeLog "Failed to copy Pending Updates Summary HTML: $($_.Exception.Message)" "WARN"
+            }
+        })
+    }
+
+    $btnCopyUpdatesSummaryXml = $window.FindName('BtnCopyUpdatesSummaryXml')
+    if ($btnCopyUpdatesSummaryXml) {
+        $btnCopyUpdatesSummaryXml.Add_Click({
+            try {
+                $totalCnt = $observableUpdates.Count
+                $selCnt   = 0
+                $swCnt    = 0
+                $drvCnt   = 0
+                $totalMb  = 0.0
+                $selMb    = 0.0
+                foreach ($u in $observableUpdates) {
+                    $sz = 0.0
+                    if ($u.SizeDisplay -match '([0-9.]+)\s*GB') { $sz = [double]$Matches[1] * 1024.0 }
+                    elseif ($u.SizeDisplay -match '([0-9.]+)\s*MB') { $sz = [double]$Matches[1] }
+                    elseif ($u.SizeDisplay -match '([0-9.]+)\s*KB') { $sz = [double]$Matches[1] / 1024.0 }
+                    $totalMb += $sz
+                    if ($u.IsSelected) { $selCnt++; $selMb += $sz }
+                    if ($u.TypeDisplay -match 'Driver') { $drvCnt++ } else { $swCnt++ }
+                }
+                $totalMbRound = [Math]::Round($totalMb, 1)
+                $selMbRound   = [Math]::Round($selMb, 1)
+                $xmlDoc = @"
+<?xml version="1.0" encoding="utf-8"?>
+<PendingUpdatesSummary totalUpdates="$totalCnt" selectedUpdates="$selCnt" totalPayloadMB="$totalMbRound" selectedPayloadMB="$selMbRound" timestamp="$([DateTime]::UtcNow.ToString('o'))">
+  <Category name="Software" count="$swCnt" />
+  <Category name="Drivers" count="$drvCnt" />
+</PendingUpdatesSummary>
+"@
+                [System.Windows.Clipboard]::SetText($xmlDoc)
+                & $fnSetStatus "Copied Pending Updates Summary XML ($totalCnt total, ${totalMbRound} MB) to clipboard." "COPIED" "#065F46" "#6EE7B7"
+                Write-CascadeLog "Copied Pending Updates Summary XML ($totalCnt total, $swCnt software, $drvCnt drivers) to clipboard." "SUCCESS"
+            } catch {
+                Write-CascadeLog "Failed to copy Pending Updates Summary XML: $($_.Exception.Message)" "WARN"
+            }
+        })
+    }
+
+    $btnCopyLogSummaryCsv = $window.FindName('BtnCopyLogSummaryCsv')
+    if ($btnCopyLogSummaryCsv) {
+        $btnCopyLogSummaryCsv.Add_Click({
+            try {
+                $rawLog = if ($txtLogConsole.Text) { $txtLogConsole.Text } else { '' }
+                $rawLines = @($rawLog -split "\r?\n" | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
+                $lvlCounts = [ordered]@{ INFO = 0; STEP = 0; SUCCESS = 0; WARN = 0; ERROR = 0 }
+                foreach ($ln in $rawLines) {
+                    if ($ln -match '^\[[^\]]+\]\s*\[([^\]]+)\]') {
+                        $lv = $Matches[1].Trim().ToUpperInvariant()
+                        if ($lvlCounts.Contains($lv)) { $lvlCounts[$lv] = $lvlCounts[$lv] + 1 } else { $lvlCounts[$lv] = 1 }
+                    } else {
+                        $lvlCounts['INFO'] = $lvlCounts['INFO'] + 1
+                    }
+                }
+                $csvLines = @("Level,Count,SharePercent")
+                foreach ($k in $lvlCounts.Keys) {
+                    $c = $lvlCounts[$k]
+                    $pct = if ($rawLines.Count -gt 0) { [Math]::Round(($c * 100.0) / $rawLines.Count, 1) } else { 0.0 }
+                    $safeLvl = ([string]$k).Replace('"', '""')
+                    $csvLines += "`"$safeLvl`",$c,`"$pct%`""
+                }
+                $csvLines += "`"Total Lines`",$($rawLines.Count),`"100.0%`""
+                [System.Windows.Clipboard]::SetText(($csvLines -join "`r`n"))
+                & $fnSetStatus "Copied Activity Log Level Breakdown CSV ($($rawLines.Count) lines) to clipboard." "COPIED" "#065F46" "#6EE7B7"
+                Write-CascadeLog "Copied Activity Log Level Breakdown CSV ($($rawLines.Count) lines) to clipboard." "SUCCESS"
+            } catch {
+                Write-CascadeLog "Failed to copy Activity Log Summary CSV: $($_.Exception.Message)" "WARN"
+            }
+        })
+    }
+
+    $btnCopyLogSummaryHtml = $window.FindName('BtnCopyLogSummaryHtml')
+    if ($btnCopyLogSummaryHtml) {
+        $btnCopyLogSummaryHtml.Add_Click({
+            try {
+                $rawLog = if ($txtLogConsole.Text) { $txtLogConsole.Text } else { '' }
+                $rawLines = @($rawLog -split "\r?\n" | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
+                $lvlCounts = [ordered]@{ INFO = 0; STEP = 0; SUCCESS = 0; WARN = 0; ERROR = 0 }
+                foreach ($ln in $rawLines) {
+                    if ($ln -match '^\[[^\]]+\]\s*\[([^\]]+)\]') {
+                        $lv = $Matches[1].Trim().ToUpperInvariant()
+                        if ($lvlCounts.Contains($lv)) { $lvlCounts[$lv] = $lvlCounts[$lv] + 1 } else { $lvlCounts[$lv] = 1 }
+                    } else {
+                        $lvlCounts['INFO'] = $lvlCounts['INFO'] + 1
+                    }
+                }
+                $rowsHtml = @()
+                foreach ($k in $lvlCounts.Keys) {
+                    $c = $lvlCounts[$k]
+                    $pct = if ($rawLines.Count -gt 0) { [Math]::Round(($c * 100.0) / $rawLines.Count, 1) } else { 0.0 }
+                    $color = switch ($k) {
+                        'SUCCESS' { '#34D399' }
+                        'WARN'    { '#FBBF24' }
+                        'ERROR'   { '#F87171' }
+                        'STEP'    { '#38BDF8' }
+                        Default   { '#94A3B8' }
+                    }
+                    $rowsHtml += "    <tr style=`"border-bottom:1px solid #1e293b`"><td style=`"padding:5px 12px;font-weight:600;color:$color`">$k</td><td style=`"padding:5px 12px;text-align:right`">$c</td><td style=`"padding:5px 12px;text-align:right;color:#67e8f9`">$pct%</td></tr>"
+                }
+                $rowsHtml += "    <tr style=`"font-weight:bold;background:#1e293b`"><td style=`"padding:5px 12px`">Total Lines</td><td style=`"padding:5px 12px;text-align:right`">$($rawLines.Count)</td><td style=`"padding:5px 12px;text-align:right`">100.0%</td></tr>"
+                $htmlTable = @"
+<table style="border-collapse:collapse;font-family:Segoe UI,Helvetica,Arial,sans-serif;font-size:12px;color:#f8fafc;background:#0f172a;border:1px solid #334155;border-radius:6px;overflow:hidden">
+  <thead>
+    <tr style="background:#1e293b;border-bottom:2px solid #475569">
+      <th style="padding:6px 12px;text-align:left;color:#94a3b8">Level</th>
+      <th style="padding:6px 12px;text-align:right;color:#94a3b8">Count</th>
+      <th style="padding:6px 12px;text-align:right;color:#94a3b8">Share %</th>
+    </tr>
+  </thead>
+  <tbody>
+$($rowsHtml -join "`r`n")
+  </tbody>
+</table>
+"@
+                [System.Windows.Clipboard]::SetText($htmlTable)
+                & $fnSetStatus "Copied Activity Log Level Breakdown HTML ($($rawLines.Count) lines) to clipboard." "COPIED" "#065F46" "#6EE7B7"
+                Write-CascadeLog "Copied Activity Log Level Breakdown HTML ($($rawLines.Count) lines) to clipboard." "SUCCESS"
+            } catch {
+                Write-CascadeLog "Failed to copy Activity Log Summary HTML: $($_.Exception.Message)" "WARN"
+            }
+        })
+    }
+
+    $btnCopyLogSummaryXml = $window.FindName('BtnCopyLogSummaryXml')
+    if ($btnCopyLogSummaryXml) {
+        $btnCopyLogSummaryXml.Add_Click({
+            try {
+                $rawLog = if ($txtLogConsole.Text) { $txtLogConsole.Text } else { '' }
+                $rawLines = @($rawLog -split "?
+" | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
+                $lvlCounts = [ordered]@{ INFO = 0; STEP = 0; SUCCESS = 0; WARN = 0; ERROR = 0 }
+                foreach ($ln in $rawLines) {
+                    if ($ln -match '^\[[^\]]+\]\s*\[([^\]]+)\]') {
+                        $lv = $Matches[1].Trim().ToUpperInvariant()
+                        if ($lvlCounts.Contains($lv)) { $lvlCounts[$lv] = $lvlCounts[$lv] + 1 } else { $lvlCounts[$lv] = 1 }
+                    } else {
+                        $lvlCounts['INFO'] = $lvlCounts['INFO'] + 1
+                    }
+                }
+                $rowsXml = @()
+                foreach ($k in $lvlCounts.Keys) {
+                    $c = $lvlCounts[$k]
+                    $pct = if ($rawLines.Count -gt 0) { [Math]::Round(($c * 100.0) / $rawLines.Count, 1) } else { 0.0 }
+                    $safeK = [System.Security.SecurityElement]::Escape([string]$k)
+                    $rowsXml += "  <LogLevel name=`"$safeK`" count=`"$c`" sharePercent=`"$pct%`" />"
+                }
+                $joinedXml = $rowsXml -join "`r`n"
+                $xmlDoc = @"
+<?xml version="1.0" encoding="utf-8"?>
+<ActivityLogSummary totalLines="$($rawLines.Count)" timestamp="$([DateTime]::UtcNow.ToString('o'))">
+$joinedXml
+</ActivityLogSummary>
+"@
+                [System.Windows.Clipboard]::SetText($xmlDoc)
+                & $fnSetStatus "Copied Activity Log Level Breakdown XML ($($rawLines.Count) lines) to clipboard." "COPIED" "#065F46" "#6EE7B7"
+                Write-CascadeLog "Copied Activity Log Level Breakdown XML ($($rawLines.Count) lines) to clipboard." "SUCCESS"
+            } catch {
+                Write-CascadeLog "Failed to copy Activity Log Summary XML: $($_.Exception.Message)" "WARN"
+            }
+        })
+    }
+
+    $btnCopyLogErrors = $window.FindName('BtnCopyLogErrors')
+    if ($btnCopyLogErrors) {
+        $btnCopyLogErrors.Add_Click({
+            try {
+                $rawLog = if ($txtLogConsole.Text) { $txtLogConsole.Text } else { '' }
+                $errLines = @($rawLog -split "\r?\n" | Where-Object { $_ -match '\[(WARN|ERROR)\]' })
+                if ($errLines.Count -eq 0) {
+                    [System.Windows.Clipboard]::SetText("No [WARN] or [ERROR] entries in UpdateCascade Activity Log.")
+                    & $fnSetStatus "Zero [WARN]/[ERROR] entries found in Activity Log." "CLEAN" "#065F46" "#6EE7B7"
+                } else {
+                    [System.Windows.Clipboard]::SetText(($errLines -join "`r`n"))
+                    & $fnSetStatus "Copied $($errLines.Count) [WARN]/[ERROR] log line(s) to clipboard." "COPIED" "#065F46" "#6EE7B7"
+                }
+            } catch {
+                Write-CascadeLog "Failed to copy warn/error lines: $($_.Exception.Message)" "WARN"
+            }
+        })
+    }
+
+    $btnExportLogFile = $window.FindName('BtnExportLogFile')
+    if ($btnExportLogFile) {
+        $btnExportLogFile.Add_Click({
+            try {
+                $outDir = if (Test-Path $script:PersistDir) { $script:PersistDir } else { $env:TEMP }
+                $logOutPath = Join-Path $outDir ("UpdateCascade_Activity_{0}.log" -f (Get-Date -Format "yyyyMMdd_HHmmss"))
+                $txtLogConsole.Text | Set-Content -Path $logOutPath -Encoding UTF8 -Force
+                [System.Windows.Clipboard]::SetText($logOutPath)
+                & $fnSetStatus "Saved Activity Log transcript to $logOutPath (path copied)" "EXPORTED" "#065F46" "#6EE7B7"
+                Write-CascadeLog "Exported Activity Log transcript to $logOutPath" "SUCCESS"
+            } catch {
+                Write-CascadeLog "Failed to export Activity Log file: $($_.Exception.Message)" "WARN"
+            }
+        })
+    }
+
+    $btnScanOnly.Add_Click({
+        & $fnSetStatus "Scanning for pending updates and drivers..." "SCANNING" "#1E3A8A" "#93C5FD"
+        & $fnSetSource 'NONE'
+        $incDrivers = [bool]$chkIncludeDrivers.IsChecked
+        Write-CascadeLog "Starting manual scan for pending updates (Drivers: $incDrivers)..." "STEP"
+        $btnScanOnly.IsEnabled = $false
+        $btnStartCascade.IsEnabled = $false
+        $btnInstallSelected.IsEnabled = $false
+
+        $rsScan = New-CascadeRunspace
+        $psScan = [powershell]::Create()
+        $psScan.Runspace = $rsScan
+        [void]$psScan.AddCommand('Get-CascadePendingUpdates').AddParameter('IncludeDrivers', $incDrivers)
+
+        $async = $psScan.BeginInvoke()
+        $t = New-Object System.Windows.Threading.DispatcherTimer
+        $t.Interval = [TimeSpan]::FromMilliseconds(200)
+        $t.Add_Tick({
+            if ($async.IsCompleted) {
+                $t.Stop()
+                $res = @()
+                try { $res = $psScan.EndInvoke($async) } catch { }
+                $psScan.Dispose()
+                $rsScan.Dispose()
+                $btnScanOnly.IsEnabled = $true
+                $btnStartCascade.IsEnabled = $true
+                $btnInstallSelected.IsEnabled = $true
+                & $fnPopulateUpdates $res
+                $foundCnt = if ($res) { $res.Count } else { 0 }
+                & $fnSetStatus "Scan complete: found $foundCnt pending update(s)." "READY" "#1E3A8A" "#93C5FD"
+                Write-CascadeLog "Scan complete: found $foundCnt pending update(s)." "INFO"
+            }
+        })
+        $t.Start()
+    })
+
+    $btnInstallSelected.Add_Click({
+        $selected = @($observableUpdates | Where-Object { $_.IsSelected } | ForEach-Object { $_.Raw })
+        if (-not $selected -or $selected.Count -eq 0) {
+            & $fnSetStatus "No updates selected. Please select at least one update from the list to install." "WARNING" "#7C2D12" "#FDBA74"
+            Write-CascadeLog "Manual install aborted: no updates selected in the update list." "WARN"
+            return
+        }
+
+        & $fnSetStatus "Installing $($selected.Count) selected update(s)..." "INSTALLING" "#7C2D12" "#FDBA74"
+        Write-CascadeLog "Manual installation started for $($selected.Count) selected update(s)..." "STEP"
+        $btnInstallSelected.IsEnabled = $false
+        $btnStartCascade.IsEnabled = $false
+        $btnScanOnly.IsEnabled = $false
+
+        $snapBaselineGuiManual = Get-CascadeDoSnapshot
+        $rsInst = New-CascadeRunspace
+        $psInst = [powershell]::Create()
+        $psInst.Runspace = $rsInst
+        [void]$psInst.AddCommand('Install-CascadeUpdates').AddParameter('UpdatesToProcess', $selected)
+
+        $async = $psInst.BeginInvoke()
+        $tTick = 0
+        $t = New-Object System.Windows.Threading.DispatcherTimer
+        $t.Interval = [TimeSpan]::FromMilliseconds(300)
+        $t.Add_Tick({
+            $tTick++
+            if (-not $async.IsCompleted) {
+                if ($tTick % 3 -eq 0) {
+                    $diff = Get-CascadeDoDiff -BaselineSnapshot $snapBaselineGuiManual
+                    if ($diff.TotalMB -gt 0 -or $diff.ActiveDownloading) {
+                        if ($diff.SourceType -eq 'LAN') {
+                            & $fnSetSource "LAN" "LAN PEER (GOOD)" "#064E3B" "#6EE7B7" "#10B981" "LAN Peer: $($diff.DeltaLanMB) MB ($($diff.PercentLan)% P2P | $($diff.MaxPeers) peer(s))"
+                        } elseif ($diff.SourceType -eq 'WAN') {
+                            & $fnSetSource "WAN" "WAN CDN (WARNING)" "#7F1D1D" "#FCA5A5" "#EF4444" "WAN CDN: $($diff.DeltaWanMB) MB (0 MB from LAN)"
+                        } elseif ($diff.SourceType -eq 'HYBRID') {
+                            & $fnSetSource "HYBRID" "HYBRID (LAN + WAN)" "#1E3A8A" "#93C5FD" "#38BDF8" "Hybrid: $($diff.DeltaLanMB) MB LAN / $($diff.DeltaWanMB) MB WAN"
+                        }
+                    }
+                }
+                return
+            }
+
+            $t.Stop()
+            $res = $null
+            try { $res = $psInst.EndInvoke($async) } catch { }
+            $psInst.Dispose()
+            $rsInst.Dispose()
+            $btnInstallSelected.IsEnabled = $true
+            $btnStartCascade.IsEnabled = $true
+            $btnScanOnly.IsEnabled = $true
+
+            if ($res -and $res.SourceType) {
+                if ($res.SourceType -eq 'LAN') {
+                    & $fnSetSource "LAN" "LAN PEER (GOOD)" "#064E3B" "#6EE7B7" "#10B981" "LAN Peer: $($res.DeltaLanMB) MB ($($res.PercentLan)% P2P | $($res.MaxPeers) peer(s))"
+                } elseif ($res.SourceType -eq 'WAN') {
+                    & $fnSetSource "WAN" "WAN CDN (WARNING)" "#7F1D1D" "#FCA5A5" "#EF4444" "WAN CDN: $($res.DeltaWanMB) MB (0 MB from LAN)"
+                } elseif ($res.SourceType -eq 'HYBRID') {
+                    & $fnSetSource "HYBRID" "HYBRID (LAN + WAN)" "#1E3A8A" "#93C5FD" "#38BDF8" "Hybrid: $($res.DeltaLanMB) MB LAN / $($res.DeltaWanMB) MB WAN"
+                } elseif ($res.SourceType -eq 'CACHE') {
+                    & $fnSetSource "CACHE" "LOCAL DISK CACHE" "#1E293B" "#94A3B8" "#475569" "Disk Cache: 0 MB downloaded"
+                }
+            }
+
+                $instCnt = if ($res -and $res.InstalledCount) { [int]$res.InstalledCount } else { 0 }
+                $reb = if ($res -and $res.RebootRequired) { [bool]$res.RebootRequired } else { $false }
+                if (-not $reb -and $instCnt -gt 0) {
+                    $reb = Test-CascadeSystemRebootPending
+                }
+
+                $uiState.TotalInstalled += $instCnt
+                $txtTotalStats.Text = "Total Patches Installed: $($uiState.TotalInstalled)"
+
+                if ($reb) {
+                    & $fnSetStatus "Manual install complete ($instCnt installed). System restart required to commit updates." "REBOOT REQ" "#831843" "#F472B6"
+                    Write-CascadeLog "Manual install complete ($instCnt installed). System restart required to commit updates." "WARN"
+                    $bannerCountdown.Visibility = [System.Windows.Visibility]::Visible
+                    $script:RebootAborted = $false
+                    $countSeconds = 5
+                    $timerCount = New-Object System.Windows.Threading.DispatcherTimer
+                    $timerCount.Interval = [TimeSpan]::FromSeconds(1)
+                    $timerCount.Add_Tick({
+                        if ($script:RebootAborted) {
+                            $timerCount.Stop()
+                            $bannerCountdown.Visibility = [System.Windows.Visibility]::Collapsed
+                            & $fnSetStatus "Reboot cancelled by operator. Manual install committed." "READY" "#1E3A8A" "#93C5FD"
+                            Write-CascadeLog "Reboot countdown cancelled by operator." "WARN"
+                            return
+                        }
+                        $txtCountdown.Text = "[!] Reboot required to commit updates. Restarting automatically in $countSeconds second(s)..."
+                        if ($countSeconds -le 0) {
+                            $timerCount.Stop()
+                            $nextPass = $uiState.CurrentPass + 1
+                            Set-CascadeState -CurrentPass $nextPass -MaxPasses $uiState.MaxPasses -IncludeDrivers:([bool]$chkIncludeDrivers.IsChecked) -TotalInstalled $uiState.TotalInstalled -Active $true -Autonomous $false
+                            Register-CascadePersistence
+                            Invoke-CascadeReboot -DelaySeconds 0 -Reason "UpdateCascade manual install commit"
+                        }
+                        $countSeconds--
+                    })
+                    $timerCount.Start()
+                } else {
+                    & $fnSetStatus "Manual install complete ($instCnt installed). System is up to date." "COMPLETED" "#064E3B" "#6EE7B7"
+                    Write-CascadeLog "Manual install complete: $instCnt update package(s) installed successfully." "SUCCESS"
+                }
+        })
+        $t.Start()
+    })
+
+    # If launched with -ResumeFromRestart, automatically start the pass!
+    if ($ResumeFromRestart -and -not $MonitorOnly) {
+        $window.Add_Loaded({
+            Write-CascadeLog "Autonomous resume trigger active. Launching Pass $($uiState.CurrentPass) automatically..." "STEP"
+            & $fnExecuteCascadePass
+        })
+    }
+
+    $window.Add_Closed({
+        try { $timerLogPoller.Stop() } catch { }
+    })
+
+    # Show Window
+    $window.ShowDialog() | Out-Null
+}
+
+# --- 12. ENTRY POINT & CLI DISPATCH ---
+
+# 1. Status Command (Pure read-only status inquiry - no mutex or elevation needed)
+if ($Status) {
+    $st = Get-CascadeState
+    if ($st) {
+        $st | ConvertTo-Json
+    } else {
+        [PSCustomObject]@{ Active = $false; Message = 'No active cascade state' } | ConvertTo-Json
+    }
+    exit 0
+}
+
+# 2. Unregister / Cleanup Command (Requires elevation, bypasses single-instance mutex to allow forced abort)
+if ($Unregister) {
+    Ensure-CascadeElevation
+    $count = Unregister-CascadePersistence
+    Write-Host "Unregistered $count persistence vectors." -ForegroundColor Green
+    exit 0
+}
+
+# For active execution passes, check single-instance mutex to prevent overlapping process traps
+$global:CascadeMutex = $null
+$hasMutex = $false
+try {
+    $global:CascadeMutex = New-Object System.Threading.Mutex($false, $script:MutexName)
+    $hasMutex = $global:CascadeMutex.WaitOne(200, $false)
+} catch {
+    $hasMutex = $true
+}
+
+if (-not $hasMutex) {
+    $st = Get-CascadeState
+    $ctx = Get-CascadeRuntimeContext
+    if ($st -and $st.Active -and -not $Autonomous -and $ctx.Interactive -and (Get-Process -Id $PID).SessionId -ne 0) {
+        Write-CascadeLog "Another instance of UpdateCascade is actively processing updates. Attaching GUI in live monitor mode..." "INFO"
+        Start-CascadeGui -MonitorOnly
+        exit 0
+    }
+    Write-CascadeLog "Another instance of UpdateCascade is already actively running. Exiting secondary process." "INFO"
+    exit 0
+}
+
+# Elevation Check for active update passes
+Ensure-CascadeElevation
+
+# 3. BootWorker Trigger (Fired by SYSTEM Boot-Time Scheduled Task)
+if ($BootWorker) {
+    Write-CascadeLog "BootWorker trigger fired by Task Scheduler at system boot." "INFO"
+    $st = Get-CascadeState
+    if ($st -and $st.Active) {
+        Write-CascadeLog "Active cascade detected at boot (Pass $($st.CurrentPass) of $($st.MaxPasses)). Resuming headless cascade loop..." "STEP"
+        Start-AutonomousCascadeLoop -MaxPasses ([int]$st.MaxPasses) -IncludeDrivers:([bool]$st.IncludeDrivers) -RebootDelay 5
+    } else {
+        Write-CascadeLog "No active cascade state found at boot. Cleaning up boot task..." "INFO"
+        Unregister-CascadePersistence | Out-Null
+    }
+    exit 0
+}
+
+# 4. ScanOnly Command
+if ($ScanOnly) {
+    Write-Host "`n=== UpdateCascade: Scanning for Pending Updates & Drivers ===" -ForegroundColor Cyan
+    $results = Get-CascadePendingUpdates -IncludeDrivers:$IncludeDrivers -StatusCallback { param($m) Write-Host "  $m" -ForegroundColor Gray }
+    if ($results.Count -gt 0) {
+        if ($results.Count -eq 1 -and $results[0].IsScanError) {
+            Write-Host "`nScan failed: $($results[0].ErrorMessage)" -ForegroundColor Red
+            exit 1
+        }
+        Write-Host "`nFound $($results.Count) pending updates:" -ForegroundColor Green
+        $results | Format-Table -Property Title, KB, SizeMB, IsDriver, RebootRequired -AutoSize
+    } else {
+        Write-Host "System is completely up to date!" -ForegroundColor Green
+    }
+    exit 0
+}
+
+# 5. Autonomous / Headless CLI Mode
+if ($Autonomous -or $Cascade) {
+    Write-Host "`n=== UpdateCascade: Autonomous Multi-Pass Patch Cascade Engine ===" -ForegroundColor Cyan
+    Write-Host "MaxPasses: $MaxPasses | IncludeDrivers: $IncludeDrivers | RebootDelay: ${RebootDelay}s`n" -ForegroundColor DarkGray
+
+    $loopRes = Start-AutonomousCascadeLoop -MaxPasses $MaxPasses `
+                                           -IncludeDrivers:$IncludeDrivers `
+                                           -RebootDelay $RebootDelay `
+                                           -NoReboot:$NoReboot `
+                                           -StatusCallback { param($m) Write-Host "  $m" -ForegroundColor Gray }
+
+    if ($loopRes.Completed) {
+        Write-Host "`nPatch Cascade completed successfully! Total updates installed: $($loopRes.TotalInstalled)" -ForegroundColor Green
+        exit 0
+    } else {
+        Write-Host "`nCascade pass committed. Reboot sequence initiated." -ForegroundColor Yellow
+        exit 0
+    }
+}
+
+# 6. Resume From Restart Trigger
+if ($ResumeFromRestart) {
+    $activeState = Get-CascadeState
+    if ($activeState -and $activeState.Active) {
+        $isAutonomous = [bool]$activeState.Autonomous -or $Autonomous
+        $ctx = Get-CascadeRuntimeContext
+        if ($isAutonomous) {
+            Write-CascadeLog "Resuming autonomous CLI cascade (Pass $($activeState.CurrentPass) of $($activeState.MaxPasses))..." "STEP"
+            Start-AutonomousCascadeLoop -MaxPasses ([int]$activeState.MaxPasses) -IncludeDrivers:([bool]$activeState.IncludeDrivers) -RebootDelay 5
+        } else {
+            if ($ctx.Interactive -and (Get-Process -Id $PID).SessionId -ne 0) {
+                Start-CascadeGui
+            } else {
+                Write-CascadeLog "Non-interactive session detected on restart. Running headless loop for Pass $($activeState.CurrentPass)..." "INFO"
+                Start-AutonomousCascadeLoop -MaxPasses ([int]$activeState.MaxPasses) -IncludeDrivers:([bool]$activeState.IncludeDrivers) -RebootDelay 5
+            }
+        }
+        exit 0
+    }
+}
+
+# 7. Default Interactive Launch: WPF GUI
+$ctx = Get-CascadeRuntimeContext
+if ($ctx.Interactive -and (Get-Process -Id $PID).SessionId -ne 0) {
+    Start-CascadeGui
+} else {
+    Write-CascadeLog "Non-interactive environment detected. Defaulting to autonomous CLI cascade..." "INFO"
+    Start-AutonomousCascadeLoop -MaxPasses $MaxPasses -IncludeDrivers:$IncludeDrivers -RebootDelay $RebootDelay
+}

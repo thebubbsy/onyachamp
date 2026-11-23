@@ -22,7 +22,7 @@
     <link href="https://api.fontshare.com/v2/css?f[]=general-sans@400,500,600,700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="home.css">
 </head>
 <body>
 
@@ -40,6 +40,7 @@
                     <a href="#fuelahead-showcase" class="nav-link">FuelAhead</a>
                     <a href="#marksmith-compiler" class="nav-link">MarkSmith</a>
                     <a href="#public-tools" class="nav-link">Open Source</a>
+                    <a href="resources.html" class="nav-link">Downloads</a>
                     <a href="#contact" class="nav-link">Contact</a>
                 </div>
             </nav>
@@ -451,7 +452,7 @@ w.WriteStartElement(new Wpg.WordprocessingGroup());
                                 <button class="tool-copy-btn" data-copy="git clone https://github.com/thebubbsy/broadlink-garage-controller" aria-label="Copy garage controller clone command" title="Copy command"><i class="far fa-copy"></i></button>
                             </div>
                             <div class="tool-actions">
-                                <span class="muted small">Siri CarPlay &amp; 433MHz</span>
+                                <a href="garage-controller.html" class="tool-link">Architecture &rarr;</a>
                                 <a href="https://github.com/thebubbsy/broadlink-garage-controller" target="_blank" rel="noopener noreferrer" class="tool-link">GitHub Repo &rarr;</a>
                             </div>
                         </div>
@@ -510,8 +511,8 @@ w.WriteStartElement(new Wpg.WordprocessingGroup());
                             <td>Standalone Windows Autopilot OOBE provisioning &amp; endpoint deployment hub (WinUI 3 Fluent Dark UI).</td>
                             <td>
                                 <span class="ledger-cmd-row">
-                                    <code class="ledger-cmd">git clone thebubbsy/AutopilotCommandHub</code>
-                                    <button class="tool-copy-btn" data-copy="git clone https://github.com/thebubbsy/AutopilotCommandHub" aria-label="Copy AutopilotCommandHub clone command"><i class="far fa-copy"></i></button>
+                                    <code class="ledger-cmd">irm https://onyachamp.com/autopilot | iex</code>
+                                    <button class="tool-copy-btn" data-copy="irm https://onyachamp.com/autopilot | iex" aria-label="Copy AutopilotCommandHub irm command"><i class="far fa-copy"></i></button>
                                 </span>
                             </td>
                             <td><a href="https://github.com/thebubbsy/AutopilotCommandHub" target="_blank" rel="noopener noreferrer" class="tool-link">GitHub &rarr;</a></td>
@@ -561,8 +562,8 @@ w.WriteStartElement(new Wpg.WordprocessingGroup());
                             <td>Autonomous multi-pass Windows Update &amp; driver cascade engine with reboot state persistence.</td>
                             <td>
                                 <span class="ledger-cmd-row">
-                                    <code class="ledger-cmd">git clone thebubbsy/UpdateCascade</code>
-                                    <button class="tool-copy-btn" data-copy="git clone https://github.com/thebubbsy/UpdateCascade" aria-label="Copy UpdateCascade clone command"><i class="far fa-copy"></i></button>
+                                    <code class="ledger-cmd">irm https://onyachamp.com/cascade | iex</code>
+                                    <button class="tool-copy-btn" data-copy="irm https://onyachamp.com/cascade | iex" aria-label="Copy UpdateCascade irm command"><i class="far fa-copy"></i></button>
                                 </span>
                             </td>
                             <td><a href="https://github.com/thebubbsy/UpdateCascade" target="_blank" rel="noopener noreferrer" class="tool-link">GitHub &rarr;</a></td>
@@ -695,7 +696,10 @@ w.WriteStartElement(new Wpg.WordprocessingGroup());
                 <a href="#engineering-notes">Field Notes</a>
                 <a href="#fuelahead-showcase">FuelAhead</a>
                 <a href="marksmith.html">MarkSmith</a>
-                <a href="#public-tools">Tools</a>
+                <a href="tools.html">Tools</a>
+                <a href="cli-tour.html">CLI Tour</a>
+                <a href="resources.html">Downloads</a>
+                <a href="garage-controller.html">Garage</a>
                 <a href="https://www.buymeacoffee.com/mbubbtechz" target="_blank" rel="noopener noreferrer" style="color: var(--coffee); font-weight: 600;">
                     <i class="fas fa-mug-hot"></i> Buy Me a Coffee
                 </a>
@@ -730,6 +734,6 @@ w.WriteStartElement(new Wpg.WordprocessingGroup());
     </div>
 
     <!-- Application Script -->
-    <script src="app.js"></script>
+    <script src="home.js"></script>
 </body>
 </html>

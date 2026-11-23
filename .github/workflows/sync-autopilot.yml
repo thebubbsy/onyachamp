@@ -1,0 +1,53 @@
+name: Sync Autopilot Script from AutopilotCommandHub
+
+# Ensures onyachamp.com always serves the exact latest version of autopilot
+# and autopilot.ps1 directly from the authoritative thebubbsy/AutopilotCommandHub repo.
+
+on:
+  schedule:
+    - cron: '*/30 * * * *'
+  workflow_dispatch:
+  repository_dispatch:
+    types: [autopilot-updated]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: sync-autopilot
+  cancel-in-progress: true
+
+jobs:
+  sync:
+    name: Pull latest autopilot from AutopilotCommandHub
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout onyachamp
+        uses: actions/checkout@v4
+
+      - name: Download latest autopilot.ps1 from AutopilotCommandHub
+        run: |
+          curl -fsSL https://raw.githubusercontent.com/thebubbsy/AutopilotCommandHub/main/autopilot.ps1 -o autopilot.ps1.tmp
+          curl -fsSL https://raw.githubusercontent.com/thebubbsy/AutopilotCommandHub/main/autopilot -o autopilot.tmp
+          
+          # Sanity check that downloads are not empty
+          if [ ! -s autopilot.ps1.tmp ] || [ ! -s autopilot.tmp ]; then
+            echo "::error::Failed to download valid autopilot files from AutopilotCommandHub."
+            exit 1
+          fi
+          
+          mv autopilot.ps1.tmp autopilot.ps1
+          mv autopilot.tmp autopilot
+
+      - name: Check for updates and commit
+        run: |
+          if git diff --quiet -- autopilot autopilot.ps1; then
+            echo "Website already has the latest version from AutopilotCommandHub."
+            exit 0
+          fi
+          
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add autopilot autopilot.ps1
+          git commit -m "sync: update autopilot bootstrap to latest from AutopilotCommandHub"
+          git push

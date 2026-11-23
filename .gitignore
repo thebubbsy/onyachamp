@@ -1,3 +1,17 @@
-.taste-skill/
+# Local environment variables and secrets
+.env
+*.env.local
+
+# Python cache & build
 __pycache__/
-*.pyc
+*.py[cod]
+*$py.class
+.pytest_cache/
+
+# PowerShell logs & temporary files
+*.log
+*.tmp
+TestDellWarranty.csv
+
+# Taste-Skill audit artifacts
+.taste-skill/
