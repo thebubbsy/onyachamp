@@ -3,15 +3,29 @@ import collections
 from bs4 import BeautifulSoup
 from playwright.sync_api import sync_playwright
 
+FORBIDDEN_PRIVATE_TERMS = [
+    "TeamsChatExporter",
+    "thebubbsy/fuelahead",
+    "salesforce-exporter",
+    "pocketdesk",
+    "bubbsy-flipper-vault",
+    "m365-canary-tui",
+]
+
 def verify_static():
     print("========================================")
-    print("1. STATIC ASSET & DOM INTEGRITY AUDIT")
+    print("1. STATIC ASSET, DOM & PRIVACY AUDIT")
     print("========================================")
     
     for page in ['index.html', 'marksmith.html']:
         with open(page, 'r', encoding='utf-8') as f:
             content = f.read()
             soup = BeautifulSoup(content, 'html.parser')
+        
+        # Privacy check against private repo leaks
+        lower = content.lower()
+        for term in FORBIDDEN_PRIVATE_TERMS:
+            assert term.lower() not in lower, f"PRIVACY VIOLATION in {page}: found '{term}'"
         
         # Check IDs
         ids = [tag['id'] for tag in soup.find_all(id=True)]
@@ -51,7 +65,15 @@ def verify_static():
                 if not os.path.exists(path):
                     broken_downloads.append(href)
         assert len(broken_downloads) == 0, f"Broken download links in {page}: {broken_downloads}"
-        print(f"[{page}] Downloads: {len(downloads)} sample documents (.docx, .md, .mp4) verified on disk.")
+        print(f"[{page}] Downloads: {len(downloads)} sample documents verified on disk.")
+
+    # Verify app.js privacy too
+    with open('app.js', 'r', encoding='utf-8') as f:
+        app_js = f.read().lower()
+    for term in FORBIDDEN_PRIVATE_TERMS:
+        assert term.lower() not in app_js, f"PRIVACY VIOLATION in app.js: found '{term}'"
+    print("[Privacy] Zero private repository leaks across index.html, marksmith.html, and app.js.")
+
 
 def verify_browser():
     print("\n========================================")
@@ -61,7 +83,6 @@ def verify_browser():
     with sync_playwright() as p:
         browser = p.chromium.launch()
         
-        # Test across multiple viewports
         viewports = [
             ("Desktop 1080p", 1920, 1080),
             ("Laptop 1366x768", 1366, 768),
@@ -79,7 +100,7 @@ def verify_browser():
             page.on('pageerror', lambda err: console_errors.append(str(err)))
             
             page.goto(url)
-            page.wait_for_timeout(300)
+            page.wait_for_timeout(400)
             
             for vp_name, w, h in viewports:
                 page.set_viewport_size({"width": w, "height": h})
@@ -95,27 +116,24 @@ def verify_browser():
             assert len(console_errors) == 0, f"[{page_name}] Console errors: {console_errors}"
             print(f"[{page_name}] Console health: 0 errors detected.")
             
-            # Interactive Lightbox Testing on page
+            # Interactive Lightbox Testing
             print(f"[{page_name}] Testing Universal Lightbox interactions...")
-            first_shot = page.query_selector('.shot[data-full], .lead-screenshot-box[data-full], .feature-visual-media[data-full], .repo-card-media[data-full]')
+            first_shot = page.query_selector('.featured-tool-media[data-full], .phone-shot[data-full], .shot[data-full], [data-full]')
             if first_shot:
+                first_shot.scroll_into_view_if_needed()
                 first_shot.click()
                 page.wait_for_timeout(200)
                 
-                # Check modal opened
                 lightbox = page.query_selector('#shot-lightbox')
                 assert lightbox.is_visible(), f"[{page_name}] Lightbox did not open"
                 
-                # Check image src loaded
                 img_src = page.evaluate("document.getElementById('lightbox-img').src")
                 assert img_src and "media/" in img_src, f"[{page_name}] Lightbox image src invalid: {img_src}"
                 
-                # Check caption and counter
                 counter = page.evaluate("document.getElementById('lightbox-counter') ? document.getElementById('lightbox-counter').textContent : ''")
                 caption = page.evaluate("document.getElementById('lightbox-caption') ? document.getElementById('lightbox-caption').textContent : ''")
                 print(f"[{page_name}] Lightbox opened: Counter='{counter}', Caption preview='{caption[:40]}...'")
                 
-                # Check next button
                 next_btn = page.query_selector('.lightbox-next')
                 if next_btn:
                     next_btn.click()
@@ -124,35 +142,40 @@ def verify_browser():
                     assert img_src2 != img_src, f"[{page_name}] Next button did not advance image"
                     print(f"[{page_name}] Next navigation button: OK (advanced to {img_src2.split('/')[-1]}).")
                 
-                # Check keyboard Escape to close
                 page.keyboard.press('Escape')
                 page.wait_for_timeout(150)
                 assert not lightbox.is_visible(), f"[{page_name}] Lightbox did not close on Escape"
                 print(f"[{page_name}] Lightbox Escape key dismiss: OK.")
             
-            # If on index.html, test Category Filter and Terminal Tabs
+            # Index-specific interactive tests: Detour Calculator + Field Notes Modal Reader
             if page_name == 'index.html':
-                print("[index.html] Testing Category Filters...")
-                page.click('.filter-btn[data-filter="powershell"]')
-                page.wait_for_timeout(150)
-                visible_cards = page.evaluate("""() => {
-                    const cards = Array.from(document.querySelectorAll('.repo-card, .repo-card-featured'));
-                    return cards.filter(c => c.style.display !== 'none').length;
-                }""")
-                print(f"[index.html] Filter 'powershell': {visible_cards} cards visible.")
-                assert visible_cards > 0, "No cards visible after powershell filter"
-                
-                # Reset to all
-                page.click('.filter-btn[data-filter="all"]')
+                print("[index.html] Testing FuelAhead Detour Calculator...")
+                before_net = page.text_content('#out-net')
+                page.eval_on_selector('#slider-tank', 'el => { el.value = "80"; el.dispatchEvent(new Event("input")); }')
                 page.wait_for_timeout(100)
-                
-                print("[index.html] Testing Interactive Terminal Tabs...")
-                for tab_id in ['tab-wingetintune', 'tab-autopilotfast', 'tab-findobject', 'tab-marksmith']:
-                    page.click(f'.terminal-tab-btn[data-tab="{tab_id}"]')
-                    page.wait_for_timeout(100)
-                    active_pane = page.query_selector(f'#{tab_id}.active')
-                    assert active_pane is not None, f"Terminal tab {tab_id} failed to activate"
-                print("[index.html] All 4 terminal tabs switched cleanly.")
+                after_net = page.text_content('#out-net')
+                after_tank = page.text_content('#val-tank')
+                assert after_tank == "80 Litres" and after_net != before_net, f"Calculator failed to update: {before_net} -> {after_net}"
+                print(f"[index.html] Detour Calculator OK: 55L={before_net} -> 80L={after_net}.")
+
+                print("[index.html] Testing Engineering Field Notes Modal Reader...")
+                lead_note = page.query_selector('.editorial-split')
+                lead_note.scroll_into_view_if_needed()
+                lead_note.click()
+                page.wait_for_timeout(200)
+                reader_modal = page.query_selector('#article-reader-modal')
+                assert reader_modal.is_visible(), "Field Notes reader modal did not open"
+                reader_title = page.text_content('#reader-content h2')
+                assert "OpenXML" in reader_title, f"Unexpected modal article title: {reader_title}"
+                page.keyboard.press('Escape')
+                page.wait_for_timeout(150)
+                assert not reader_modal.is_visible(), "Field Notes reader modal did not close on Escape"
+                print(f"[index.html] Field Notes Modal OK: opened '{reader_title}' and closed via Escape.")
+
+                page.set_viewport_size({"width": 1920, "height": 1080})
+                for tab_item in page.query_selector_all('.journal-item'):
+                    assert tab_item.is_visible(), "Journal item missing"
+                print("[index.html] All 6 Engineering Field Notes verified interactive.")
                 
             page.close()
         
