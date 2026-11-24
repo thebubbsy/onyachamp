@@ -226,7 +226,44 @@ def verify_browser():
                 assert not reader_modal.is_visible(), "Field Notes reader modal did not close on Escape"
 
                 journal_count = len(page.query_selector_all('.journal-item'))
-                assert journal_count == 8, f"Expected 8 stacked journal items (+ 1 lead editorial), got {journal_count}"
+                assert journal_count == 9, f"Expected 9 stacked journal items (+ 1 lead editorial), got {journal_count}"
+
+                aus_note = page.query_selector('.journal-item[data-article="article-aus-fuel-carplay"]')
+                assert aus_note is not None, "Missing article-aus-fuel-carplay journal item"
+                aus_note.scroll_into_view_if_needed()
+                aus_note.click()
+                page.wait_for_timeout(220)
+                assert reader_modal.is_visible(), "article-aus-fuel-carplay reader modal did not open"
+                aus_title = page.text_content('#reader-content h2') or ''
+                assert "Victoria" in aus_title, f"Unexpected aus-fuel-carplay title: {aus_title}"
+                table_rows = page.evaluate("document.querySelectorAll('#reader-content table.article-table tbody tr').length")
+                assert table_rows == 8, f"Expected 8 state rows in comparison table, got {table_rows}"
+                aus_fig_loaded = page.evaluate("""() => {
+                    const imgs = Array.from(document.querySelectorAll('#reader-content .article-figure img'));
+                    imgs.forEach(img => { img.loading = 'eager'; });
+                    return imgs.length;
+                }""")
+                page.wait_for_timeout(300)
+                aus_broken_imgs = page.evaluate("""() => {
+                    return Array.from(document.querySelectorAll('#reader-content .article-figure img'))
+                        .filter(img => !img.complete || img.naturalWidth === 0)
+                        .map(img => img.getAttribute('src'));
+                }""")
+                assert aus_fig_loaded == 2 and len(aus_broken_imgs) == 0, f"Broken Android Auto images: {aus_broken_imgs}"
+                aus_fig = page.query_selector('#reader-content .article-figure[data-full]')
+                assert aus_fig is not None, "Missing inline Android Auto figure inside article-aus-fuel-carplay"
+                aus_fig.scroll_into_view_if_needed()
+                aus_fig.click()
+                page.wait_for_timeout(180)
+                lightbox = page.query_selector('#shot-lightbox')
+                assert lightbox and lightbox.is_visible(), "Lightbox did not open from Android Auto figure"
+                page.keyboard.press('Escape')
+                page.wait_for_timeout(150)
+                assert not lightbox.is_visible(), "Lightbox did not close on Escape over aus-fuel-carplay"
+                assert reader_modal.is_visible(), "Reader modal closed prematurely from Android Auto lightbox"
+                page.keyboard.press('Escape')
+                page.wait_for_timeout(150)
+                assert not reader_modal.is_visible(), "Reader modal did not close on Escape"
 
                 d1_note = page.query_selector('.journal-item[data-article="article-d1-queryplan"]')
                 assert d1_note is not None, "Missing article-d1-queryplan journal item"
@@ -264,7 +301,7 @@ def verify_browser():
                 page.keyboard.press('Escape')
                 page.wait_for_timeout(150)
                 assert not reader_modal.is_visible(), "Reader modal did not close on second Escape"
-                print("[index.html] All 9 Engineering Field Notes, inline figures, and nested Escape behavior verified.")
+                print("[index.html] All 10 Engineering Field Notes, 8-state table, inline figures, and nested Escape behavior verified.")
 
             # tools.html category filter tests
             if page_name == 'tools.html':

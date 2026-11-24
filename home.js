@@ -210,6 +210,148 @@ function initCalculator() {
 // 2. Engineering Field Notes (Matthew's Working Notes)
 // ==========================================
 const articles = {
+  'article-aus-fuel-carplay': {
+    title: 'Australia\'s Broken Servo Data (Especially Victoria) & Why Fuel Apps Skip Android Auto and CarPlay',
+    category: 'Open Data Policy & In-Car Engineering',
+    content: `
+      <p class="lead">Wiring <a href="https://fuelahead.com.au" target="_blank" rel="noopener noreferrer">fuelahead.com.au</a> across Australia exposed two absurdities in local fuel tech: eight jurisdictions running five incompatible data schemes where Victoria's public API is borderline useless beside Western Australia's 2001 design, and an industry of phone apps built strictly for drivers that still refuses to put a UI on car screens.</p>
+
+      <div class="article-stat-strip">
+        <div class="article-stat"><strong>5 Platforms</strong><span>Across 8 states &amp; territories</span></div>
+        <div class="article-stat"><strong>24-Hour Lag</strong><span>Victoria's public API delay</span></div>
+        <div class="article-stat"><strong>2:30 PM Daily</strong><span>WA publishes tomorrow's locked prices</span></div>
+      </div>
+
+      <h3>1. Auditing Every Australian State's Servo Data Scheme</h3>
+      <p>People assume "government fuel data" means one national JSON endpoint. In reality, integrating national prices means writing separate adapters, timezone handlers, rate-limiters, and licensing gates for five completely different platforms:</p>
+
+      <div class="article-table-wrap">
+        <table class="article-table" aria-label="Comparison of Australian state and territory fuel price data feeds">
+          <thead>
+            <tr>
+              <th>Jurisdiction</th>
+              <th>Platform</th>
+              <th>Developer Access</th>
+              <th>Data Freshness</th>
+              <th>Quirks &amp; Catch</th>
+              <th>Verdict</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>WA</td>
+              <td>FuelWatch RSS</td>
+              <td>Open XML feed, no key</td>
+              <td>Fixed 24 h from 6:00 AM; next day at 2:30 PM</td>
+              <td>Must credit FuelWatch; non-commercial terms</td>
+              <td><span class="state-tag-good">Open Benchmark</span></td>
+            </tr>
+            <tr>
+              <td>NSW</td>
+              <td>API.NSW FuelCheck</td>
+              <td>OAuth client credentials</td>
+              <td>Real time on change</td>
+              <td>Only feed with <code>/prices/new</code> delta; 2,500 free calls/mo</td>
+              <td><span class="state-tag-good">Live + Delta</span></td>
+            </tr>
+            <tr>
+              <td>ACT</td>
+              <td>API.NSW FuelCheck</td>
+              <td>Shared NSW credentials</td>
+              <td>Real time (voluntary coverage)</td>
+              <td>68+ stations active; legislation still catching up</td>
+              <td><span class="state-tag-warn">Partial Coverage</span></td>
+            </tr>
+            <tr>
+              <td>TAS</td>
+              <td>API.NSW FuelCheck v2</td>
+              <td>Same creds (<code>?states=NSW|TAS</code>)</td>
+              <td>Real time (30-min rule)</td>
+              <td>Numeric IDs collide with NSW; outage flags from Apr 2026</td>
+              <td><span class="state-tag-good">Live Shared Call</span></td>
+            </tr>
+            <tr>
+              <td>QLD</td>
+              <td>Informed Sources FPDAPI</td>
+              <td>App form + GUID token ($1 licence)</td>
+              <td>Real time (30-min rule)</td>
+              <td>No delta endpoint (~1 MB state dump), max 1 call/min, audits</td>
+              <td><span class="state-tag-good">Live Full State</span></td>
+            </tr>
+            <tr>
+              <td>SA</td>
+              <td>Informed Sources FPDAPI</td>
+              <td>Publisher registration + GUID ($1.10)</td>
+              <td>Real time (30-min rule)</td>
+              <td>Clause 2.4 bans charging consumers; mandatory complaint link</td>
+              <td><span class="state-tag-warn">Live (Free Only)</span></td>
+            </tr>
+            <tr>
+              <td>NT</td>
+              <td>MyFuel NT</td>
+              <td>No public live developer API</td>
+              <td>Monthly historical files</td>
+              <td>Promised API never documented; only portal dumps published</td>
+              <td><span class="state-tag-bad">Closed Live Feed</span></td>
+            </tr>
+            <tr>
+              <td>VIC</td>
+              <td>Service Victoria Fair Fuel API</td>
+              <td>Apply on DataVic (Consumer ID + key)</td>
+              <td><strong>~24 hours delayed</strong></td>
+              <td>Live prices kept exclusively inside Service Victoria's app</td>
+              <td><span class="state-tag-bad">Stale Open Feed</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>2. Why Victoria's Setup Looks Criminal Compared to WA</h3>
+      <p>Victoria holds roughly 26% of Australia's motorists. In late 2025 / early 2026 it mandated real-time reporting from fuel retailers within 30 minutes of a price change and rolled out Servo Saver inside Service Victoria's own app. On paper that sounds pro-consumer, until you open the "Fair Fuel Open Data API" documentation.</p>
+      <p>The Victorian Government forces stations to submit live prices using public compliance law, keeps the live feed exclusive to its own app, gates third-party developer credentials behind a manual Consumer ID application, and deliberately injects a <strong>24-hour lag</strong> into the public JSON API citing commercial sensitivity. Showing yesterday's Monash Freeway pump price inside a live routing app does not just fail to help drivers; it actively sends them to the wrong servo.</p>
+      <p>Compare that directly against Western Australia. WA launched <strong>FuelWatch</strong> in 2001 with an open XML RSS feed and zero API key walls. Better yet, WA's pricing law requires stations to lock tomorrow's price by 2:00 PM each day and publishes tomorrow's locked board at 2:30 PM across ~950 outlets (24 hours from 6:00 AM the following morning, AWST). There is no intra-day guesswork: any developer can answer "fill today or tomorrow morning" with 100% certainty. Even Queensland and South Australia (outsourced through Informed Sources) hand independent publishers live 30-minute updates for a nominal dollar licence. Victoria hoarding live public data behind a 24-hour delay while WA has served next-day locked prices openly for 25 years is backwards.</p>
+
+      <h3>3. Why Almost No Other Fuel App Ships Android Auto or CarPlay</h3>
+      <p>Look closely at the major Australian fuel apps motorists rely on every week: NSW FuelCheck, Service Victoria, Petrol Spy, MotorMouth, My 7-Eleven. Virtually none of them ship native Android Auto or Apple CarPlay interfaces, even though literally 100% of their audience is behind a steering wheel or handlebars in a country where touching a phone at traffic lights costs hundreds of dollars and four or five demerit points.</p>
+      <p>Three practical incentives keep every competitor on handheld phone screens:</p>
+      <ul>
+        <li><strong>Head units ban ads:</strong> Both Google and Apple strictly prohibit banner ads, sponsored cards, and popup overlays on car dashboards. Ad-funded fuel apps earn zero impressions inside CarPlay or Android Auto, so management never signs off on building them.</li>
+        <li><strong>You cannot mirror a web wrapper onto a dash:</strong> Hybrid mobile apps that display a responsive React or Ionic screen on a phone cannot just cast that DOM to Android Auto. Google forces a dedicated native <code>CarAppService</code> checked by <code>HostValidator</code>, templated UI via <code>MapWithContentTemplate</code> (Car App API 7+) or <code>ListTemplate</code> fallback on older head units, and strict driving-distraction rules that forbid reflowing rows randomly mid-trip. In <a href="https://fuelahead.com.au" target="_blank" rel="noopener noreferrer">FuelAhead</a> I had to wire custom vector map pins directly via <code>AppManager.setSurfaceCallback()</code>, pin row slots to fixed titles (<code>Cheapest</code>, <code>2nd</code>, <code>3rd</code>...), collapse zone switching into one top button (<code>Around / Ahead / Wide / Road</code>), and gate API refreshes by real movement (300 m travelled or 35 deg turn, 8 s minimum cooldown, ignoring noisy compass bearings below 1.5 m/s).</li>
+        <li><strong>Apple CarPlay entitlements and Play Store gates:</strong> Apple refuses to render a CarPlay app on any car screen unless you hold a paid Developer account, apply for and win manual review of the <strong>Fueling</strong> CarPlay entitlement, re-architect iOS scene lifecycles, and distribute through App Store/TestFlight (free-profile sideloads cannot carry that entitlement at all). On Android, shipping Android Auto plus hands-free background location triggers full Google Play manual compliance reviews and live screencast proof before testing unlocks.</li>
+      </ul>
+
+<pre><code>// FuelCarAppService + PriceMapScreen (au.com.fuelahead.app.car)
+// Enforces template fallback, driving-safe fixed slots &amp; 300m / 35deg movement gating
+public Screen onCreateScreen(@NonNull Intent intent) {
+    return PriceMapScreen.supported(getCarContext())
+        ? new PriceMapScreen(getCarContext())   // Car App API 7+ surface map + fixed ranks
+        : new StationListScreen(getCarContext()); // Legacy head-unit ListTemplate fallback
+}
+// Rows stay pinned ("Cheapest", "2nd", "3rd"...) so moving lists never fail Auto limits</code></pre>
+
+      <div class="article-figure-grid">
+        <figure class="article-figure" data-full="media/fuelahead-android-auto-night.png" data-caption="FuelAhead Android Auto Night Mode: live raised-tenth price pins rendered directly via native SurfaceCallback templates ($1.899-$2.127/L)">
+          <img src="media/fuelahead-android-auto-night.png" alt="FuelAhead Android Auto night-mode car dashboard map displaying live U91 fuel price pins" loading="lazy">
+          <figcaption>
+            <span>Android Auto Night Dash (<code>isDarkMode()</code>)</span>
+            <span class="article-figure-zoom">Enlarge &rarr;</span>
+          </figcaption>
+        </figure>
+        <figure class="article-figure" data-full="media/fuelahead-android-auto-day.png" data-caption="FuelAhead Android Auto Day Mode: automatic head-unit theme switching with raised tenths along Enmore Road and Parramatta Road">
+          <img src="media/fuelahead-android-auto-day.png" alt="FuelAhead Android Auto day-mode car dashboard map showing live fuel price pins" loading="lazy">
+          <figcaption>
+            <span>Android Auto Day Dash (Surface Renderer)</span>
+            <span class="article-figure-zoom">Enlarge &rarr;</span>
+          </figcaption>
+        </figure>
+      </div>
+
+      <div class="article-cta-row">
+        <a href="https://fuelahead.com.au" target="_blank" rel="noopener noreferrer" class="btn btn-primary btn-sm">Launch fuelahead.com.au</a>
+        <a href="https://fuelahead.com.au/android" target="_blank" rel="noopener noreferrer" class="btn btn-surface btn-sm">Download Android APK</a>
+      </div>
+    `
+  },
   'article-d1-queryplan': {
     title: 'Cutting Cloudflare D1 Reads 100x with EXPLAIN QUERY PLAN and CROSS JOIN',
     category: 'SQLite Internals & Edge Scaling',

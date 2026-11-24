@@ -1274,6 +1274,63 @@ table.calc-ledger td:last-child {
   white-space: nowrap;
 }
 
+.article-table-wrap {
+  overflow-x: auto;
+  margin-block: 20px;
+  background: var(--bg);
+  border-radius: var(--radius-tile);
+}
+
+table.article-table {
+  width: 100%;
+  min-width: 600px;
+  border-collapse: collapse;
+  font-size: var(--step-small);
+  text-align: left;
+}
+
+table.article-table th {
+  background: var(--surface-high);
+  color: var(--ink);
+  font-weight: 600;
+  padding: 10px 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  white-space: nowrap;
+}
+
+table.article-table td {
+  padding: 10px 12px;
+  color: var(--muted);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  vertical-align: top;
+  line-height: 1.45;
+}
+
+table.article-table td:first-child {
+  color: var(--ink);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+table.article-table tr:last-child td {
+  border-bottom: none;
+}
+
+.state-tag-good {
+  color: var(--success);
+  font-weight: 600;
+}
+
+.state-tag-warn {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.state-tag-bad {
+  color: var(--danger);
+  font-weight: 600;
+}
+
 .article-cta-row {
   margin-top: 24px;
   padding-top: 12px;
