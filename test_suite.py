@@ -285,7 +285,7 @@ def verify_browser():
                         .filter(img => !img.complete || img.naturalWidth === 0)
                         .map(img => img.getAttribute('src'));
                 }""")
-                assert fig_loaded >= 2 and len(broken_fig_imgs) == 0, f"Broken article figure images: {broken_fig_imgs}"
+                assert fig_loaded >= 1 and len(broken_fig_imgs) == 0, f"Broken article figure images: {broken_fig_imgs}"
 
                 article_fig.scroll_into_view_if_needed()
                 article_fig.click()

@@ -388,26 +388,6 @@ WHERE s.cell_id IN (/* 9-cell viewport fan */)
       <p>Viewport queries were only half the read burn. Statewide scorecard aggregations still touched the full price table too often. Layering a dataset-version-keyed isolate snapshot cache with Cloudflare's <code>caches.default</code> edge cache (<code>max-age=600</code>) cut redundant cold scans between scheduled crons.</p>
       <p>Consolidating databases and wiring custom domains (<code>fuelahead.com.au</code> and <code>api.fuelahead.com.au</code>) turned up one more edge constraint: Cloudflare D1 rejects SQL statements above 100 KB (<code>SQLITE_TOOBIG</code>), which breaks importing raw 1 MiB hex timeline snapshots from standard SQL dumps. Reassembling each timeline incrementally via chunked <code>UPDATE ... SET data = unhex(hex(data) || ?)</code> passes moved every byte cleanly, while a stateless zero-D1 reverse proxy kept older mobile builds working during domain cutover.</p>
 
-      <h3>Car, Motorbike, and Farmer Modes</h3>
-      <p>Drivers care about E10 or U91 around suburb arterials; riders only want stations straight ahead with voice alerts over Cardo intercoms; farmers and bulk diesel rigs need truck stops separated properly from passenger cars (because brands like Mercedes-Benz build hatchbacks and prime movers alike). Splitting mode capabilities let every vehicle profile keep relevant filters front and centre without turning the radar noisy.</p>
-
-      <div class="article-figure-grid">
-        <figure class="article-figure" data-full="media/fuelahead-radar-live.jpg" data-caption="FuelAhead live mobile heading cone: filtering 49 nearby pumps down to stations strictly in your path">
-          <img src="media/fuelahead-radar-live.jpg" alt="FuelAhead mobile compass radar view" loading="lazy">
-          <figcaption>
-            <span>90&deg; heading cone radar</span>
-            <span class="article-figure-zoom">Enlarge &rarr;</span>
-          </figcaption>
-        </figure>
-        <figure class="article-figure" data-full="media/fuelahead-phone-forecast.png" data-caption="30-day regional Fill-or-Wait forecast across 5 km sectors on NSW/ACT/QLD/SA/WA feeds">
-          <img src="media/fuelahead-phone-forecast.png" alt="FuelAhead 30-day regional Fill-or-Wait sector forecast" loading="lazy">
-          <figcaption>
-            <span>5 km sector Fill-or-Wait grid</span>
-            <span class="article-figure-zoom">Enlarge &rarr;</span>
-          </figcaption>
-        </figure>
-      </div>
-
       <div class="article-cta-row">
         <a href="https://fuelahead.com.au" target="_blank" rel="noopener noreferrer" class="btn btn-primary btn-sm">Launch fuelahead.com.au</a>
         <a href="https://fuelahead.com.au/android" target="_blank" rel="noopener noreferrer" class="btn btn-surface btn-sm">Download Android APK</a>
