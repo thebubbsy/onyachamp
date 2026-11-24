@@ -195,7 +195,7 @@ img, video, svg, canvas {
 .nav-links {
   display: flex;
   align-items: center;
-  gap: 1.25rem;
+  gap: 1rem;
   list-style: none;
 }
 

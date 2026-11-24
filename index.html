@@ -37,7 +37,7 @@
             <nav>
                 <div class="nav-links">
                     <a href="#engineering-notes" class="nav-link">Field Notes</a>
-                    <a href="#fuelahead-showcase" class="nav-link">FuelAhead</a>
+                    <a href="https://fuelahead.com.au" target="_blank" rel="noopener noreferrer" class="nav-link">FuelAhead</a>
                     <a href="#marksmith-compiler" class="nav-link">MarkSmith</a>
                     <a href="#public-tools" class="nav-link">Open Source</a>
                     <a href="resources.html" class="nav-link">Downloads</a>
@@ -131,13 +131,13 @@
                         <h3>Solving the Detour Maths</h3>
                     </div>
                     <p>Every fuel app shows you the cheapest sign in five kilometres without telling you how much petrol you burn getting there. Driving six kilometres out of your way to chase two cents off a litre on a small fill leaves you behind before you even pull up to the bowser, and E10's lower energy density quietly cancels out the discount on the signboard anyway.</p>
-                    <p>FuelAhead pulls live NSW, ACT, and Tasmania government FuelCheck feeds (3,284+ stations) into a free Cloudflare Workers + D1 SQL backend under a strict 72-call daily cron budget. It tracks stations strictly ahead in a 90&deg; cone or locked onto the main road you are actually riding on, runs a 30-day Fill-or-Wait price cycle forecast, and speaks the next cheap servo into your AirPods or Cardo helmet intercom once you pass 15 km/h.</p>
+                    <p>FuelAhead pulls live NSW, ACT, Tasmania, QLD, SA, and WA FuelWatch feeds (7,100+ stations and 23,000+ live prices) onto Cloudflare Workers + D1 with dedicated Car, Motorbike, and Farmer modes. It tracks stations strictly ahead in a 90&deg; cone or locked onto the main road you are actually riding on, runs a 30-day Fill-or-Wait price cycle forecast, and speaks the next cheap servo into your AirPods or Cardo helmet intercom once you pass 15 km/h.</p>
 
                     <div style="display: flex; gap: 12px; margin-top: 24px; flex-wrap: wrap;">
-                        <a href="https://fuel.onyachamp.com" target="_blank" rel="noopener noreferrer" class="btn btn-primary btn-sm">
-                            <i class="fas fa-arrow-up-right-from-square"></i> Launch Web App
+                        <a href="https://fuelahead.com.au" target="_blank" rel="noopener noreferrer" class="btn btn-primary btn-sm">
+                            <i class="fas fa-arrow-up-right-from-square"></i> Launch fuelahead.com.au
                         </a>
-                        <a href="https://fuel.onyachamp.com/android" target="_blank" rel="noopener noreferrer" class="btn btn-surface btn-sm">
+                        <a href="https://fuelahead.com.au/android" target="_blank" rel="noopener noreferrer" class="btn btn-surface btn-sm">
                             <i class="fab fa-android"></i> Android APK Download
                         </a>
                         <a href="#live-calculator" class="btn btn-surface btn-sm">
@@ -153,7 +153,7 @@
                     </div>
                     <div class="media-caption-bar">
                         <span class="muted">FuelCheck Live Ingestion &bull; iOS TestFlight &amp; Android APK</span>
-                        <span style="color: var(--accent); font-weight: 600;">Roadside Totem View</span>
+                        <a href="https://fuelahead.com.au" target="_blank" rel="noopener noreferrer" class="link" style="color: var(--accent); font-weight: 600;">fuelahead.com.au &rarr;</a>
                     </div>
                 </div>
 
@@ -187,7 +187,7 @@
                     <div class="calc-header">
                         <div class="calc-title-group">
                             <div class="calc-title">Live Fuel Detour Calculator</div>
-                            <p class="muted small">Compare a cheaper servo further away against the petrol burned getting there.</p>
+                            <p class="muted small">Compare a cheaper servo further away against the petrol burned getting there. Try live Australian prices at <a href="https://fuelahead.com.au" target="_blank" rel="noopener noreferrer" style="color: var(--accent); font-weight: 600;">fuelahead.com.au</a>.</p>
                         </div>
                         <div class="calc-presets" role="group" aria-label="Vehicle presets">
                             <button type="button" class="calc-preset-btn is-active" aria-pressed="true" data-preset="car" data-tank="55" data-base="209" data-disc="189" data-dist="4.0" data-econ="8.5">Daily Car (55L)</button>
@@ -406,27 +406,72 @@ w.WriteStartElement(new Wpg.WordprocessingGroup());
                 </div>
             </div>
 
-            <!-- Composed Editorial List for Notes 2–6 (No repeated icons or equal card grids) -->
+            <!-- Composed Editorial List for Notes 2–9 (With live project thumbnails) -->
             <div class="journal-stack">
-                <div class="journal-item" role="button" tabindex="0" data-reveal onclick="openReader('article-fuel')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openReader('article-fuel');}">
+                <div class="journal-item" data-article="article-d1-queryplan" role="button" tabindex="0" data-reveal onclick="openReader('article-d1-queryplan')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openReader('article-d1-queryplan');}">
+                    <div class="journal-thumb">
+                        <img src="media/fuelahead-live-web.png" alt="Live FuelAhead multi-state desktop view showing Parramatta NSW fuel prices and Fill-or-Wait forecast" loading="lazy">
+                    </div>
+                    <div class="journal-main">
+                        <div class="journal-meta">SQLite Internals &amp; Edge Scaling &bull; 7 min read</div>
+                        <div class="journal-title">Cutting Cloudflare D1 Reads 100x with EXPLAIN QUERY PLAN and CROSS JOIN</div>
+                        <p class="journal-desc">Why SQLite skipped my spatial index across 7,133 stations, chunking 1 MiB blobs past SQLITE_TOOBIG, Car/Bike/Farmer modes, and migrating live onto fuelahead.com.au.</p>
+                    </div>
+                    <div class="journal-action">Read Note &rarr;</div>
+                </div>
+
+                <div class="journal-item" data-article="article-table-ast" role="button" tabindex="0" data-reveal onclick="openReader('article-table-ast')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openReader('article-table-ast');}">
+                    <div class="journal-thumb">
+                        <img src="media/marksmith-feature-tables.png" alt="MarkSmith compiled Markdown pipe table rendering inline math, nested lists, Warning and Tip alert blocks inside cells" loading="lazy">
+                    </div>
+                    <div class="journal-main">
+                        <div class="journal-meta">AST Compilers &amp; Visual Regression &bull; 6 min read</div>
+                        <div class="journal-title">Breaking CommonMark's Inline-Only Table Ceiling in Native Word OOXML</div>
+                        <p class="journal-desc">Recovering alerts and nested lists inside Word table cells without promoting raw syntax examples, plus unbraced LaTeX atoms, \top symbols, and shrinking vector PDFs from 4.1 MB to 145 KB.</p>
+                    </div>
+                    <div class="journal-action">Read Note &rarr;</div>
+                </div>
+
+                <div class="journal-item" data-article="article-oobe-runspace" role="button" tabindex="0" data-reveal onclick="openReader('article-oobe-runspace')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openReader('article-oobe-runspace');}">
+                    <div class="journal-thumb">
+                        <img src="media/autopilot-hub-preflight.png" alt="AutopilotCommandHub 7-stage enterprise preflight diagnostic ladder running asynchronously" loading="lazy">
+                    </div>
+                    <div class="journal-main">
+                        <div class="journal-meta">Windows Internals &amp; WPF Concurrency &bull; 7 min read</div>
+                        <div class="journal-title">Zero-Freeze WPF in PowerShell OOBE: Lock-Free RunspacePools &amp; Hybrid Telemetry</div>
+                        <p class="journal-desc">Running WMI hash harvesters, Windows Update COM searches, and 7-stage OOBE preflight checks over ConcurrentQueue + 30ms DispatcherTimer ticks with tracked NIC recovery.</p>
+                    </div>
+                    <div class="journal-action">Read Note &rarr;</div>
+                </div>
+
+                <div class="journal-item" data-article="article-fuel" role="button" tabindex="0" data-reveal onclick="openReader('article-fuel')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openReader('article-fuel');}">
+                    <div class="journal-thumb is-contain">
+                        <img src="media/fuelahead-radar-live.jpg" alt="FuelAhead mobile compass radar highlighting stations in driving path" loading="lazy">
+                    </div>
                     <div class="journal-main">
                         <div class="journal-meta">Cloudflare D1 &amp; Fuel Maths &bull; 6 min read</div>
                         <div class="journal-title">FuelAhead: Why "Cheapest Servo Nearby" Is Usually a Maths Trap</div>
-                        <p class="journal-desc">Squeezing 3,284 NSW/ACT/Tasmania stations into a free D1 worker, ditching compass cones for main-road matching, catching E10 false economy, and piping cheap stops into a motorbike intercom.</p>
+                        <p class="journal-desc">Variable polling across six Australian state feeds, ditching compass cones for main-road matching, catching E10 false economy, and piping cheap stops into a motorbike intercom.</p>
                     </div>
                     <div class="journal-action">Read Note &rarr;</div>
                 </div>
 
-                <div class="journal-item" role="button" tabindex="0" data-reveal onclick="openReader('article-garage')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openReader('article-garage');}">
+                <div class="journal-item" data-article="article-garage" role="button" tabindex="0" data-reveal onclick="openReader('article-garage')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openReader('article-garage');}">
+                    <div class="journal-thumb">
+                        <img src="media/garage-stats.png" alt="Smart Garage Controller Cloudflare D1 analytics drawer with hourly distribution and Siri breakdown" loading="lazy">
+                    </div>
                     <div class="journal-main">
-                        <div class="journal-meta">Edge IoT &amp; RF Hardware &bull; 5 min read</div>
+                        <div class="journal-meta">Edge IoT &amp; RF Hardware &bull; 6 min read</div>
                         <div class="journal-title">Running My Garage Door on Cloudflare D1 (And Catching My Own Auth Bug)</div>
-                        <p class="journal-desc">Moving off a flaky Raspberry Pi to Workers + D1 + a BroadLink RM4 Pro, wiring the 4th hardware fingerprint factor properly, triple-bursting 433MHz signals, and CarPlay Siri Shortcuts.</p>
+                        <p class="journal-desc">Wiring the missing 4th hardware fingerprint factor, keyset pagination + 4s live delta feeds for 92% Siri opens, non-blocking webhooks, and triple-burst 433MHz CarPlay triggers.</p>
                     </div>
                     <div class="journal-action">Read Note &rarr;</div>
                 </div>
 
-                <div class="journal-item" role="button" tabindex="0" data-reveal onclick="openReader('article-session0')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openReader('article-session0');}">
+                <div class="journal-item" data-article="article-session0" role="button" tabindex="0" data-reveal onclick="openReader('article-session0')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openReader('article-session0');}">
+                    <div class="journal-thumb">
+                        <img src="media/wingetintune-pipeline.png" alt="WingetIntune Win32 packaging pipeline diagram" loading="lazy">
+                    </div>
                     <div class="journal-main">
                         <div class="journal-meta">Intune &amp; Windows Session 0 &bull; 7 min read</div>
                         <div class="journal-title">Session 0 Isolation: Where Intune Win32 Packages Go to Die</div>
@@ -435,7 +480,10 @@ w.WriteStartElement(new Wpg.WordprocessingGroup());
                     <div class="journal-action">Read Note &rarr;</div>
                 </div>
 
-                <div class="journal-item" role="button" tabindex="0" data-reveal onclick="openReader('article-simd')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openReader('article-simd');}">
+                <div class="journal-item" data-article="article-simd" role="button" tabindex="0" data-reveal onclick="openReader('article-simd')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openReader('article-simd');}">
+                    <div class="journal-thumb">
+                        <img src="media/findobject-benchmark.png" alt="FindObject SIMD benchmark comparison chart" loading="lazy">
+                    </div>
                     <div class="journal-main">
                         <div class="journal-meta">PowerShell &amp; C# SIMD &bull; 5 min read</div>
                         <div class="journal-title">Stop Using Where-Object on Big Pipelines (344x Faster in C# SIMD)</div>
@@ -444,7 +492,7 @@ w.WriteStartElement(new Wpg.WordprocessingGroup());
                     <div class="journal-action">Read Note &rarr;</div>
                 </div>
 
-                <div class="journal-item" role="button" tabindex="0" data-reveal onclick="openReader('article-startpage')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openReader('article-startpage');}">
+                <div class="journal-item" data-article="article-startpage" role="button" tabindex="0" data-reveal onclick="openReader('article-startpage')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openReader('article-startpage');}">
                     <div class="journal-main">
                         <div class="journal-meta">Product Cleanup &bull; 4 min read</div>
                         <div class="journal-title">How My 1,904-Tool OSINT Start Page Got Too Busy for Daily Use</div>
@@ -753,6 +801,9 @@ w.WriteStartElement(new Wpg.WordprocessingGroup());
                         <a href="https://www.buymeacoffee.com/mbubbtechz" target="_blank" rel="noopener noreferrer" class="btn btn-coffee">
                             <i class="fas fa-mug-hot"></i> Buy Me a Coffee (@mbubbtechz)
                         </a>
+                        <a href="https://fuelahead.com.au" target="_blank" rel="noopener noreferrer" class="btn btn-surface">
+                            <i class="fas fa-gas-pump"></i> FuelAhead.com.au
+                        </a>
                         <a href="https://github.com/thebubbsy" target="_blank" rel="noopener noreferrer" class="btn btn-surface">
                             <i class="fab fa-github"></i> GitHub (@thebubbsy)
                         </a>
@@ -778,7 +829,7 @@ w.WriteStartElement(new Wpg.WordprocessingGroup());
 
             <div class="footer-nav">
                 <a href="#engineering-notes">Field Notes</a>
-                <a href="#fuelahead-showcase">FuelAhead</a>
+                <a href="https://fuelahead.com.au" target="_blank" rel="noopener noreferrer">FuelAhead.com.au</a>
                 <a href="marksmith.html">MarkSmith</a>
                 <a href="tools.html">Tools</a>
                 <a href="cli-tour.html">CLI Tour</a>

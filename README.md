@@ -12,7 +12,7 @@ It's a traditional multi-page site: every page shares the same top menu, and the
 
 | Page | What's on it |
 | :--- | :--- |
-| [`index.html`](index.html) | Home: about me, recent public open-source releases, plus a directory of every page |
+| [`index.html`](index.html) | Home: engineering field notes, [FuelAhead](https://fuelahead.com.au) (`fuelahead.com.au`), recent public open-source releases, plus a directory of every page |
 | [`marksmith.html`](marksmith.html) | MarkSmith (v3.111.0), my Markdown-to-Office compiler & 6-Studio WinUI 3 desktop suite: live demo, comparisons, pricing |
 | [`garage-controller.html`](garage-controller.html) | broadlink-garage-controller (`garage.onyachamp.com`) |
 | [`cli-tour.html`](cli-tour.html) | Interactive 6-pipeline terminal tour (WingetIntune, AutopilotFast, UpdateCascade, AutopilotCommandHub, FindObject, MarkSmith CLI) |

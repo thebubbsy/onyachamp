@@ -1,4 +1,5 @@
 import os
+import re
 import collections
 from bs4 import BeautifulSoup
 from playwright.sync_api import sync_playwright
@@ -36,11 +37,6 @@ FORBIDDEN_PRIVATE_TERMS = [
     'salesforce-exporter',
 ]
 
-NON_INDEX_FORBIDDEN_TERMS = [
-    'fuelahead',
-]
-
-
 def verify_static():
     print("========================================")
     print("1. STATIC ASSET & PRIVACY BOUNDARY AUDIT")
@@ -53,9 +49,9 @@ def verify_static():
             soup = BeautifulSoup(content, 'html.parser')
 
         leaked = [term for term in FORBIDDEN_PRIVATE_TERMS if term in lower_content]
-        if page != 'index.html':
-            leaked.extend(term for term in NON_INDEX_FORBIDDEN_TERMS if term in lower_content)
         assert len(leaked) == 0, f"PRIVACY VIOLATION in {page}: leaked private repo terms {leaked}"
+        assert 'fuel.onyachamp.com' not in lower_content, f"LEGACY LINK in {page}: fuel.onyachamp.com still present"
+        assert 'https://fuelahead.com.au' in lower_content, f"MISSING LINK in {page}: expected https://fuelahead.com.au"
 
         # Check IDs
         ids = [tag['id'] for tag in soup.find_all(id=True)]
@@ -99,12 +95,18 @@ def verify_static():
 
     for js_file in ['home.js', 'app.js']:
         with open(js_file, 'r', encoding='utf-8') as f:
-            js_lower = f.read().lower()
+            js_raw = f.read()
+            js_lower = js_raw.lower()
         leaked = [term for term in FORBIDDEN_PRIVATE_TERMS if term in js_lower]
-        if js_file != 'home.js':
-            leaked.extend(term for term in NON_INDEX_FORBIDDEN_TERMS if term in js_lower)
         assert len(leaked) == 0, f"PRIVACY VIOLATION in {js_file}: leaked {leaked}"
-    print("[Privacy] Zero private repository leaks across HTML & JS sources.")
+        assert 'fuel.onyachamp.com' not in js_lower, f"LEGACY LINK in {js_file}: fuel.onyachamp.com still present"
+        if js_file == 'home.js':
+            assert 'https://fuelahead.com.au' in js_lower, "MISSING LINK in home.js: expected https://fuelahead.com.au"
+            media_refs = sorted(set(re.findall(r'media/[A-Za-z0-9._-]+', js_raw)))
+            missing_media = [m for m in media_refs if not os.path.exists(m)]
+            assert len(missing_media) == 0, f"Broken media references in home.js: {missing_media}"
+            print(f"[home.js] {len(media_refs)} embedded blog media assets verified on disk.")
+    print("[Privacy & Links] Zero private leaks, zero legacy fuel links, and https://fuelahead.com.au verified across all pages.")
 
 
 def verify_browser():
@@ -210,7 +212,7 @@ def verify_browser():
                 assert reset_net == "+$10.35", f"Car preset reset failed: {reset_net}"
                 print(f"[index.html] Detour Calculator OK: 55L={before_net} -> 80L={after_net}, Trap={trap_net}, Reset={reset_net}.")
 
-                print("[index.html] Testing Engineering Field Notes Modal Reader...")
+                print("[index.html] Testing Engineering Field Notes Modal Reader & Inline Figures...")
                 lead_note = page.query_selector('.editorial-split')
                 lead_note.scroll_into_view_if_needed()
                 lead_note.click()
@@ -222,9 +224,47 @@ def verify_browser():
                 page.keyboard.press('Escape')
                 page.wait_for_timeout(150)
                 assert not reader_modal.is_visible(), "Field Notes reader modal did not close on Escape"
+
                 journal_count = len(page.query_selector_all('.journal-item'))
-                assert journal_count == 5, f"Expected 5 stacked journal items (+ 1 lead editorial), got {journal_count}"
-                print("[index.html] All 6 Engineering Field Notes verified interactive.")
+                assert journal_count == 8, f"Expected 8 stacked journal items (+ 1 lead editorial), got {journal_count}"
+
+                d1_note = page.query_selector('.journal-item[data-article="article-d1-queryplan"]')
+                assert d1_note is not None, "Missing article-d1-queryplan journal item"
+                d1_note.scroll_into_view_if_needed()
+                d1_note.click()
+                page.wait_for_timeout(220)
+                assert reader_modal.is_visible(), "article-d1-queryplan reader modal did not open"
+
+                article_fig = page.query_selector('#reader-content .article-figure[data-full]')
+                assert article_fig is not None, "Missing inline article-figure inside article-d1-queryplan"
+                fig_loaded = page.evaluate("""() => {
+                    const imgs = Array.from(document.querySelectorAll('#reader-content .article-figure img'));
+                    imgs.forEach(img => { img.loading = 'eager'; });
+                    return imgs.length;
+                }""")
+                page.wait_for_timeout(300)
+                broken_fig_imgs = page.evaluate("""() => {
+                    return Array.from(document.querySelectorAll('#reader-content .article-figure img'))
+                        .filter(img => !img.complete || img.naturalWidth === 0)
+                        .map(img => img.getAttribute('src'));
+                }""")
+                assert fig_loaded >= 2 and len(broken_fig_imgs) == 0, f"Broken article figure images: {broken_fig_imgs}"
+
+                article_fig.scroll_into_view_if_needed()
+                article_fig.click()
+                page.wait_for_timeout(180)
+                lightbox = page.query_selector('#shot-lightbox')
+                assert lightbox and lightbox.is_visible(), "Lightbox did not open from inline article figure"
+
+                page.keyboard.press('Escape')
+                page.wait_for_timeout(150)
+                assert not lightbox.is_visible(), "Lightbox did not close on first Escape"
+                assert reader_modal.is_visible(), "Reader modal closed prematurely when dismissing nested lightbox"
+
+                page.keyboard.press('Escape')
+                page.wait_for_timeout(150)
+                assert not reader_modal.is_visible(), "Reader modal did not close on second Escape"
+                print("[index.html] All 9 Engineering Field Notes, inline figures, and nested Escape behavior verified.")
 
             # tools.html category filter tests
             if page_name == 'tools.html':
