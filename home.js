@@ -316,18 +316,21 @@ const articles = {
       <p>Three practical incentives keep every competitor on handheld phone screens:</p>
       <ul>
         <li><strong>Head units ban ads:</strong> Both Google and Apple strictly prohibit banner ads, sponsored cards, and popup overlays on car dashboards. Ad-funded fuel apps earn zero impressions inside CarPlay or Android Auto, so management never signs off on building them.</li>
-        <li><strong>You cannot mirror a web wrapper onto a dash:</strong> Hybrid mobile apps that display a responsive React or Ionic screen on a phone cannot just cast that DOM to Android Auto. Google forces a dedicated native <code>CarAppService</code> checked by <code>HostValidator</code>, templated UI via <code>MapWithContentTemplate</code> (Car App API 7+) or <code>ListTemplate</code> fallback on older head units, and strict driving-distraction rules that forbid reflowing rows randomly mid-trip. In <a href="https://fuelahead.com.au" target="_blank" rel="noopener noreferrer">FuelAhead</a> I had to wire custom vector map pins directly via <code>AppManager.setSurfaceCallback()</code>, pin row slots to fixed titles (<code>Cheapest</code>, <code>2nd</code>, <code>3rd</code>...), collapse zone switching into one top button (<code>Around / Ahead / Wide / Road</code>), and gate API refreshes by real movement (300 m travelled or 35 deg turn, 8 s minimum cooldown, ignoring noisy compass bearings below 1.5 m/s).</li>
-        <li><strong>Apple CarPlay entitlements and Play Store gates:</strong> Apple refuses to render a CarPlay app on any car screen unless you hold a paid Developer account, apply for and win manual review of the <strong>Fueling</strong> CarPlay entitlement, re-architect iOS scene lifecycles, and distribute through App Store/TestFlight (free-profile sideloads cannot carry that entitlement at all). On Android, shipping Android Auto plus hands-free background location triggers full Google Play manual compliance reviews and live screencast proof before testing unlocks.</li>
+        <li><strong>You cannot mirror a web wrapper onto a dash:</strong> Hybrid mobile apps that show a React or Ionic view on a phone cannot just project DOM elements onto a car screen. On iOS, CarPlay runs through an isolated scene delegate (<code>CPTemplateApplicationSceneDelegate</code>) driving native <code>CPPointOfInterestTemplate</code> and <code>CPListTemplate</code> screens. On Android, Android Auto enforces a dedicated native <code>CarAppService</code> checked by <code>HostValidator</code>, templated UI via <code>MapWithContentTemplate</code> (Car App API 7+) or <code>ListTemplate</code> fallback on older head units, and strict distraction rules that forbid shuffling list rows mid-drive. In <a href="https://fuelahead.com.au" target="_blank" rel="noopener noreferrer">FuelAhead</a> both car targets run natively: custom vector map pins via <code>AppManager.setSurfaceCallback()</code>, fixed row slots (<code>Cheapest</code>, <code>2nd</code>, <code>3rd</code>...), a single zone toggle cycling <code>Around / Ahead / Wide / Road</code>, and movement-gated refreshes (300 m travelled or 35 deg turn, 8 s minimum cooldown, discarding compass noise below 1.5 m/s).</li>
+        <li><strong>Apple CarPlay Fueling entitlement and Play compliance:</strong> Apple only lets apps render inside CarPlay once you hold an Apple Developer licence and obtain approval under Apple's <strong>Fueling</strong> CarPlay entitlement alongside separate scene-lifecycle handling in UIKit/CarPlay. Securing the entitlement and wiring native CarPlay templates plus passing Google Play's Car App and background-location compliance reviews takes real engineering effort, which ad-funded competitors skip when dashboards earn zero ad impressions.</li>
       </ul>
 
-<pre><code>// FuelCarAppService + PriceMapScreen (au.com.fuelahead.app.car)
-// Enforces template fallback, driving-safe fixed slots &amp; 300m / 35deg movement gating
+<pre><code>// Apple CarPlay (CPTemplateApplicationSceneDelegate) + Android Auto (FuelCarAppService)
+func templateApplicationScene(_ scene: CPTemplateApplicationScene,
+    didConnect interfaceController: CPInterfaceController) {
+    interfaceController.setRootTemplate(makeFuelPoiTemplate(), animated: true, completion: nil)
+}
+
 public Screen onCreateScreen(@NonNull Intent intent) {
     return PriceMapScreen.supported(getCarContext())
         ? new PriceMapScreen(getCarContext())   // Car App API 7+ surface map + fixed ranks
         : new StationListScreen(getCarContext()); // Legacy head-unit ListTemplate fallback
-}
-// Rows stay pinned ("Cheapest", "2nd", "3rd"...) so moving lists never fail Auto limits</code></pre>
+}</code></pre>
 
       <div class="article-figure-grid">
         <figure class="article-figure" data-full="media/fuelahead-android-auto-night.png" data-caption="FuelAhead Android Auto Night Mode: live raised-tenth price pins rendered directly via native SurfaceCallback templates ($1.899-$2.127/L)">
