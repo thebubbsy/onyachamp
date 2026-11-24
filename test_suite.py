@@ -196,7 +196,19 @@ def verify_browser():
                 after_net = page.text_content('#out-net')
                 after_tank = page.text_content('#val-tank')
                 assert after_tank == "80 Litres" and after_net != before_net, f"Calculator failed: {before_net} -> {after_net}"
-                print(f"[index.html] Detour Calculator OK: 55L={before_net} -> 80L={after_net}.")
+
+                # Preset tests: Detour Trap -> negative net + bad verdict, then back to Daily Car
+                page.click('.calc-preset-btn[data-preset="trap"]')
+                page.wait_for_timeout(100)
+                trap_net = page.text_content('#out-net')
+                trap_verdict_cls = page.get_attribute('#out-verdict', 'class') or ''
+                assert trap_net.startswith('-') and 'is-bad' in trap_verdict_cls, f"Trap preset failed: {trap_net}, {trap_verdict_cls}"
+
+                page.click('.calc-preset-btn[data-preset="car"]')
+                page.wait_for_timeout(100)
+                reset_net = page.text_content('#out-net')
+                assert reset_net == "+$10.35", f"Car preset reset failed: {reset_net}"
+                print(f"[index.html] Detour Calculator OK: 55L={before_net} -> 80L={after_net}, Trap={trap_net}, Reset={reset_net}.")
 
                 print("[index.html] Testing Engineering Field Notes Modal Reader...")
                 lead_note = page.query_selector('.editorial-split')

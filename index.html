@@ -183,71 +183,155 @@
                 </div>
 
                 <!-- Tile 3: The Live Thing (Interactive Detour & Net Savings Calculator) -->
-                <div id="live-calculator" class="tile col-12 tile-pad-lg tile-high" data-ui data-reveal>
-                    <div style="margin-bottom: 6px; font-size: var(--step-lead); font-weight: 700; color: var(--ink);">Live Fuel Detour Calculator</div>
-                    <p class="muted small" style="margin-bottom: 16px;">Test the net pocket equation running inside FuelAhead, including the E10 energy-density threshold (~3.5% higher burn per litre than U91).</p>
+                <div id="live-calculator" class="tile col-12 tile-pad-lg calc-shell" data-ui data-reveal>
+                    <div class="calc-header">
+                        <div class="calc-title-group">
+                            <div class="calc-title">Live Fuel Detour Calculator</div>
+                            <p class="muted small">Compare a cheaper servo further away against the petrol burned getting there.</p>
+                        </div>
+                        <div class="calc-presets" role="group" aria-label="Vehicle presets">
+                            <button type="button" class="calc-preset-btn is-active" aria-pressed="true" data-preset="car" data-tank="55" data-base="209" data-disc="189" data-dist="4.0" data-econ="8.5">Daily Car (55L)</button>
+                            <button type="button" class="calc-preset-btn" aria-pressed="false" data-preset="bike" data-tank="14" data-base="212" data-disc="198" data-dist="5.0" data-econ="4.5">Motorbike (14L)</button>
+                            <button type="button" class="calc-preset-btn" aria-pressed="false" data-preset="ute" data-tank="80" data-base="218" data-disc="194" data-dist="7.0" data-econ="12.5">Ute / 4WD (80L)</button>
+                            <button type="button" class="calc-preset-btn" aria-pressed="false" data-preset="trap" data-tank="25" data-base="204" data-disc="200" data-dist="8.5" data-econ="10.5">Detour Trap (25L)</button>
+                        </div>
+                    </div>
 
                     <div class="calc-grid">
                         <div class="calc-inputs">
                             <div class="calc-row">
                                 <div class="calc-label-row">
                                     <label for="slider-tank">Fuel Tank Fill Volume</label>
-                                    <span class="calc-val-display" id="val-tank">55 Litres</span>
+                                    <span class="calc-val-pill" id="val-tank">55 Litres</span>
                                 </div>
-                                <input type="range" class="calc-slider" id="slider-tank" min="15" max="120" value="55" step="1">
+                                <div class="calc-track-wrap">
+                                    <div class="calc-track-bg" aria-hidden="true">
+                                        <div class="calc-track-fill" id="fill-tank"></div>
+                                    </div>
+                                    <input type="range" class="calc-slider" id="slider-tank" min="10" max="120" value="55" step="1">
+                                </div>
+                                <div class="calc-bounds"><span>10 L</span><span>120 L</span></div>
                             </div>
 
                             <div class="calc-row">
                                 <div class="calc-label-row">
                                     <label for="slider-base">Nearby Base Station Price</label>
-                                    <span class="calc-val-display" id="val-base">209.9 c/L</span>
+                                    <span class="calc-val-pill" id="val-base">209.9 c/L</span>
                                 </div>
-                                <input type="range" class="calc-slider" id="slider-base" min="150" max="260" value="209" step="1">
+                                <div class="calc-track-wrap">
+                                    <div class="calc-track-bg" aria-hidden="true">
+                                        <div class="calc-track-fill" id="fill-base"></div>
+                                    </div>
+                                    <input type="range" class="calc-slider" id="slider-base" min="150" max="260" value="209" step="1">
+                                </div>
+                                <div class="calc-bounds"><span>150.9 c/L</span><span>260.9 c/L</span></div>
                             </div>
 
                             <div class="calc-row">
                                 <div class="calc-label-row">
                                     <label for="slider-disc">Discount Station Price</label>
-                                    <span class="calc-val-display" id="val-disc">189.9 c/L</span>
+                                    <span class="calc-val-pill" id="val-disc">189.9 c/L</span>
                                 </div>
-                                <input type="range" class="calc-slider" id="slider-disc" min="150" max="260" value="189" step="1">
+                                <div class="calc-track-wrap">
+                                    <div class="calc-track-bg" aria-hidden="true">
+                                        <div class="calc-track-fill" id="fill-disc"></div>
+                                    </div>
+                                    <input type="range" class="calc-slider" id="slider-disc" min="150" max="260" value="189" step="1">
+                                </div>
+                                <div class="calc-bounds"><span>150.9 c/L</span><span>260.9 c/L</span></div>
                             </div>
 
                             <div class="calc-row">
                                 <div class="calc-label-row">
                                     <label for="slider-dist">Detour Distance (Return)</label>
-                                    <span class="calc-val-display" id="val-dist">4.0 km</span>
+                                    <span class="calc-val-pill" id="val-dist">4.0 km</span>
                                 </div>
-                                <input type="range" class="calc-slider" id="slider-dist" min="0.5" max="25" value="4.0" step="0.5">
+                                <div class="calc-track-wrap">
+                                    <div class="calc-track-bg" aria-hidden="true">
+                                        <div class="calc-track-fill" id="fill-dist"></div>
+                                    </div>
+                                    <input type="range" class="calc-slider" id="slider-dist" min="0.5" max="25" value="4.0" step="0.5">
+                                </div>
+                                <div class="calc-bounds"><span>0.5 km</span><span>25 km</span></div>
                             </div>
 
                             <div class="calc-row">
                                 <div class="calc-label-row">
                                     <label for="slider-econ">Vehicle Fuel Consumption</label>
-                                    <span class="calc-val-display" id="val-econ">8.5 L/100km</span>
+                                    <span class="calc-val-pill" id="val-econ">8.5 L/100km</span>
                                 </div>
-                                <input type="range" class="calc-slider" id="slider-econ" min="4.0" max="18.0" value="8.5" step="0.5">
+                                <div class="calc-track-wrap">
+                                    <div class="calc-track-bg" aria-hidden="true">
+                                        <div class="calc-track-fill" id="fill-econ"></div>
+                                    </div>
+                                    <input type="range" class="calc-slider" id="slider-econ" min="4.0" max="18.0" value="8.5" step="0.5">
+                                </div>
+                                <div class="calc-bounds"><span>4.0 L/100km</span><span>18.0 L/100km</span></div>
                             </div>
                         </div>
 
                         <div class="calc-outputs">
-                            <div class="totem-box">
-                                <div class="muted small" style="margin-bottom: 6px;">Station Totem (NSW Verified)</div>
-                                <div class="totem-price">
-                                    <span id="totem-whole">189</span>
-                                    <span class="totem-tenth">9</span>
-                                    <span class="totem-unit" style="margin-left: 6px;">c/L</span>
+                            <div class="calc-verdict is-good" id="out-verdict">
+                                <span class="verdict-dot" aria-hidden="true"></span>
+                                <span id="out-verdict-text">Worth the detour</span>
+                            </div>
+
+                            <div class="totem-display">
+                                <div class="totem-head">
+                                    <span>Discount Servo Signboard</span>
+                                    <span class="totem-spread" id="out-spread">20.0 c/L cheaper</span>
+                                </div>
+                                <div class="totem-main">
+                                    <div class="totem-price" id="totem-price-readout">
+                                        <span id="totem-whole">189</span>
+                                        <span class="totem-tenth">9</span>
+                                        <span class="totem-unit">c/L</span>
+                                    </div>
+                                    <div class="totem-eff">
+                                        <span class="muted small">After detour burn</span>
+                                        <strong id="out-effective">191.1 c/L eff.</strong>
+                                    </div>
                                 </div>
                             </div>
 
-                            <div style="margin-top: 10px;">
-                                <div class="muted small">Gross Savings on Fill: <strong id="out-gross" style="color: var(--ink);">$11.00</strong></div>
-                                <div class="muted small">Fuel Burned on Detour: <strong id="out-cost" style="color: var(--danger);">$0.65</strong></div>
-                                <div class="muted small" style="margin-top: 4px;">E10 False-Economy Cap: <strong id="out-e10" style="color: var(--ink);">183.3 c/L</strong></div>
-                                <div style="margin-top: 12px; display: flex; align-items: baseline; gap: 10px;">
-                                    <span class="small" style="font-weight: 600; color: var(--ink);">Net Pocket Savings:</span>
-                                    <span class="profit-badge" id="out-net">+$10.35</span>
+                            <div class="calc-meter-wrap">
+                                <div class="calc-meter-labels">
+                                    <span>Savings kept vs drive cost</span>
+                                    <span id="out-burn-pct">6% eaten by drive</span>
                                 </div>
+                                <div class="calc-meter" role="img" aria-label="Savings retention bar">
+                                    <div class="calc-meter-kept" id="meter-kept" style="width: 94%;"></div>
+                                    <div class="calc-meter-burn" id="meter-burn" style="width: 6%;"></div>
+                                </div>
+                            </div>
+
+                            <table class="calc-ledger" aria-label="Detour savings breakdown">
+                                <tbody>
+                                    <tr>
+                                        <td>Gross savings on fill</td>
+                                        <td><strong id="out-gross">$11.00</strong></td>
+                                    </tr>
+                                    <tr>
+                                        <td>Fuel burned (<span id="out-burn-litres">0.34 L</span>)</td>
+                                        <td><strong id="out-cost" class="calc-cost-val">-$0.65</strong></td>
+                                    </tr>
+                                    <tr>
+                                        <td>Break-even max detour</td>
+                                        <td><strong id="out-breakeven">67.9 km</strong></td>
+                                    </tr>
+                                    <tr>
+                                        <td>E10 false-economy cap</td>
+                                        <td><strong id="out-e10">183.3 c/L</strong></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+
+                            <div class="calc-net-box">
+                                <div>
+                                    <div class="calc-net-title">Net cash in pocket</div>
+                                    <div class="muted small" id="out-net-sub">for a 55 L fill</div>
+                                </div>
+                                <span class="profit-badge" id="out-net">+$10.35</span>
                             </div>
                         </div>
                     </div>

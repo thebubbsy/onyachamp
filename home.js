@@ -24,11 +24,55 @@ function initCalculator() {
   const valDist = document.getElementById('val-dist');
   const valEcon = document.getElementById('val-econ');
 
+  const fillMap = [
+    [sliderTank, document.getElementById('fill-tank')],
+    [sliderBase, document.getElementById('fill-base')],
+    [sliderDisc, document.getElementById('fill-disc')],
+    [sliderDist, document.getElementById('fill-dist')],
+    [sliderEcon, document.getElementById('fill-econ')],
+  ];
+
   const totemWhole = document.getElementById('totem-whole');
+  const totemPriceReadout = document.getElementById('totem-price-readout');
+  const outSpread = document.getElementById('out-spread');
+  const outEffective = document.getElementById('out-effective');
+  const outVerdict = document.getElementById('out-verdict');
+  const outVerdictText = document.getElementById('out-verdict-text');
+  const outBurnPct = document.getElementById('out-burn-pct');
+  const meterKept = document.getElementById('meter-kept');
+  const meterBurn = document.getElementById('meter-burn');
+  const outBurnLitres = document.getElementById('out-burn-litres');
+  const outBreakeven = document.getElementById('out-breakeven');
   const outGross = document.getElementById('out-gross');
   const outCost = document.getElementById('out-cost');
   const outE10 = document.getElementById('out-e10');
+  const outNetSub = document.getElementById('out-net-sub');
   const outNet = document.getElementById('out-net');
+  const presetBtns = Array.from(document.querySelectorAll('.calc-preset-btn'));
+
+  function syncFills() {
+    for (const [slider, fill] of fillMap) {
+      if (!slider || !fill) continue;
+      const min = parseFloat(slider.min);
+      const max = parseFloat(slider.max);
+      const val = parseFloat(slider.value);
+      const pct = max > min ? Math.max(0, Math.min(100, ((val - min) / (max - min)) * 100)) : 0;
+      fill.style.width = `${pct.toFixed(2)}%`;
+    }
+  }
+
+  function updatePresetStates() {
+    for (const btn of presetBtns) {
+      const matches =
+        parseFloat(sliderTank.value) === parseFloat(btn.dataset.tank) &&
+        parseFloat(sliderBase.value) === parseFloat(btn.dataset.base) &&
+        parseFloat(sliderDisc.value) === parseFloat(btn.dataset.disc) &&
+        parseFloat(sliderDist.value) === parseFloat(btn.dataset.dist) &&
+        parseFloat(sliderEcon.value) === parseFloat(btn.dataset.econ);
+      btn.classList.toggle('is-active', matches);
+      btn.setAttribute('aria-pressed', matches ? 'true' : 'false');
+    }
+  }
 
   function update() {
     const tank = parseFloat(sliderTank.value);
@@ -40,43 +84,119 @@ function initCalculator() {
     const baseTenths = base + 0.9;
     const discTenths = disc + 0.9;
 
-    // Update labels
+    // Update labels & progress fills
     valTank.textContent = `${tank} Litres`;
     valBase.textContent = `${base}.9 c/L`;
     valDisc.textContent = `${disc}.9 c/L`;
     valDist.textContent = `${dist.toFixed(1)} km`;
     valEcon.textContent = `${econ.toFixed(1)} L/100km`;
+    syncFills();
 
-    // Totem display
+    // Totem display & spread
     totemWhole.textContent = Math.floor(disc);
+    const priceDiffCents = baseTenths - discTenths;
+    if (outSpread) {
+      if (priceDiffCents > 0.05) {
+        outSpread.textContent = `${priceDiffCents.toFixed(1)} c/L cheaper`;
+        outSpread.style.color = 'var(--accent)';
+      } else if (priceDiffCents < -0.05) {
+        outSpread.textContent = `${Math.abs(priceDiffCents).toFixed(1)} c/L pricier`;
+        outSpread.style.color = 'var(--danger)';
+      } else {
+        outSpread.textContent = 'Same pump price';
+        outSpread.style.color = 'var(--muted)';
+      }
+    }
 
     // Mathematics of Detour
-    const priceDiffCents = baseTenths - discTenths;
     const grossSavings = (priceDiffCents * tank) / 100;
-
-    // Fuel consumed during the detour
     const fuelBurnedLitres = dist * (econ / 100);
     const detourFuelCost = fuelBurnedLitres * (discTenths / 100);
-
-    // Net In-Pocket Profit & E10 break-even (~3.5% energy penalty vs U91)
     const netSavings = grossSavings - detourFuelCost;
     const e10Cap = discTenths * 0.965;
+    const effectiveCents = discTenths + (detourFuelCost * 100) / tank;
+
+    if (outEffective) {
+      outEffective.textContent = `${effectiveCents.toFixed(1)} c/L eff.`;
+    }
+    if (outBurnLitres) {
+      outBurnLitres.textContent = `${fuelBurnedLitres.toFixed(2)} L`;
+    }
+    if (outBreakeven) {
+      if (grossSavings > 0) {
+        const costPerKm = (econ / 100) * (discTenths / 100);
+        const maxKm = costPerKm > 0 ? grossSavings / costPerKm : 0;
+        outBreakeven.textContent = `${maxKm.toFixed(1)} km`;
+      } else {
+        outBreakeven.textContent = '0.0 km';
+      }
+    }
 
     outGross.textContent = grossSavings >= 0
       ? `$${grossSavings.toFixed(2)}`
       : `-$${Math.abs(grossSavings).toFixed(2)}`;
-    outCost.textContent = `$${detourFuelCost.toFixed(2)}`;
+    outCost.textContent = `-$${detourFuelCost.toFixed(2)}`;
     if (outE10) {
       outE10.textContent = `${e10Cap.toFixed(1)} c/L`;
     }
+    if (outNetSub) {
+      outNetSub.textContent = `for a ${tank} L fill`;
+    }
 
-    if (netSavings >= 0) {
+    // Savings retention meter
+    if (meterKept && meterBurn && outBurnPct) {
+      if (grossSavings <= 0) {
+        meterKept.style.width = '0%';
+        meterBurn.style.width = '100%';
+        outBurnPct.textContent = 'No pump discount';
+      } else {
+        const burnRatio = Math.min(100, Math.round((detourFuelCost / grossSavings) * 100));
+        const keptRatio = Math.max(0, 100 - burnRatio);
+        meterKept.style.width = `${keptRatio}%`;
+        meterBurn.style.width = `${burnRatio}%`;
+        outBurnPct.textContent = `${burnRatio}% eaten by drive`;
+      }
+    }
+
+    // Verdict banner + totem colour + net figure
+    if (netSavings >= 1.0) {
+      if (outVerdict && outVerdictText) {
+        outVerdict.className = 'calc-verdict is-good';
+        outVerdictText.textContent = 'Worth the detour';
+      }
+      if (totemPriceReadout) totemPriceReadout.style.color = 'var(--success)';
       outNet.textContent = `+$${netSavings.toFixed(2)}`;
       outNet.style.color = 'var(--success)';
+    } else if (netSavings >= 0) {
+      if (outVerdict && outVerdictText) {
+        outVerdict.className = 'calc-verdict is-warn';
+        outVerdictText.textContent = 'Marginal: under $1 net gain';
+      }
+      if (totemPriceReadout) totemPriceReadout.style.color = 'var(--accent)';
+      outNet.textContent = `+$${netSavings.toFixed(2)}`;
+      outNet.style.color = 'var(--accent)';
     } else {
+      if (outVerdict && outVerdictText) {
+        outVerdict.className = 'calc-verdict is-bad';
+        outVerdictText.textContent = 'Skip: detour costs more';
+      }
+      if (totemPriceReadout) totemPriceReadout.style.color = 'var(--danger)';
       outNet.textContent = `-$${Math.abs(netSavings).toFixed(2)}`;
       outNet.style.color = 'var(--danger)';
     }
+
+    updatePresetStates();
+  }
+
+  for (const btn of presetBtns) {
+    btn.addEventListener('click', () => {
+      sliderTank.value = btn.dataset.tank;
+      sliderBase.value = btn.dataset.base;
+      sliderDisc.value = btn.dataset.disc;
+      sliderDist.value = btn.dataset.dist;
+      sliderEcon.value = btn.dataset.econ;
+      update();
+    });
   }
 
   [sliderTank, sliderBase, sliderDisc, sliderDist, sliderEcon].forEach(slider => {
